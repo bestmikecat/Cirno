@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "nep.timeline.cirno"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "nep.timeline.cirno"
         minSdk = 31
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 7
         versionName = "7.0"
 
