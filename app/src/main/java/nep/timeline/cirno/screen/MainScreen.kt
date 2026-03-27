@@ -82,12 +82,14 @@ fun MainScreen() {
 
     val readConfig = ConfigManager.manager.readConfigSU()
     val apps = remember { mutableStateOf<List<ApplicationInfo>>(emptyList()) }
-UI
+
     LaunchedEffect(Unit) {
         handler.post {
             apps.value = getInstalledApps(context)
         }
-        if (!Shell.getShell().isRoot) Toast.makeText(context, "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用", Toast.LENGTH_SHORT).show()
+        if (!Shell.getShell().isRoot) {
+            Toast.makeText(context, "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用", Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun enterAppPage(appName: String, userId: String, packageName: String) {
