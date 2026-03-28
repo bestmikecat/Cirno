@@ -9,6 +9,7 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.handlers.AudioHandler;
+import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.virtuals.AudioPlaybackConfigurationReflect;
@@ -38,26 +39,42 @@ public class PlayerBanHook extends MethodHook {
         return new AbstractMethodHook() {
             @Override
             protected void afterMethod(MethodHookParam param) {
-                if ((boolean) param.getResult()) {
+                try {
+                    boolean result = (boolean) param.getResult();
+                    
                     Object configuration = param.args[0];
-                    if (configuration == null)
+                    if (configuration == null) {
                         return;
+                    }
 
-                    AudioPlaybackConfigurationReflect reflect = new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) configuration);
+                    try {
+                        AudioPlaybackConfigurationReflect reflect = 
+                            new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) configuration);
+                        
+                        int uid = reflect.getClientUid();
+                        int interfaceId = reflect.getPlayerInterfaceId();
+                        
+                        if (result) {
+                            Handlers.audio.post(() -> {
+                                List<AppRecord> appRecords = AppService.getByUid(uid);
+                                if (appRecords == null || appRecords.isEmpty()) {
+                                    return;
+                                }
 
-                    Handlers.audio.post(() -> {
-                        List<AppRecord> appRecords = AppService.getByUid(reflect.getClientUid());
-                        if (appRecords == null || appRecords.isEmpty())
-                            return;
+                                for (AppRecord appRecord : appRecords) {
+                                    if (appRecord == null)
+                                        continue;
 
-                        for (AppRecord appRecord : appRecords) {
-                            if (appRecord == null)
-                                continue;
-
-                            int interfaceId = reflect.getPlayerInterfaceId();
-                            AudioHandler.call(appRecord, AudioHandler.PLAYER_STATE_PAUSED, interfaceId);
+                                    AudioHandler.call(appRecord, AudioHandler.PLAYER_STATE_PAUSED, interfaceId);
+                                }
+                            });
                         }
-                    });
+                    } catch (Exception e) {
+                        Log.e("PlayerBanHook 反射失败", e);
+                    }
+                    
+                } catch (Exception e) {
+                    Log.e("PlayerBanHook 异常", e);
                 }
             }
         };
