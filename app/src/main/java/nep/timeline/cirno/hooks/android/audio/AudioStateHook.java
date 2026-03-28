@@ -128,32 +128,23 @@ public class AudioStateHook extends MethodHook {
                         XposedBridge.hookMethod(method, getTargetHook());
                         Log.i(method.getName() + " [参数: " + method.getParameterCount() + "] -> 成功Hook完毕!");
                         hooked = true;
-     public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
-            @Override
-            protected void afterMethod(MethodHookParam param) {
-                if (!((boolean) param.getResult()))
-                    return;
-
-                int event = (int) param.args[0];
-                if (AudioHandler.LISTEN_EVENT.contains(event)) {
-                    AudioPlaybackConfigurationReflect reflect = new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) param.thisObject);
-
-                    Handlers.audio.post(() -> {
-                        List<AppRecord> appRecords = AppService.getByUid(reflect.getClientUid());
-                        if (appRecords == null)
-                            return;
-
-                        int interfaceId = reflect.getPlayerInterfaceId();
-                        for (AppRecord appRecord : appRecords) {
-                            if (appRecord == null)
-                                continue;
-
-                            AudioHandler.call(appRecord, event, interfaceId);
-                        }
-                    });
+                    } catch (Exception e) {
+                        Log.w("Hook " + method.getName() + " [参数: " + method.getParameterCount() + "] 失败: " + e.getMessage());
+                    }
                 }
             }
-        };
+            
+            if (!hooked) {
+                Log.w("未能 Hook 任何 handleStateEvent 方法");
+            }
+        } catch (Throwable e) {
+            Log.e(getTargetMethod() + " Hook 失败", e);
+        }
+    }
+
+    @Override
+    public boolean isIgnoreError() {
+        // ✅ 忽略错误，允许部分失败
+        return true;
     }
 }
