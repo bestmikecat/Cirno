@@ -86,14 +86,6 @@ public class AudioStateHook extends MethodHook {
                                     continue;
                                 }
 
-                                // ✅ 只在播放和停止时输出日志
-                                if (event == AudioHandler.PLAYER_STATE_STARTED) {
-                                    Log.i("🎵 音频播放: " + appRecord.getPackageNameWithUser());
-                                } else if (event == AudioHandler.PLAYER_STATE_PAUSED || 
-                                           event == AudioHandler.PLAYER_STATE_STOPPED) {
-                                    Log.i("🔇 音频停止: " + appRecord.getPackageNameWithUser());
-                                }
-                                
                                 AudioHandler.call(appRecord, event, interfaceId);
                             }
                         } catch (Exception e) {

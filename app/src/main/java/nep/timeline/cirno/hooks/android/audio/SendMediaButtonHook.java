@@ -13,9 +13,13 @@ import nep.timeline.cirno.services.FreezerService;
 
 public class SendMediaButtonHook {
     public SendMediaButtonHook(ClassLoader classLoader) {
-        Class<?> targetClass = XposedHelpers.findClassIfExists("com.android.server.media.MediaSessionRecord$SessionCb", classLoader);
-        if (targetClass == null)
+        Class<?> targetClass = XposedHelpers.findClassIfExists(
+            "com.android.server.media.MediaSessionRecord$SessionCb", classLoader);
+        
+        if (targetClass == null) {
+            Log.w("MediaSessionRecord$SessionCb 不存在");
             return;
+        }
 
         String fieldName = null;
 
@@ -27,15 +31,19 @@ public class SendMediaButtonHook {
         }
 
         if (fieldName == null) {
-            Log.e("无法监听媒体按键!");
+            Log.w("无法监听媒体按键!");
             return;
         }
 
         List<Method> methods = new ArrayList<>();
         for (Method method : targetClass.getDeclaredMethods()) {
             String methodName = method.getName();
-            if (methodName.equals("sendMediaButton") || methodName.equals("play") || methodName.equals("playFromMediaId") || methodName.equals("playFromSearch") || methodName.equals("playFromUri") || methodName.equals("next") || methodName.equals("previous") || methodName.equals("seekTo"))
+            if (methodName.equals("sendMediaButton") || methodName.equals("play") || 
+                methodName.equals("playFromMediaId") || methodName.equals("playFromSearch") || 
+                methodName.equals("playFromUri") || methodName.equals("next") || 
+                methodName.equals("previous") || methodName.equals("seekTo")) {
                 methods.add(method);
+            }
         }
 
         for (Method method : methods) {
@@ -44,11 +52,17 @@ public class SendMediaButtonHook {
                 XposedBridge.hookMethod(method, new AbstractMethodHook() {
                     @Override
                     protected void beforeMethod(MethodHookParam param) {
-                        Object record = XposedHelpers.getObjectField(param.thisObject, finalFieldName);
-                        if (record == null)
-                            return;
+                        try {
+                            Object record = XposedHelpers.getObjectField(param.thisObject, finalFieldName);
+                            if (record == null) {
+                                return;
+                            }
 
-                        FreezerService.temporaryUnfreezeIfNeed(XposedHelpers.getIntField(record, "mOwnerUid"), "按下媒体按键", 3000);
+                            int uid = XposedHelpers.getIntField(record, "mOwnerUid");
+                            FreezerService.temporaryUnfreezeIfNeed(uid, "媒体按键", 3000);
+                        } catch (Exception e) {
+                            Log.e("媒体按键处理失败", e);
+                        }
                     }
                 });
                 Log.i(method.getName() + " -> 成功Hook完毕!");
