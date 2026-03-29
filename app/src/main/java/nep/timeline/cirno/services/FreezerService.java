@@ -29,16 +29,16 @@ public class FreezerService {
             processRecord.setFrozen(true);
         }
 
-        Handlers.alarms.post(() -> ForceAppStandbyListener.removeAlarmsForUid(appRecord));
-        Handlers.network.post(() -> {
+        Handlers.alarms.post(() -> {
             try {
-                NetworkManagementService.socketDestroy(appRecord);
-            } catch (UnsupportedOperationException e) {
-                Log.w("socketDestroy 不支持，跳过");
+                ForceAppStandbyListener.removeAlarmsForUid(appRecord);
             } catch (Exception e) {
-                Log.e("socketDestroy 失败", e);
+                Log.e("移除警报失败", e);
             }
         });
+        
+        // 🔧 尝试断开网络（某些ROM可能不支持，会自动判断）
+        Handlers.network.post(() -> NetworkManagementService.socketDestroy(appRecord));
         
         appRecord.setFrozen(true);
     }
