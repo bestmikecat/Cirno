@@ -1,5 +1,6 @@
 package nep.timeline.cirno.services;
 
+import android.os.Build;
 import java.lang.reflect.Array;
 
 import de.robv.android.xposed.XposedHelpers;
@@ -10,7 +11,8 @@ public class NetworkManagementService {
     public static volatile Object instance;
     private static Object mNetdService;
     private static Class<?> UidRangeParcel;
-    private static boolean isInitialized = false;  // 🔧 标记是否初始化成功
+    private static boolean isInitialized = false;
+    private static int socketDestroyVersion = -1;  // 🔧 记录socketDestroy的版本支持情况
 
     public static void setInstance(Object obj, ClassLoader classLoader) {
         try {
@@ -18,13 +20,13 @@ public class NetworkManagementService {
             mNetdService = XposedHelpers.getObjectField(obj, "mNetdService");
             UidRangeParcel = XposedHelpers.findClass("android.net.UidRangeParcel", classLoader);
             
-            // 🔧 检查初始化是否成功
             if (mNetdService != null && UidRangeParcel != null) {
                 isInitialized = true;
-                Log.d("NetworkManagementService 初始化成功");
+                detectSocketDestroySupport();
+                Log.d("NetworkManagementService 初始化成功, socketDestroy版本: " + socketDestroyVersion);
             } else {
                 isInitialized = false;
-                Log.w("NetworkManagementService 初始化失败: mNetdService=" + (mNetdService != null) + ", UidRangeParcel=" + (UidRangeParcel != null));
+                Log.w("NetworkManagementService 初始化失败");
             }
         } catch (Exception e) {
             isInitialized = false;
@@ -32,47 +34,65 @@ public class NetworkManagementService {
         }
     }
 
-    public static void socketDestroy(AppRecord appRecord) {
-        // 🔧 检查初始化状态
-        if (!isInitialized) {
-            Log.w("socketDestroy: NetworkManagementService 未初始化，跳过");
-            return;
+    // 🔧 检测该设备支持哪个版本的socketDestroy
+    private static void detectSocketDestroySupport() {
+        try {
+            // Android 13+ 使用新的签名
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                socketDestroyVersion = 2;
+            }
+            // Android 12 及以下使用旧的签名
+            else {
+                socketDestroyVersion = 1;
+            }
+        } catch (Exception ignored) {
+            socketDestroyVersion = 1;  // 默认尝试旧版本
         }
+    }
 
-        // 🔧 检查参数有效性
-        if (appRecord == null) {
-            Log.w("socketDestroy: appRecord 为 null");
+    public static void socketDestroy(AppRecord appRecord) {
+        if (!isInitialized || appRecord == null) {
             return;
         }
 
         try {
-            // 🔧 双重检查
             if (mNetdService == null || UidRangeParcel == null) {
-                Log.w("socketDestroy: 服务未就绪");
                 return;
             }
 
-            Object uidRangeParcels = Array.newInstance(UidRangeParcel, 1);
             int uid = appRecord.getUid();
             
-            // 🔧 尝试创建 UidRangeParcel 实例
-            Object uidRange = XposedHelpers.newInstance(UidRangeParcel, uid, uid);
-            Array.set(uidRangeParcels, 0, uidRange);
-            
-            // 🔧 尝试调用 socketDestroy，捕获所有可能的异常
-            XposedHelpers.callMethod(mNetdService, "socketDestroy", uidRangeParcels, new int[0]);
-            Log.d(appRecord.getPackageNameWithUser() + " 断开网络连接");
-            
-        } catch (NoSuchMethodError e) {
-            // 🔧 方法不存在，说明该 Android 版本不支持
-            Log.w("socketDestroy 方法不存在（该 Android 版本不支持）");
-            isInitialized = false;  // 标记为未初始化，后续不再尝试
-        } catch (UnsupportedOperationException e) {
-            // 🔧 方法存在但不支持该操作
-            Log.w("socketDestroy 操作不支持");
-        } catch (Exception e) {
-            // 🔧 其他异常（参数类型不匹配、空指针等）
-            Log.e("socketDestroy 执行异常: " + e.getClass().getSimpleName(), e);
+            try {
+                if (socketDestroyVersion == 2) {
+                    // 🔧 Android 13+ 的方式：传递 UidRangeParcel[]
+                    Object uidRangeParcels = Array.newInstance(UidRangeParcel, 1);
+                    Object uidRange = XposedHelpers.newInstance(UidRangeParcel, uid, uid);
+                    Array.set(uidRangeParcels, 0, uidRange);
+                    XposedHelpers.callMethod(mNetdService, "socketDestroy", uidRangeParcels, new int[0]);
+                } else {
+                    // 🔧 Android 12 及以下的方式：可能不支持或使用不同的参数
+                    // 先尝试新版本，如果失败就标记为不支持
+                    Object uidRangeParcels = Array.newInstance(UidRangeParcel, 1);
+                    Object uidRange = XposedHelpers.newInstance(UidRangeParcel, uid, uid);
+                    Array.set(uidRangeParcels, 0, uidRange);
+                    XposedHelpers.callMethod(mNetdService, "socketDestroy", uidRangeParcels, new int[0]);
+                }
+                Log.d(appRecord.getPackageNameWithUser() + " 断开网络连接");
+            } catch (UnsupportedOperationException e) {
+                // 🔧 该Android版本的netd服务不支持socketDestroy操作
+                // 这是正常的，某些定制ROM禁用了该功能
+                socketDestroyVersion = 0;  // 标记为不支持
+                Log.w("当前设备不支持socketDestroy操作（可能是ROM限制）");
+                isInitialized = false;  // 后续不再尝试
+            } catch (NoSuchMethodError e) {
+                // 🔧 该Android版本没有socketDestroy方法
+                socketDestroyVersion = 0;
+                Log.w("当前Android版本不支持socketDestroy方法");
+                isInitialized = false;
+            }
+        } catch (Throwable e) {
+            // 🔧 其他未预期的异常
+            Log.e("socketDestroy 执行失败", e);
         }
     }
 }
