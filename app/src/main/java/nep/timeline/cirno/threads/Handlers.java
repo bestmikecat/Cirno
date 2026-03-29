@@ -51,21 +51,51 @@ public class Handlers {
 
     public static Looper makeLooperForeground(String str) {
         HandlerThread handlerThread = new HandlerThread(GlobalVars.TAG + "-" + str, Process.THREAD_PRIORITY_FOREGROUND);
-        handlerThread.setUncaughtExceptionHandler((t, e) -> Log.e("线程 " + t.getName() + " 出现异常: " + e));
+        // 🔧 改进的异常处理：记录完整堆栈
+        handlerThread.setUncaughtExceptionHandler((t, e) -> {
+            Log.e("线程 " + t.getName() + " 出现异常: " + e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                Log.e("  根因: " + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage());
+            }
+            Log.e("完整堆栈:");
+            for (StackTraceElement element : e.getStackTrace()) {
+                Log.e("  at " + element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")");
+            }
+        });
         handlerThread.start();
         return handlerThread.getLooper();
     }
 
     public static Looper makeLooperBackground(String str) {
         HandlerThread handlerThread = new HandlerThread(GlobalVars.TAG + "-" + str, Process.THREAD_PRIORITY_BACKGROUND);
-        handlerThread.setUncaughtExceptionHandler((t, e) -> Log.e("线程 " + t.getName() + " 出现异常: " + e));
+        // 🔧 改进的异常处理：记录完整堆栈
+        handlerThread.setUncaughtExceptionHandler((t, e) -> {
+            Log.e("线程 " + t.getName() + " 出现异常: " + e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                Log.e("  根因: " + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage());
+            }
+            Log.e("完整堆栈:");
+            for (StackTraceElement element : e.getStackTrace()) {
+                Log.e("  at " + element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")");
+            }
+        });
         handlerThread.start();
         return handlerThread.getLooper();
     }
 
     public static Looper makeLooper(String str) {
         HandlerThread handlerThread = new HandlerThread(GlobalVars.TAG + "-" + str);
-        handlerThread.setUncaughtExceptionHandler((t, e) -> Log.e("线程 " + t.getName() + " 出现异常: " + e));
+        // 🔧 改进的异常处理：记录完整堆栈
+        handlerThread.setUncaughtExceptionHandler((t, e) -> {
+            Log.e("线程 " + t.getName() + " 出现异常: " + e.getClass().getSimpleName());
+            if (e.getCause() != null) {
+                Log.e("  根因: " + e.getCause().getClass().getSimpleName() + ": " + e.getCause().getMessage());
+            }
+            Log.e("完整堆栈:");
+            for (StackTraceElement element : e.getStackTrace()) {
+                Log.e("  at " + element.getClassName() + "." + element.getMethodName() + "(" + element.getFileName() + ":" + element.getLineNumber() + ")");
+            }
+        });
         handlerThread.start();
         return handlerThread.getLooper();
     }
