@@ -40,6 +40,30 @@ public class BroadcastSkipHook extends MethodHook {
         return new AbstractMethodHook() {
             @Override
             protected void afterMethod(MethodHookParam param) {
+            Log.d("=== shouldSkipMessage 调用 ===");
+    Log.d("参数数量: " + param.args.length);
+    for (int i = 0; i < param.args.length; i++) {
+        Object arg = param.args[i];
+        String typeName = arg == null ? "null" : arg.getClass().getName();
+        Log.d("参数[" + i + "]: " + typeName);
+        
+        if (arg != null) {
+            try {
+                // 尝试列出该对象的所有字段
+                Class<?> clazz = arg.getClass();
+                java.lang.reflect.Field[] fields = clazz.getDeclaredFields();
+                for (java.lang.reflect.Field field : fields) {
+                    field.setAccessible(true);
+                    String fieldName = field.getName();
+                    Log.d("  字段: " + fieldName);
+                }
+            } catch (Exception e) {
+                Log.d("  无法反射获取字段");
+            }
+        }
+    }
+    Log.d("返回值: " + param.getResult());
+    Log.d("========================");
                 try {
                     // ✅ 安全地获取返回值
                     Object result = param.getResult();
