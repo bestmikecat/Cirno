@@ -138,7 +138,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "允许应用在冻结时继续播放音频",
+                                    text = "允许应用在播放音频时不被冻结，推荐音乐类应用",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -167,7 +167,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "允许应用在冻结时继续使用位置信息",
+                                    text = "允许应用在使用位置信息时不被冻结 推荐导航地图类应用",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
