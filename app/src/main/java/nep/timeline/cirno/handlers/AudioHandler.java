@@ -2,6 +2,7 @@ package nep.timeline.cirno.handlers;
 
 import java.util.Set;
 
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
@@ -19,13 +20,19 @@ public class AudioHandler {
     );
 
     public static void call(AppRecord appRecord, int event, int interfaceId) {
+        // 检查后台播放开关是否启用
+        boolean backgroundPlayAllowed = AppConfigs.isBackgroundPlayAllowed(
+            appRecord.getPackageName(), 
+            appRecord.getUserId()
+        );
+
         Set<Integer> set = appRecord.getAppState().getInterfaceIds();
         
         if (event == PLAYER_STATE_STARTED) {
             boolean wasEmpty = set.isEmpty();
             set.add(interfaceId);
             
-            if (wasEmpty) {
+            if (wasEmpty && backgroundPlayAllowed) {
                 appRecord.getAppState().setAudio(true);
                 FreezerService.thaw(appRecord);
                 Log.i("🎵 音频播放: " + appRecord.getPackageNameWithUser());
@@ -36,7 +43,7 @@ public class AudioHandler {
             
             set.remove(interfaceId);
             
-            if (set.isEmpty()) {
+            if (set.isEmpty() && backgroundPlayAllowed) {
                 appRecord.getAppState().setAudio(false);
                 Log.i("🔇 音频停止: " + appRecord.getPackageNameWithUser());
                 FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord, 6000);

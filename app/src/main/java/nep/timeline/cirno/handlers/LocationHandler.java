@@ -4,6 +4,7 @@ import android.os.IBinder;
 
 import java.util.Set;
 
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
@@ -14,12 +15,18 @@ public class LocationHandler {
         if (appRecord.isSystem())
             return;
 
+        // 检查位置使用开关是否启用
+        boolean locationUseAllowed = AppConfigs.isLocationUseAllowed(
+            appRecord.getPackageName(), 
+            appRecord.getUserId()
+        );
+
         if (set.isEmpty()) {
-            if (appRecord.getAppState().setLocation(false)) {
+            if (appRecord.getAppState().setLocation(false) && locationUseAllowed) {
                 Log.d("应用 " + appRecord.getPackageNameWithUser() + " 结束定位");
                 FreezerHandler.sendFreezeMessage(appRecord, 3000);
             }
-        } else if (appRecord.getAppState().setLocation(true)) {
+        } else if (locationUseAllowed && appRecord.getAppState().setLocation(true)) {
             Log.d("应用 " + appRecord.getPackageNameWithUser() + " 开始定位");
             FreezerService.thaw(appRecord);
         }

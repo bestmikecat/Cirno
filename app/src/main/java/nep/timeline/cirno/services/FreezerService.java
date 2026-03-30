@@ -2,6 +2,7 @@ package nep.timeline.cirno.services;
 
 import java.util.List;
 
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.ForceAppStandbyListener;
@@ -13,10 +14,42 @@ import nep.timeline.cirno.utils.FrozenRW;
 public class FreezerService {
     public static void freezer(AppRecord appRecord) {
         if (appRecord.isFrozen() || appRecord.isSystem() || 
-            appRecord.getAppState().isVisible() || 
-            appRecord.getAppState().isLocation() || 
-            appRecord.getAppState().isAudio() ||
-            appRecord.getAppState().isRecording() || 
+            appRecord.getAppState().isVisible()) {
+            return;
+        }
+
+        // 检查后台播放开关
+        boolean backgroundPlayAllowed = AppConfigs.isBackgroundPlayAllowed(
+            appRecord.getPackageName(), 
+            appRecord.getUserId()
+        );
+        
+        // 检查位置使用开关
+        boolean locationUseAllowed = AppConfigs.isLocationUseAllowed(
+            appRecord.getPackageName(), 
+            appRecord.getUserId()
+        );
+
+        // 如果后台播放开关关闭，忽略音频播放状态
+        if (!backgroundPlayAllowed && appRecord.getAppState().isAudio()) {
+            return;
+        }
+
+        // 如果位置使用开关关闭，忽略位置使用状态
+        if (!locationUseAllowed && appRecord.getAppState().isLocation()) {
+            return;
+        }
+
+        // 原有的其他条件检查（只有当开关启用时才检查）
+        if (backgroundPlayAllowed && appRecord.getAppState().isAudio()) {
+            return;
+        }
+
+        if (locationUseAllowed && appRecord.getAppState().isLocation()) {
+            return;
+        }
+
+        if (appRecord.getAppState().isRecording() || 
             appRecord.getAppState().isVpn()) {
             return;
         }
@@ -37,7 +70,6 @@ public class FreezerService {
             }
         });
         
-        // 🔧 尝试断开网络（某些ROM可能不支持，会自动判断）
         Handlers.network.post(() -> NetworkManagementService.socketDestroy(appRecord));
         
         appRecord.setFrozen(true);
