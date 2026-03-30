@@ -55,6 +55,8 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     )
 
     val isWhitelisted = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
+    val isBackgroundPlayAllowed = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
+    val isLocationUseAllowed = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId.toInt())) }
 
     Scaffold(
         topBar = {
@@ -96,6 +98,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                     contentPadding = PaddingValues(top = padding.calculateTopPadding())
                 ) {
                     item {
+                        // Whitelist Toggle
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -112,7 +115,69 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                 checked = isWhitelisted.value,
                                 onCheckedChange = {
                                     isWhitelisted.value = it
-                                    GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
+                                    if (it) {
+                                        GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
+                                    } else {
+                                        GlobalVars.applicationSettings.whiteApps.remove("$packageName#$userId")
+                                    }
+                                    ConfigManager.manager.saveConfigSU()
+                                }
+                            )
+                        }
+
+                        // Background Play Toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "后台播放",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "允许应用在冻结时继续播放音频",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Switch(
+                                checked = isBackgroundPlayAllowed.value,
+                                onCheckedChange = {
+                                    isBackgroundPlayAllowed.value = it
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId.toInt(), it)
+                                    ConfigManager.manager.saveConfigSU()
+                                }
+                            )
+                        }
+
+                        // Location Use Toggle
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "位置使用",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    text = "允许应用在冻结时继续使用位置信息",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Switch(
+                                checked = isLocationUseAllowed.value,
+                                onCheckedChange = {
+                                    isLocationUseAllowed.value = it
+                                    AppConfigs.setLocationUseAllowed(packageName, userId.toInt(), it)
                                     ConfigManager.manager.saveConfigSU()
                                 }
                             )
