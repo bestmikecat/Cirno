@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,9 +50,9 @@ import dev.chrisbanes.haze.rememberHazeState
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import nep.timeline.cirno.ApplicationActivity
@@ -61,7 +63,21 @@ import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.utils.PKGUtils
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-@OptIn(ExperimentalEncodingApi::class)
+// 特殊配置标签定义
+private data class SpecialTag(val label: String, val color: Color)
+
+private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
+    val tags = mutableListOf<SpecialTag>()
+    if (AppConfigs.isWhiteApp(packageName, userId))
+        tags += SpecialTag("白名单", Color(0xFF4CAF50))
+    if (AppConfigs.isBackgroundPlayAllowed(packageName, userId))
+        tags += SpecialTag("后台播放", Color(0xFF2196F3))
+    if (AppConfigs.isLocationUseAllowed(packageName, userId))
+        tags += SpecialTag("位置使用", Color(0xFFFF9800))
+    return tags
+}
+
+@OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen() {
     val handler = Handler(Looper.getMainLooper())
@@ -106,7 +122,10 @@ fun MainScreen() {
         val appName = appInfo.loadLabel(packageManager).toString()
         val appIcon = appInfo.loadIcon(packageManager)
         val userId = PKGUtils.getUserId(appInfo.uid)
-        val isWhite = AppConfigs.isWhiteApp(appInfo.packageName, userId)
+        val tags = getSpecialTags(appInfo.packageName, userId)
+        val hasAnyTag = tags.isNotEmpty()
+        // 主色：取第一个标签颜色（如有），否则用默认
+        val primaryTagColor = tags.firstOrNull()?.color
 
         Row(
             modifier = (if (Shell.getShell().isRoot && readConfig)
@@ -128,7 +147,7 @@ fun MainScreen() {
                 Text(
                     text = appName,
                     style = MiuixTheme.textStyles.subtitle,
-                    color = if (isWhite) Color(0xFF4CAF50) else MiuixTheme.colorScheme.onBackground,
+                    color = primaryTagColor ?: MiuixTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -140,18 +159,26 @@ fun MainScreen() {
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (isWhite) {
+            if (hasAnyTag) {
                 Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFF4CAF50).copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                // 多标签时用 FlowRow 自动换行（通常最多3个标签不会换行）
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = "白名单",
-                        style = MiuixTheme.textStyles.footnote2,
-                        color = Color(0xFF4CAF50)
-                    )
+                    tags.forEach { tag ->
+                        Box(
+                            modifier = Modifier
+                                .background(tag.color.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 7.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = tag.label,
+                                style = MiuixTheme.textStyles.footnote2,
+                                color = tag.color
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -182,19 +209,20 @@ fun MainScreen() {
             }
 
             val packageManager = context.packageManager
-            val sortedApps = apps.value.sortedByDescending {
-                AppConfigs.isWhiteApp(it.packageName, PKGUtils.getUserId(it.uid))
+
+            // 特殊配置应用：有任意一种特殊配置的应用
+            val specialApps = apps.value.filter { appInfo ->
+                val uid = PKGUtils.getUserId(appInfo.uid)
+                getSpecialTags(appInfo.packageName, uid).isNotEmpty()
             }
-            val whiteApps = sortedApps.filter {
-                AppConfigs.isWhiteApp(it.packageName, PKGUtils.getUserId(it.uid))
-            }
-            val normalApps = sortedApps.filter {
-                !AppConfigs.isWhiteApp(it.packageName, PKGUtils.getUserId(it.uid))
+            // 普通应用：无任何特殊配置
+            val normalApps = apps.value.filter { appInfo ->
+                val uid = PKGUtils.getUserId(appInfo.uid)
+                getSpecialTags(appInfo.packageName, uid).isEmpty()
             }
 
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = padding.calculateTopPadding(),
                     bottom = padding.calculateBottomPadding() + 16.dp
@@ -258,21 +286,23 @@ fun MainScreen() {
                     }
                 }
 
-                if (whiteApps.isNotEmpty()) {
+                // 特殊配置应用分组
+                if (specialApps.isNotEmpty()) {
                     item {
-                        SmallTitle(text = "白名单应用", modifier = Modifier.padding(top = 8.dp))
+                        SmallTitle(text = "特殊配置应用", modifier = Modifier.padding(top = 8.dp))
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
                         ) {
-                            whiteApps.forEach { appInfo ->
+                            specialApps.forEach { appInfo ->
                                 AppItem(appInfo, packageManager)
                             }
                         }
                     }
                 }
 
+                // 全部应用分组
                 item {
                     SmallTitle(text = "全部应用", modifier = Modifier.padding(top = 8.dp))
                     Card(

@@ -1,6 +1,6 @@
 package nep.timeline.cirno.screen
 
-import androidx.compose.foundation.layout.Column
+import android.widget.Toast
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -40,6 +41,8 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     var userId = activity.intent.getStringExtra("userId")
     if (userId == null) userId = "0"
 
+    val context = LocalContext.current
+
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.background,
@@ -51,6 +54,9 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     val isWhitelisted = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
     val isBackgroundPlayAllowed = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
     val isLocationUseAllowed = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId.toInt())) }
+
+    // 冻结豁免任意一项是否已开启
+    fun anyExemptionEnabled() = isBackgroundPlayAllowed.value || isLocationUseAllowed.value
 
     Scaffold(
         topBar = {
@@ -70,8 +76,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
             color = MiuixTheme.colorScheme.background
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(), // ← 关键
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = padding.calculateTopPadding(),
                     bottom = 16.dp
@@ -89,8 +94,18 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                     ) {
                         SuperSwitch(
                             title = "白名单",
+                            summary = "白名单应用不会被 Cirno 冻结",
                             checked = isWhitelisted.value,
                             onCheckedChange = { newValue ->
+                                // 尝试开启白名单时，检查冻结豁免是否有项已开启
+                                if (newValue && anyExemptionEnabled()) {
+                                    Toast.makeText(
+                                        context,
+                                        "白名单不能与冻结豁免同时开启",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@SuperSwitch
+                                }
                                 isWhitelisted.value = newValue
                                 if (newValue) {
                                     GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
@@ -118,6 +133,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                             summary = "允许应用在播放音频时不被冻结，推荐音乐类应用",
                             checked = isBackgroundPlayAllowed.value,
                             onCheckedChange = { newValue ->
+                                // 尝试开启冻结豁免时，检查白名单是否已开启
+                                if (newValue && isWhitelisted.value) {
+                                    Toast.makeText(
+                                        context,
+                                        "冻结豁免不能与白名单同时开启",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@SuperSwitch
+                                }
                                 isBackgroundPlayAllowed.value = newValue
                                 AppConfigs.setBackgroundPlayAllowed(packageName, userId.toInt(), newValue)
                                 ConfigManager.manager.saveConfigSU()
@@ -128,6 +152,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                             summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用",
                             checked = isLocationUseAllowed.value,
                             onCheckedChange = { newValue ->
+                                // 尝试开启冻结豁免时，检查白名单是否已开启
+                                if (newValue && isWhitelisted.value) {
+                                    Toast.makeText(
+                                        context,
+                                        "冻结豁免不能与白名单同时开启",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@SuperSwitch
+                                }
                                 isLocationUseAllowed.value = newValue
                                 AppConfigs.setLocationUseAllowed(packageName, userId.toInt(), newValue)
                                 ConfigManager.manager.saveConfigSU()
