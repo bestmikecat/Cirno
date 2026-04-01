@@ -4,7 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.darkColorScheme
+import top.yukonga.miuix.kmp.theme.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import nep.timeline.cirno.screen.MainScreen
 
 class MainActivity : ComponentActivity() {
@@ -12,7 +15,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme {
+            MiuixTheme(
+                colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+            ) {
                 MainScreen()
             }
         }

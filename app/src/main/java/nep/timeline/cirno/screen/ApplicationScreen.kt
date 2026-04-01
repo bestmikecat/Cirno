@@ -1,58 +1,52 @@
 package nep.timeline.cirno.screen
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
+import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import kotlin.io.encoding.ExperimentalEncodingApi
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalEncodingApi::class)
+@OptIn(ExperimentalEncodingApi::class)
 @Composable
 fun ApplicationScreen(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName")!!
     val packageName = activity.intent.getStringExtra("packageName")!!
     var userId = activity.intent.getStringExtra("userId")
-    if (userId == null)
-        userId = "0"
+    if (userId == null) userId = "0"
 
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.background,
-        tint = HazeTint(MaterialTheme.colorScheme.background.copy(0.67f))
+        backgroundColor = MiuixTheme.colorScheme.background,
+        tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.67f))
     )
+
+    val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
     val isWhitelisted = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
     val isBackgroundPlayAllowed = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
@@ -61,127 +55,84 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = TopAppBarDefaults.largeTopAppBarColors(Color.Transparent),
+                title = appName,
+                largeTitle = appName + (if (userId == "0") "" else "  #$userId"),
+                color = Color.Transparent,
                 modifier = Modifier
-                    .hazeEffect(hazeState) {
-                        style = hazeStyle
-                    }
+                    .hazeEffect(hazeState) { style = hazeStyle }
                     .fillMaxWidth(),
-                title = {
-                    Box(
-                        Modifier
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = appName + (if (userId == "0") "" else "#$userId"),
-                                style = MaterialTheme.typography.headlineSmall
-                            )
-                        }
-                    }
-                }
+                scrollBehavior = scrollBehavior
             )
         },
     ) { padding ->
         Surface(
-            modifier = Modifier.hazeSource(
-                state = hazeState
-            ),
-            color = MaterialTheme.colorScheme.background
+            modifier = Modifier.hazeSource(state = hazeState).fillMaxSize(),
+            color = MiuixTheme.colorScheme.background
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentPadding = PaddingValues(top = padding.calculateTopPadding())
-                ) {
-                    item {
-                        // Whitelist Toggle
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "白名单",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = isWhitelisted.value,
-                                onCheckedChange = {
-                                    isWhitelisted.value = it
-                                    if (it) {
-                                        GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
-                                    } else {
-                                        GlobalVars.applicationSettings.whiteApps.remove("$packageName#$userId")
-                                    }
-                                    ConfigManager.manager.saveConfigSU()
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(), // ← 关键
+                contentPadding = PaddingValues(
+                    top = padding.calculateTopPadding(),
+                    bottom = 16.dp
+                )
+            ) {
+                item {
+                    SmallTitle(
+                        text = "基本设置",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        SuperSwitch(
+                            title = "白名单",
+                            checked = isWhitelisted.value,
+                            onCheckedChange = { newValue ->
+                                isWhitelisted.value = newValue
+                                if (newValue) {
+                                    GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
+                                } else {
+                                    GlobalVars.applicationSettings.whiteApps.remove("$packageName#$userId")
                                 }
-                            )
-                        }
-
-                        // Background Play Toggle
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "后台播放",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = "允许应用在播放音频时不被冻结，推荐音乐类应用",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                ConfigManager.manager.saveConfigSU()
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = isBackgroundPlayAllowed.value,
-                                onCheckedChange = {
-                                    isBackgroundPlayAllowed.value = it
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId.toInt(), it)
-                                    ConfigManager.manager.saveConfigSU()
-                                }
-                            )
-                        }
+                        )
+                    }
+                }
 
-                        // Location Use Toggle
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "位置使用",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Text(
-                                    text = "允许应用在使用位置信息时不被冻结 推荐导航地图类应用",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                item {
+                    SmallTitle(
+                        text = "冻结豁免",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        SuperSwitch(
+                            title = "后台播放",
+                            summary = "允许应用在播放音频时不被冻结，推荐音乐类应用",
+                            checked = isBackgroundPlayAllowed.value,
+                            onCheckedChange = { newValue ->
+                                isBackgroundPlayAllowed.value = newValue
+                                AppConfigs.setBackgroundPlayAllowed(packageName, userId.toInt(), newValue)
+                                ConfigManager.manager.saveConfigSU()
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = isLocationUseAllowed.value,
-                                onCheckedChange = {
-                                    isLocationUseAllowed.value = it
-                                    AppConfigs.setLocationUseAllowed(packageName, userId.toInt(), it)
-                                    ConfigManager.manager.saveConfigSU()
-                                }
-                            )
-                        }
+                        )
+                        SuperSwitch(
+                            title = "位置使用",
+                            summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用",
+                            checked = isLocationUseAllowed.value,
+                            onCheckedChange = { newValue ->
+                                isLocationUseAllowed.value = newValue
+                                AppConfigs.setLocationUseAllowed(packageName, userId.toInt(), newValue)
+                                ConfigManager.manager.saveConfigSU()
+                            }
+                        )
                     }
                 }
             }

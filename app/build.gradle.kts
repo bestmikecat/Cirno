@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation("top.yukonga.miuix.kmp:miuix:0.8.8")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.8")
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)
