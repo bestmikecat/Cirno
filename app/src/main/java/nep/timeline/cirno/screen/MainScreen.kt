@@ -30,8 +30,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,12 +51,18 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.NavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.CommonConstants
@@ -62,6 +71,35 @@ import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.utils.PKGUtils
 import kotlin.io.encoding.ExperimentalEncodingApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
+import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.basic.SliderDefaults
+import top.yukonga.miuix.kmp.basic.BasicComponent
 
 // 特殊配置标签定义
 private data class SpecialTag(val label: String, val color: Color)
@@ -80,6 +118,34 @@ private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
 @OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen() {
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    val bottomBar: @Composable () -> Unit = {
+        NavigationBar {
+            NavigationBarItem(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                icon = MiuixIcons.VerticalSplit,
+                label = "主页"
+            )
+            NavigationBarItem(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                icon = MiuixIcons.Settings,
+                label = "设置"
+            )
+        }
+    }
+
+    when (selectedTab) {
+        0 -> HomeTab(bottomBar = bottomBar)
+        1 -> SettingScreen(bottomBar = bottomBar)
+    }
+}
+
+@OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
+@Composable
+private fun HomeTab(bottomBar: @Composable () -> Unit) {
     val handler = Handler(Looper.getMainLooper())
 
     val hazeState = rememberHazeState()
@@ -124,7 +190,6 @@ fun MainScreen() {
         val userId = PKGUtils.getUserId(appInfo.uid)
         val tags = getSpecialTags(appInfo.packageName, userId)
         val hasAnyTag = tags.isNotEmpty()
-        // 主色：取第一个标签颜色（如有），否则用默认
         val primaryTagColor = tags.firstOrNull()?.color
 
         Row(
@@ -161,7 +226,6 @@ fun MainScreen() {
             }
             if (hasAnyTag) {
                 Spacer(modifier = Modifier.width(8.dp))
-                // 多标签时用 FlowRow 自动换行（通常最多3个标签不会换行）
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -194,6 +258,7 @@ fun MainScreen() {
                     .fillMaxWidth()
             )
         },
+        bottomBar = bottomBar
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -210,12 +275,10 @@ fun MainScreen() {
 
             val packageManager = context.packageManager
 
-            // 特殊配置应用：有任意一种特殊配置的应用
             val specialApps = apps.value.filter { appInfo ->
                 val uid = PKGUtils.getUserId(appInfo.uid)
                 getSpecialTags(appInfo.packageName, uid).isNotEmpty()
             }
-            // 普通应用：无任何特殊配置
             val normalApps = apps.value.filter { appInfo ->
                 val uid = PKGUtils.getUserId(appInfo.uid)
                 getSpecialTags(appInfo.packageName, uid).isEmpty()
@@ -228,7 +291,6 @@ fun MainScreen() {
                     bottom = padding.calculateBottomPadding() + 16.dp
                 )
             ) {
-                // 激活状态卡片
                 item {
                     Card(
                         modifier = Modifier
@@ -286,7 +348,6 @@ fun MainScreen() {
                     }
                 }
 
-                // 特殊配置应用分组
                 if (specialApps.isNotEmpty()) {
                     item {
                         SmallTitle(text = "特殊配置应用", modifier = Modifier.padding(top = 8.dp))
@@ -302,7 +363,6 @@ fun MainScreen() {
                     }
                 }
 
-                // 全部应用分组
                 item {
                     SmallTitle(text = "全部应用", modifier = Modifier.padding(top = 8.dp))
                     Card(
@@ -313,6 +373,120 @@ fun MainScreen() {
                         normalApps.forEach { appInfo ->
                             AppItem(appInfo, packageManager)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+public fun SettingScreen(bottomBar: @Composable () -> Unit) {
+    val hazeState = rememberHazeState()
+    val hazeStyle = HazeStyle(
+        backgroundColor = MiuixTheme.colorScheme.background,
+        tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.67f))
+    )
+
+    val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
+
+    // 冻结延时状态（秒）
+    val freezeDelay = remember {
+        mutableStateOf(GlobalVars.globalSettings.freezeDelay)
+    }
+    var showFreezeDelayDialog by remember { mutableStateOf(false) }
+
+    // 日志输出状态
+    val logEnabled = remember {
+        mutableStateOf(GlobalVars.globalSettings.logEnabled)
+    }
+
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(
+                title = "设置",
+                color = Color.Transparent,
+                modifier = Modifier
+                    .hazeEffect(hazeState) { style = hazeStyle }
+                    .fillMaxWidth(),
+                scrollBehavior = scrollBehavior
+            )
+        },
+        bottomBar = bottomBar
+    ) { padding ->
+        Surface(
+            modifier = Modifier
+                .hazeSource(state = hazeState)
+                .fillMaxSize(),
+            color = MiuixTheme.colorScheme.background
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding() + 16.dp
+                )
+            ) {
+                item {
+                    SmallTitle(
+                        text = "冻结",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        BasicComponent(
+                title = "冻结延时",
+                summary = "应用进入后台后延迟冻结的时间，单位秒",
+                endActions = { Text(
+        text = "${freezeDelay.value}",
+        fontSize = MiuixTheme.textStyles.body2.fontSize,
+        color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+    ) },
+                bottomAction = {
+                    Slider(
+                value = freezeDelay.value.toFloat(),
+                onValueChange = { 
+                freezeDelay.value = it.toInt()
+                GlobalVars.globalSettings.freezeDelay = freezeDelay.value
+                ConfigManager.manager.saveConfigSU()
+                 },
+                valueRange = 0f..10f,
+                steps = 9,
+                hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                showKeyPoints = true,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
+            )
+                },
+                insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+            )
+                    }
+                }
+
+                item {
+                    SmallTitle(
+                        text = "调试",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        SuperSwitch(
+                            title = "日志输出",
+                            summary = "在 Logcat 中输出 Cirno 运行日志",
+                            checked = logEnabled.value,
+                            onCheckedChange = { newValue ->
+                                logEnabled.value = newValue
+                                GlobalVars.globalSettings.logEnabled = newValue
+                                ConfigManager.manager.saveConfigSU()
+                            }
+                        )
                     }
                 }
             }
