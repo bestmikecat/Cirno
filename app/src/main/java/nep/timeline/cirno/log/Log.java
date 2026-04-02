@@ -14,11 +14,16 @@ import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.RWUtils;
 
 public class Log {
+    private final static boolean logEnabled = GlobalVars.globalSettings.logEnabled;
     private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
     private final static File currentLog = new File(GlobalVars.LOG_DIR, "current.log");
 
     static {
         i("设备Android SDK: " + Build.VERSION.SDK_INT);
+    }
+    
+    static {
+        i("冻结延时: " + 1000*GlobalVars.globalSettings.freezeDelay + "ms");
     }
 
     public static void d(String msg) {
@@ -50,6 +55,9 @@ public class Log {
     }
 
     public static void execute(String level, String msg) {
+         if (!logEnabled) {
+           return;
+        }
         Handlers.log.post(() -> fileLog(simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg));
     }
 
