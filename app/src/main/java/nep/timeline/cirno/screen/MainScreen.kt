@@ -479,7 +479,7 @@ public fun SettingScreen(bottomBar: @Composable () -> Unit) {
                     ) {
                         SuperSwitch(
                             title = "日志输出",
-                            summary = "在 Logcat 中输出 Cirno 运行日志",
+                            summary = "在 /data/system/Cirno/log 中输出 Cirno 日志",
                             checked = logEnabled.value,
                             onCheckedChange = { newValue ->
                                 logEnabled.value = newValue
