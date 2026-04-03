@@ -50,56 +50,31 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Settings
-import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.utils.PKGUtils
-import kotlin.io.encoding.ExperimentalEncodingApi
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.NavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.extra.SuperSwitch
-import top.yukonga.miuix.kmp.basic.SliderDefaults
-import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 // 特殊配置标签定义
 private data class SpecialTag(val label: String, val color: Color)
@@ -169,7 +144,11 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
     LaunchedEffect(Unit) {
         handler.post { apps.value = getInstalledApps(context) }
         if (!Shell.getShell().isRoot) {
-            Toast.makeText(context, "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -332,7 +311,9 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
                                         modifier = Modifier
                                             .size(7.dp)
                                             .background(
-                                                color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50) else Color.Gray,
+                                                color = if (GlobalVars.isModuleActive) Color(
+                                                    0xFF4CAF50
+                                                ) else Color.Gray,
                                                 shape = CircleShape
                                             )
                                     )
@@ -381,7 +362,7 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
 }
 
 @Composable
-public fun SettingScreen(bottomBar: @Composable () -> Unit) {
+fun SettingScreen(bottomBar: @Composable () -> Unit) {
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.background,
@@ -394,7 +375,6 @@ public fun SettingScreen(bottomBar: @Composable () -> Unit) {
     val freezeDelay = remember {
         mutableStateOf(GlobalVars.globalSettings.freezeDelay)
     }
-    var showFreezeDelayDialog by remember { mutableStateOf(false) }
 
     // 日志输出状态
     val logEnabled = remember {
@@ -438,32 +418,34 @@ public fun SettingScreen(bottomBar: @Composable () -> Unit) {
                             .padding(horizontal = 12.dp)
                     ) {
                         BasicComponent(
-                title = "冻结延时",
-                summary = "应用进入后台后延迟冻结的时间，单位秒",
-                endActions = { Text(
-        text = "${freezeDelay.value}",
-        fontSize = MiuixTheme.textStyles.body2.fontSize,
-        color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-    ) },
-                bottomAction = {
-                    Slider(
-                value = freezeDelay.value.toFloat(),
-                onValueChange = { 
-                freezeDelay.value = it.toInt()
-                GlobalVars.globalSettings.freezeDelay = freezeDelay.value
-                ConfigManager.manager.saveConfigSU()
-                 },
-                valueRange = 0f..10f,
-                steps = 9,
-                hapticEffect = SliderDefaults.SliderHapticEffect.Step,
-                showKeyPoints = true,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
-            )
-                },
-                insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
-            )
+                            title = "冻结延时",
+                            summary = "应用进入后台后延迟冻结的时间，单位秒",
+                            endActions = {
+                                Text(
+                                    text = "${freezeDelay.value}",
+                                    fontSize = MiuixTheme.textStyles.body2.fontSize,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                )
+                            },
+                            bottomAction = {
+                                Slider(
+                                    value = freezeDelay.value.toFloat(),
+                                    onValueChange = {
+                                        freezeDelay.value = it.toInt()
+                                        GlobalVars.globalSettings.freezeDelay = freezeDelay.value
+                                        ConfigManager.manager.saveConfigSU()
+                                    },
+                                    valueRange = 0f..10f,
+                                    steps = 9,
+                                    hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                                    showKeyPoints = true,
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                        .padding(bottom = 12.dp),
+                                )
+                            },
+                            insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
+                        )
                     }
                 }
 

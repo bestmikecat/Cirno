@@ -8,13 +8,6 @@ import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.utils.AnrHelper;
 
 public class ANRHelperHooks {
-    public final Integer findIndex(Class<?>[] parameterTypes, String clazz) {
-        for (int i = 0; i < parameterTypes.length; i++)
-            if (clazz.equals(parameterTypes[i].getName()))
-                return i;
-        return null;
-    }
-
     public ANRHelperHooks(ClassLoader classLoader) {
         try {
             Class<?> targetClass = XposedHelpers.findClassIfExists("com.android.server.am.AnrHelper", classLoader);
@@ -57,5 +50,12 @@ public class ANRHelperHooks {
         } catch (Throwable ignored) {
 
         }
+    }
+
+    public final Integer findIndex(Class<?>[] parameterTypes, String clazz) {
+        for (int i = 0; i < parameterTypes.length; i++)
+            if (clazz.equals(parameterTypes[i].getName()))
+                return i;
+        return null;
     }
 }

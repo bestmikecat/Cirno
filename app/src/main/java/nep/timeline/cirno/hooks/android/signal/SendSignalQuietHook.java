@@ -25,7 +25,7 @@ public class SendSignalQuietHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { int.class, int.class };
+        return new Object[]{int.class, int.class};
     }
 
     @Override

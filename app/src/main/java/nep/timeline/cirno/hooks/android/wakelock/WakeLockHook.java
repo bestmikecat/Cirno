@@ -29,8 +29,8 @@ public class WakeLockHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2)
-            return new Object[] { IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class, "android.os.IWakeLockCallback" };
-        return new Object[] { IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class };
+            return new Object[]{IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class, "android.os.IWakeLockCallback"};
+        return new Object[]{IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class};
     }
 
     @Override

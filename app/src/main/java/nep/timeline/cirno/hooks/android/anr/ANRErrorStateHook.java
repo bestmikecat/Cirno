@@ -30,8 +30,8 @@ public class ANRErrorStateHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU)
-            return new Object[] { String.class, ApplicationInfo.class, String.class, "com.android.server.wm.WindowProcessController", boolean.class, "com.android.internal.os.TimeoutRecord", ExecutorService.class, boolean.class, boolean.class, Future.class };
-        return new Object[] { String.class, ApplicationInfo.class, String.class, "com.android.server.wm.WindowProcessController", boolean.class, String.class, boolean.class };
+            return new Object[]{String.class, ApplicationInfo.class, String.class, "com.android.server.wm.WindowProcessController", boolean.class, "com.android.internal.os.TimeoutRecord", ExecutorService.class, boolean.class, boolean.class, Future.class};
+        return new Object[]{String.class, ApplicationInfo.class, String.class, "com.android.server.wm.WindowProcessController", boolean.class, String.class, boolean.class};
     }
 
     @Override

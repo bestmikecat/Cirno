@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import nep.timeline.cirno.screen.ApplicationScreen
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
-import nep.timeline.cirno.screen.ApplicationScreen
 
 class ApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

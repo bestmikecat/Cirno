@@ -24,10 +24,10 @@ import nep.timeline.cirno.utils.StringUtils;
 
 public class BinderService {
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
-    public static boolean received = false;
-    private static boolean isRunning = false;
     private static final int NETLINK_UNIT_DEFAULT = 22;
     private static final int NETLINK_UNIT_MAX = 26;
+    public static boolean received = false;
+    private static boolean isRunning = false;
 
     private static Map<String, String> parseParams(String message) {
         Map<String, String> map = new HashMap<>();

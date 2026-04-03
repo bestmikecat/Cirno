@@ -21,9 +21,9 @@ public class Log {
     static {
         i("设备Android SDK: " + Build.VERSION.SDK_INT);
     }
-    
+
     static {
-        i("冻结延时: " + 1000*GlobalVars.globalSettings.freezeDelay + "ms");
+        i("冻结延时: " + 1000 * GlobalVars.globalSettings.freezeDelay + "ms");
     }
 
     public static void d(String msg) {
@@ -55,8 +55,8 @@ public class Log {
     }
 
     public static void execute(String level, String msg) {
-         if (!logEnabled) {
-           return;
+        if (!logEnabled) {
+            return;
         }
         Handlers.log.post(() -> fileLog(simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg));
     }

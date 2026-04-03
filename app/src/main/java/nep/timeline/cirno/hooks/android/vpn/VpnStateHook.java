@@ -30,7 +30,7 @@ public class VpnStateHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { NetworkInfo.DetailedState.class, String.class };
+        return new Object[]{NetworkInfo.DetailedState.class, String.class};
     }
 
     @Override

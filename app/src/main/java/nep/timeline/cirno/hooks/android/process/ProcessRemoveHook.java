@@ -21,7 +21,7 @@ public class ProcessRemoveHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { String.class, int.class, "com.android.server.am.ProcessRecord" };
+        return new Object[]{String.class, int.class, "com.android.server.am.ProcessRecord"};
     }
 
     @Override

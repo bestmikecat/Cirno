@@ -1,6 +1,5 @@
 package nep.timeline.cirno.services;
 
-import android.os.Build;
 import java.lang.reflect.Array;
 
 import de.robv.android.xposed.XposedHelpers;
@@ -19,7 +18,7 @@ public class NetworkManagementService {
             instance = obj;
             mNetdService = XposedHelpers.getObjectField(obj, "mNetdService");
             UidRangeParcel = XposedHelpers.findClass("android.net.UidRangeParcel", classLoader);
-            
+
             if (mNetdService != null && UidRangeParcel != null) {
                 Log.d("NetworkManagementService 初始化成功");
             } else {
@@ -47,15 +46,15 @@ public class NetworkManagementService {
 
         try {
             int uid = appRecord.getUid();
-            
+
             // 🔧 构造参数
             Object uidRangeParcels = Array.newInstance(UidRangeParcel, 1);
             Object uidRange = XposedHelpers.newInstance(UidRangeParcel, uid, uid);
             Array.set(uidRangeParcels, 0, uidRange);
-            
+
             // 🔧 尝试调用
             XposedHelpers.callMethod(mNetdService, "socketDestroy", uidRangeParcels, new int[0]);
-            
+
             // 🔧 成功！标记支持
             if (!hasTestedSupport) {
                 hasTestedSupport = true;
@@ -63,7 +62,7 @@ public class NetworkManagementService {
                 Log.i("✅ socketDestroy 功能可用");
             }
             Log.d(appRecord.getPackageNameWithUser() + " 断开网络连接");
-            
+
         } catch (UnsupportedOperationException e) {
             // 🔧 首次失败：该ROM不支持socketDestroy
             if (!hasTestedSupport) {

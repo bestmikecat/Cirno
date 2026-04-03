@@ -23,7 +23,7 @@ public class ANRHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { boolean.class };
+        return new Object[]{boolean.class};
     }
 
     @Override

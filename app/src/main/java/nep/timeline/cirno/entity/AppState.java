@@ -10,15 +10,15 @@ import lombok.Getter;
 @Getter
 public class AppState {
     private final AppRecord parent;
+    private final Set<IBinder> activities = new HashSet<>();
+    private final Set<IBinder> locationListeners = new HashSet<>();
+    private final Set<Integer> interfaceIds = new HashSet<>();
+    private final Set<Integer> recodingIds = new HashSet<>();
     private boolean visible = false;
     private boolean location = false;
     private boolean audio = false;
     private boolean recording = false;
     private boolean vpn = false;
-    private final Set<IBinder> activities = new HashSet<>();
-    private final Set<IBinder> locationListeners = new HashSet<>();
-    private final Set<Integer> interfaceIds = new HashSet<>();
-    private final Set<Integer> recodingIds = new HashSet<>();
 
     public AppState(AppRecord appRecord) {
         this.parent = appRecord;

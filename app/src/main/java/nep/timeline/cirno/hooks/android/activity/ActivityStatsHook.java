@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.robv.android.xposed.XC_MethodHook;
-import nep.timeline.cirno.virtuals.ActivityRecord;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
 import nep.timeline.cirno.threads.FreezerHandler;
+import nep.timeline.cirno.virtuals.ActivityRecord;
 
 public class ActivityStatsHook extends MethodHook {
     private final Map<IBinder, ActivityRecord> activityRecords = new ConcurrentHashMap<>();
@@ -36,7 +36,7 @@ public class ActivityStatsHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { "com.android.server.wm.ActivityRecord", int.class };
+        return new Object[]{"com.android.server.wm.ActivityRecord", int.class};
     }
 
     @Override

@@ -92,8 +92,7 @@ public interface CommonConstants {
             "miui.systemui.plugin"  /* 系统界面组件 */
     );
 
-    static boolean isWhitelistApps(String packageName)
-    {
+    static boolean isWhitelistApps(String packageName) {
         return whiteApps.contains(packageName);
     }
 }

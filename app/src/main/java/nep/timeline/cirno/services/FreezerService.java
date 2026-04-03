@@ -4,30 +4,30 @@ import java.util.List;
 
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.threads.Handlers;
-import nep.timeline.cirno.utils.ForceAppStandbyListener;
-import nep.timeline.cirno.virtuals.ProcessRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.threads.FreezerHandler;
+import nep.timeline.cirno.threads.Handlers;
+import nep.timeline.cirno.utils.ForceAppStandbyListener;
 import nep.timeline.cirno.utils.FrozenRW;
+import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class FreezerService {
     public static void freezer(AppRecord appRecord) {
-        if (appRecord.isFrozen() || appRecord.isSystem() || 
-            appRecord.getAppState().isVisible()) {
+        if (appRecord.isFrozen() || appRecord.isSystem() ||
+                appRecord.getAppState().isVisible()) {
             return;
         }
 
         // 检查后台播放开关
         boolean backgroundPlayAllowed = AppConfigs.isBackgroundPlayAllowed(
-            appRecord.getPackageName(), 
-            appRecord.getUserId()
+                appRecord.getPackageName(),
+                appRecord.getUserId()
         );
-        
+
         // 检查位置使用开关
         boolean locationUseAllowed = AppConfigs.isLocationUseAllowed(
-            appRecord.getPackageName(), 
-            appRecord.getUserId()
+                appRecord.getPackageName(),
+                appRecord.getUserId()
         );
 
         // 如果后台播放开关关闭，忽略音频播放状态
@@ -49,8 +49,8 @@ public class FreezerService {
             return;
         }
 
-        if (appRecord.getAppState().isRecording() || 
-            appRecord.getAppState().isVpn()) {
+        if (appRecord.getAppState().isRecording() ||
+                appRecord.getAppState().isVpn()) {
             return;
         }
 
@@ -69,9 +69,9 @@ public class FreezerService {
                 Log.e("移除警报失败", e);
             }
         });
-        
+
         Handlers.network.post(() -> NetworkManagementService.socketDestroy(appRecord));
-        
+
         appRecord.setFrozen(true);
     }
 

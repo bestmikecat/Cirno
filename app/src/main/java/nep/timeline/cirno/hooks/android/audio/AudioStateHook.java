@@ -74,13 +74,13 @@ public class AudioStateHook extends MethodHook {
                         try {
                             int uid = reflect.getClientUid();
                             List<AppRecord> appRecords = AppService.getByUid(uid);
-                            
+
                             if (appRecords == null) {
                                 return;
                             }
 
                             int interfaceId = reflect.getPlayerInterfaceId();
-                            
+
                             for (AppRecord appRecord : appRecords) {
                                 if (appRecord == null) {
                                     continue;
@@ -103,7 +103,7 @@ public class AudioStateHook extends MethodHook {
     public void startHook() {
         try {
             Class<?> targetClass = XposedHelpers.findClass(getTargetClass(), classLoader);
-            
+
             boolean hooked = false;
             for (Method method : targetClass.getDeclaredMethods()) {
                 if (method.getName().equals(getTargetMethod())) {
@@ -115,7 +115,7 @@ public class AudioStateHook extends MethodHook {
                     }
                 }
             }
-            
+
             if (hooked) {
                 Log.i("handleStateEvent -> 成功Hook完毕!");
             }

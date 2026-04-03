@@ -18,9 +18,9 @@ public class AppRecord {
     private final int userId;
     private final int uid;
     private final ApplicationInfo applicationInfo;
+    private final List<ProcessRecord> processRecords = new CopyOnWriteArrayList<>();
     private AppState appState;
     private boolean frozen;
-    private final List<ProcessRecord> processRecords = new CopyOnWriteArrayList<>();
 
     public AppRecord(ApplicationInfo applicationInfo) {
         this.packageName = applicationInfo.packageName;
@@ -55,7 +55,7 @@ public class AppRecord {
             return getUserId() == appRecord.getUserId() && getPackageName().equals(appRecord.getPackageName());
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int userId = getUserId();

@@ -17,8 +17,8 @@ public class LocationHandler {
 
         // 检查位置使用开关是否启用
         boolean locationUseAllowed = AppConfigs.isLocationUseAllowed(
-            appRecord.getPackageName(), 
-            appRecord.getUserId()
+                appRecord.getPackageName(),
+                appRecord.getUserId()
         );
 
         if (set.isEmpty()) {

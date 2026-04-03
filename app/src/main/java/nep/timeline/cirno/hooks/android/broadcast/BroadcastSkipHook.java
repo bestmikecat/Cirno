@@ -28,7 +28,7 @@ public class BroadcastSkipHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         // 🔧 只Hook参数3版本：BroadcastRecord, BroadcastFilter, boolean
-        return new Object[] { "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class };
+        return new Object[]{"com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class};
     }
 
     @Override

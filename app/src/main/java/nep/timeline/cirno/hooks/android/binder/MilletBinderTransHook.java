@@ -27,8 +27,8 @@ public class MilletBinderTransHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-            return new Object[]{ int.class, int.class, int.class, int.class, int.class, boolean.class, long.class, int.class, int.class };
-        return new Object[]{ int.class, int.class, int.class, int.class, int.class, boolean.class, long.class, int.class };
+            return new Object[]{int.class, int.class, int.class, int.class, int.class, boolean.class, long.class, int.class, int.class};
+        return new Object[]{int.class, int.class, int.class, int.class, int.class, boolean.class, long.class, int.class};
     }
 
     @Override

@@ -27,6 +27,7 @@ public final class NetlinkSocketAddress extends SocketAddress {
     public NetlinkSocketAddress() {
         this(0, 0);
     }
+
     /**
      * @hide
      */
@@ -40,7 +41,6 @@ public final class NetlinkSocketAddress extends SocketAddress {
      *
      * @param nlPortId     port id
      * @param nlGroupsMask groups mask
-     *
      * @hide
      */
     public NetlinkSocketAddress(int nlPortId, int nlGroupsMask) {
@@ -52,7 +52,6 @@ public final class NetlinkSocketAddress extends SocketAddress {
      * Returns this address's port id.
      *
      * @return port id
-     *
      * @hide
      */
     public int getPortId() {
@@ -63,7 +62,6 @@ public final class NetlinkSocketAddress extends SocketAddress {
      * Returns this address's groups multicast mask.
      *
      * @return groups mask
-     *
      * @hide
      */
     public int getGroupsMask() {
@@ -73,7 +71,8 @@ public final class NetlinkSocketAddress extends SocketAddress {
     /**
      * @hide
      */
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return Objects.toString(this);
     }
 

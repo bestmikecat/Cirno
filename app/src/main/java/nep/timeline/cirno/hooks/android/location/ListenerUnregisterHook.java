@@ -18,7 +18,7 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 public class ListenerUnregisterHook extends MethodHook {
     public ListenerUnregisterHook(ClassLoader classLoader) {
         super(classLoader);
-   }
+    }
 
     @Override
     public String getTargetClass() {
@@ -32,7 +32,7 @@ public class ListenerUnregisterHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { "android.location.ILocationListener" };
+        return new Object[]{"android.location.ILocationListener"};
     }
 
     @Override

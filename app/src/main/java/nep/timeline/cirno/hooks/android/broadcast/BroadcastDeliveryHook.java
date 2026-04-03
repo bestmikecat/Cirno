@@ -29,9 +29,9 @@ public class BroadcastDeliveryHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         if (SystemChecker.isHuawei(classLoader))
-            return new Object[] { "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class, "com.android.server.am.BroadcastRecordEx" };
+            return new Object[]{"com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class, "com.android.server.am.BroadcastRecordEx"};
 
-        return new Object[] { "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class };
+        return new Object[]{"com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class};
     }
 
     @Override

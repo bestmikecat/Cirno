@@ -53,25 +53,24 @@ public class InputMethodManagerService extends MethodHook {
                     }
 
                     Object arg0 = param.args[0];
-                    if (!(arg0 instanceof String)) {
+                    if (!(arg0 instanceof String id)) {
                         return;
                     }
 
-                    String id = (String) arg0;
                     if (id == null || id.isEmpty()) {
                         return;
                     }
 
                     int userId = ActivityManagerService.getCurrentOrTargetUserId();
-                    
+
                     Object settings = null;
                     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                         try {
                             settings = XposedHelpers.callStaticMethod(
-                                XposedHelpers.findClassIfExists(
-                                    "com.android.server.inputmethod.InputMethodSettingsRepository", 
-                                    classLoader), 
-                                "get", userId);
+                                    XposedHelpers.findClassIfExists(
+                                            "com.android.server.inputmethod.InputMethodSettingsRepository",
+                                            classLoader),
+                                    "get", userId);
                         } catch (Exception e) {
                             Log.w("获取 InputMethodSettingsRepository 失败");
                         }
@@ -91,8 +90,8 @@ public class InputMethodManagerService extends MethodHook {
                                     Object map = XposedHelpers.getObjectField(settings, "mMethodMap");
                                     if (map != null) {
                                         if (map.getClass().getTypeName().equals("com.android.server.inputmethod.InputMethodMap")) {
-                                            InputMethodData.inputMethods = (Map<String, InputMethodInfo>) 
-                                                XposedHelpers.getObjectField(map, "mMap");
+                                            InputMethodData.inputMethods = (Map<String, InputMethodInfo>)
+                                                    XposedHelpers.getObjectField(map, "mMap");
                                         } else {
                                             InputMethodData.inputMethods = (Map<String, InputMethodInfo>) map;
                                         }
@@ -140,7 +139,7 @@ public class InputMethodManagerService extends MethodHook {
     public void startHook() {
         try {
             Class<?> targetClass = XposedHelpers.findClass(getTargetClass(), classLoader);
-            
+
             // ✅ 遍历所有 setInputMethodLocked 方法，不管参数是什么
             boolean hooked = false;
             for (Method method : targetClass.getDeclaredMethods()) {
@@ -154,7 +153,7 @@ public class InputMethodManagerService extends MethodHook {
                     }
                 }
             }
-            
+
             if (!hooked) {
                 Log.w("未能 Hook 任何 setInputMethodLocked 方法");
             }

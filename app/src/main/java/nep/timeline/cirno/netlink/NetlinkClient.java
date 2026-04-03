@@ -22,10 +22,10 @@ public class NetlinkClient implements Closeable {
     private static final int DEFAULT_RECV_BUFSIZE = 8 * 1024;
     @Getter
     final private FileDescriptor mDescriptor;
+    private final ClassLoader classLoader;
     private NetlinkSocketAddress mAddr;
     private long mLastRecvTimeoutMs;
     private long mLastSendTimeoutMs;
-    private final ClassLoader classLoader;
 
     public NetlinkClient(ClassLoader classLoader, int nlProto) throws ErrnoException {
         this.classLoader = classLoader;
@@ -39,19 +39,24 @@ public class NetlinkClient implements Closeable {
     public NetlinkSocketAddress getLocalAddress() throws ErrnoException {
         return (NetlinkSocketAddress) Os.getsockname(mDescriptor);
     }
+
     public void bind(NetlinkSocketAddress localAddr) throws ErrnoException, SocketException {
         Os.bind(mDescriptor, localAddr);
     }
+
     public void bind(SocketAddress localAddr) throws ErrnoException, SocketException {
         Os.bind(mDescriptor, localAddr);
     }
+
     public void connectTo(NetlinkSocketAddress peerAddr)
             throws ErrnoException, SocketException {
         Os.connect(mDescriptor, peerAddr);
     }
+
     public void connectToKernel() throws ErrnoException, SocketException {
         connectTo(new NetlinkSocketAddress(0, 0));
     }
+
     /**
      * Wait indefinitely (or until underlying socket error) for a
      * netlink message of at most DEFAULT_RECV_BUFSIZE size.
@@ -60,6 +65,7 @@ public class NetlinkClient implements Closeable {
             throws ErrnoException, InterruptedIOException {
         return recvMessage(DEFAULT_RECV_BUFSIZE, 0);
     }
+
     /**
      * Wait up to |timeoutMs| (or until underlying socket error) for a
      * netlink message of at most DEFAULT_RECV_BUFSIZE size.
@@ -67,15 +73,17 @@ public class NetlinkClient implements Closeable {
     public ByteBuffer recvMessage(long timeoutMs) throws ErrnoException, InterruptedIOException {
         return recvMessage(DEFAULT_RECV_BUFSIZE, timeoutMs);
     }
+
     private void checkTimeout(long timeoutMs) {
         if (timeoutMs < 0) {
             throw new IllegalArgumentException("Negative timeouts not permitted");
         }
     }
+
     /**
      * Wait up to |timeoutMs| (or until underlying socket error) for a
      * netlink message of at most |bufsize| size.
-     *
+     * <p>
      * Multi-threaded calls with different timeouts will cause unexpected results.
      */
     public ByteBuffer recvMessage(int bufsize, long timeoutMs)
@@ -102,17 +110,18 @@ public class NetlinkClient implements Closeable {
 
     /**
      * Send a message to a peer to which this socket has previously connected.
-     *
+     * <p>
      * This blocks until completion or an error occurs.
      */
     public boolean sendMessage(byte[] bytes, int offset, int count)
             throws ErrnoException, InterruptedIOException {
         return sendMessage(bytes, offset, count, 0);
     }
+
     /**
      * Send a message to a peer to which this socket has previously connected,
      * waiting at most |timeoutMs| milliseconds for the send to complete.
-     *
+     * <p>
      * Multi-threaded calls with different timeouts will cause unexpected results.
      */
     public boolean sendMessage(byte[] bytes, int offset, int count, long timeoutMs)

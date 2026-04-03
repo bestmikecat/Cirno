@@ -14,8 +14,8 @@ import nep.timeline.cirno.services.FreezerService;
 public class SendMediaButtonHook {
     public SendMediaButtonHook(ClassLoader classLoader) {
         Class<?> targetClass = XposedHelpers.findClassIfExists(
-            "com.android.server.media.MediaSessionRecord$SessionCb", classLoader);
-        
+                "com.android.server.media.MediaSessionRecord$SessionCb", classLoader);
+
         if (targetClass == null) {
             Log.w("MediaSessionRecord$SessionCb 不存在");
             return;
@@ -38,10 +38,10 @@ public class SendMediaButtonHook {
         List<Method> methods = new ArrayList<>();
         for (Method method : targetClass.getDeclaredMethods()) {
             String methodName = method.getName();
-            if (methodName.equals("sendMediaButton") || methodName.equals("play") || 
-                methodName.equals("playFromMediaId") || methodName.equals("playFromSearch") || 
-                methodName.equals("playFromUri") || methodName.equals("next") || 
-                methodName.equals("previous") || methodName.equals("seekTo")) {
+            if (methodName.equals("sendMediaButton") || methodName.equals("play") ||
+                    methodName.equals("playFromMediaId") || methodName.equals("playFromSearch") ||
+                    methodName.equals("playFromUri") || methodName.equals("next") ||
+                    methodName.equals("previous") || methodName.equals("seekTo")) {
                 methods.add(method);
             }
         }

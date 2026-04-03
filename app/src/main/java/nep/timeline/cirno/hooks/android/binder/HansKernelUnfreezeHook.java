@@ -24,7 +24,7 @@ public class HansKernelUnfreezeHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { int.class, int.class, int.class, int.class, int.class, String.class, int.class };
+        return new Object[]{int.class, int.class, int.class, int.class, int.class, String.class, int.class};
     }
 
     @Override

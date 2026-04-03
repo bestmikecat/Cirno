@@ -31,7 +31,7 @@ public class PlayerBanHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { AudioPlaybackConfiguration.class, int.class };
+        return new Object[]{AudioPlaybackConfiguration.class, int.class};
     }
 
     @Override
@@ -41,19 +41,19 @@ public class PlayerBanHook extends MethodHook {
             protected void afterMethod(MethodHookParam param) {
                 try {
                     boolean result = (boolean) param.getResult();
-                    
+
                     Object configuration = param.args[0];
                     if (configuration == null) {
                         return;
                     }
 
                     try {
-                        AudioPlaybackConfigurationReflect reflect = 
-                            new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) configuration);
-                        
+                        AudioPlaybackConfigurationReflect reflect =
+                                new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) configuration);
+
                         int uid = reflect.getClientUid();
                         int interfaceId = reflect.getPlayerInterfaceId();
-                        
+
                         if (result) {
                             Handlers.audio.post(() -> {
                                 List<AppRecord> appRecords = AppService.getByUid(uid);
@@ -72,7 +72,7 @@ public class PlayerBanHook extends MethodHook {
                     } catch (Exception e) {
                         Log.e("PlayerBanHook 反射失败", e);
                     }
-                    
+
                 } catch (Exception e) {
                     Log.e("PlayerBanHook 异常", e);
                 }

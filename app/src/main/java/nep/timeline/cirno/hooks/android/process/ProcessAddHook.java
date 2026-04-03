@@ -21,7 +21,7 @@ public class ProcessAddHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { "com.android.server.am.ProcessRecord" };
+        return new Object[]{"com.android.server.am.ProcessRecord"};
     }
 
     @Override

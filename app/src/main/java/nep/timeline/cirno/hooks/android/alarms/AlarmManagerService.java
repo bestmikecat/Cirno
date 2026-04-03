@@ -23,7 +23,7 @@ public class AlarmManagerService extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[] { int.class };
+        return new Object[]{int.class};
     }
 
     @Override

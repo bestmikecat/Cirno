@@ -18,6 +18,10 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import nep.timeline.cirno.ApplicationActivity
+import nep.timeline.cirno.GlobalVars
+import nep.timeline.cirno.configs.ConfigManager
+import nep.timeline.cirno.configs.checkers.AppConfigs
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -27,10 +31,6 @@ import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import nep.timeline.cirno.ApplicationActivity
-import nep.timeline.cirno.GlobalVars
-import nep.timeline.cirno.configs.ConfigManager
-import nep.timeline.cirno.configs.checkers.AppConfigs
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @OptIn(ExperimentalEncodingApi::class)
@@ -51,9 +51,12 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
-    val isWhitelisted = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
-    val isBackgroundPlayAllowed = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
-    val isLocationUseAllowed = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId.toInt())) }
+    val isWhitelisted =
+        remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
+    val isBackgroundPlayAllowed =
+        remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
+    val isLocationUseAllowed =
+        remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId.toInt())) }
 
     // 冻结豁免任意一项是否已开启
     fun anyExemptionEnabled() = isBackgroundPlayAllowed.value || isLocationUseAllowed.value
@@ -72,7 +75,9 @@ fun ApplicationScreen(activity: ApplicationActivity) {
         },
     ) { padding ->
         Surface(
-            modifier = Modifier.hazeSource(state = hazeState).fillMaxSize(),
+            modifier = Modifier
+                .hazeSource(state = hazeState)
+                .fillMaxSize(),
             color = MiuixTheme.colorScheme.background
         ) {
             LazyColumn(
@@ -143,7 +148,11 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     return@SuperSwitch
                                 }
                                 isBackgroundPlayAllowed.value = newValue
-                                AppConfigs.setBackgroundPlayAllowed(packageName, userId.toInt(), newValue)
+                                AppConfigs.setBackgroundPlayAllowed(
+                                    packageName,
+                                    userId.toInt(),
+                                    newValue
+                                )
                                 ConfigManager.manager.saveConfigSU()
                             }
                         )
@@ -162,7 +171,11 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     return@SuperSwitch
                                 }
                                 isLocationUseAllowed.value = newValue
-                                AppConfigs.setLocationUseAllowed(packageName, userId.toInt(), newValue)
+                                AppConfigs.setLocationUseAllowed(
+                                    packageName,
+                                    userId.toInt(),
+                                    newValue
+                                )
                                 ConfigManager.manager.saveConfigSU()
                             }
                         )
