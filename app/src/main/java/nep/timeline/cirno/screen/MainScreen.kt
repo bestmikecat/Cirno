@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.topjohnwu.superuser.Shell
@@ -99,49 +100,51 @@ fun MainScreen() {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomBar: @Composable () -> Unit = {
-        NavigationBar {
-            NavigationBarItem(
-                selected = pagerState.currentPage == 0,
-                onClick = {
-                    if (pagerState.currentPage != 0) {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(0)
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = pagerState.currentPage == 0,
+                    onClick = {
+                        if (pagerState.currentPage != 0) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(0)
+                            }
                         }
-                    }
-                },
-                icon = MiuixIcons.VerticalSplit,
-                label = "主页"
-            )
-            NavigationBarItem(
-                selected = pagerState.currentPage == 1,
-                onClick = {
-                    if (pagerState.currentPage != 1) {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(1)
+                    },
+                    icon = MiuixIcons.VerticalSplit,
+                    label = "主页"
+                )
+                NavigationBarItem(
+                    selected = pagerState.currentPage == 1,
+                    onClick = {
+                        if (pagerState.currentPage != 1) {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(1)
+                            }
                         }
-                    }
-                },
-                icon = MiuixIcons.Settings,
-                label = "设置"
-            )
+                    },
+                    icon = MiuixIcons.Settings,
+                    label = "设置"
+                )
+            }
         }
-    }
-
-    HorizontalPager(
-        state = pagerState,
-        modifier = Modifier.fillMaxSize()
-    ) { page ->
-        when (page) {
-            0 -> HomeTab(bottomBar = bottomBar)
-            1 -> SettingScreen(bottomBar = bottomBar)
+    ) { innerPadding ->
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            when (page) {
+                0 -> HomeTab(bottomInset = innerPadding.calculateBottomPadding())
+                1 -> SettingScreen(bottomInset = innerPadding.calculateBottomPadding())
+            }
         }
     }
 }
 
 @OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
-private fun HomeTab(bottomBar: @Composable () -> Unit) {
+private fun HomeTab(bottomInset: Dp = 0.dp) {
     val handler = Handler(Looper.getMainLooper())
 
     val hazeState = rememberHazeState()
@@ -258,7 +261,6 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
                     .fillMaxWidth()
             )
         },
-        bottomBar = bottomBar
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -288,7 +290,7 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = padding.calculateTopPadding(),
-                    bottom = padding.calculateBottomPadding() + 16.dp
+                    bottom = padding.calculateBottomPadding() + bottomInset + 16.dp
                 )
             ) {
                 item {
@@ -383,7 +385,7 @@ private fun HomeTab(bottomBar: @Composable () -> Unit) {
 }
 
 @Composable
-fun SettingScreen(bottomBar: @Composable () -> Unit) {
+fun SettingScreen(bottomInset: Dp = 0.dp) {
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.background,
@@ -413,7 +415,6 @@ fun SettingScreen(bottomBar: @Composable () -> Unit) {
                 scrollBehavior = scrollBehavior
             )
         },
-        bottomBar = bottomBar
     ) { padding ->
         Surface(
             modifier = Modifier
@@ -425,7 +426,7 @@ fun SettingScreen(bottomBar: @Composable () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = padding.calculateTopPadding(),
-                    bottom = padding.calculateBottomPadding() + 16.dp
+                    bottom = padding.calculateBottomPadding() + bottomInset + 16.dp
                 )
             ) {
                 item {
