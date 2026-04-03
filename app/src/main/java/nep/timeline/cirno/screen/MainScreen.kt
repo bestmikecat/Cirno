@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,9 +33,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +77,7 @@ import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.launch
 
 // 特殊配置标签定义
 private data class SpecialTag(val label: String, val color: Color)
@@ -93,28 +96,46 @@ private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
 @OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MainScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
+    val coroutineScope = rememberCoroutineScope()
 
     val bottomBar: @Composable () -> Unit = {
         NavigationBar {
             NavigationBarItem(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
+                selected = pagerState.currentPage == 0,
+                onClick = {
+                    if (pagerState.currentPage != 0) {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(0)
+                        }
+                    }
+                },
                 icon = MiuixIcons.VerticalSplit,
                 label = "主页"
             )
             NavigationBarItem(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
+                selected = pagerState.currentPage == 1,
+                onClick = {
+                    if (pagerState.currentPage != 1) {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(1)
+                        }
+                    }
+                },
                 icon = MiuixIcons.Settings,
                 label = "设置"
             )
         }
     }
 
-    when (selectedTab) {
-        0 -> HomeTab(bottomBar = bottomBar)
-        1 -> SettingScreen(bottomBar = bottomBar)
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize()
+    ) { page ->
+        when (page) {
+            0 -> HomeTab(bottomBar = bottomBar)
+            1 -> SettingScreen(bottomBar = bottomBar)
+        }
     }
 }
 
