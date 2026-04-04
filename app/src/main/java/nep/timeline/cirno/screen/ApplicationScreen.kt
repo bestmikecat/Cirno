@@ -12,12 +12,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.topjohnwu.superuser.Shell
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
@@ -37,6 +39,8 @@ import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalEncodingApi::class)
 @Composable
@@ -44,12 +48,25 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName")!!
     val packageName = activity.intent.getStringExtra("packageName")!!
     val initialUserId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
-    val availableUserIds = activity.intent.getIntArrayExtra("userIds")
+    val baseUserIds = activity.intent.getIntArrayExtra("userIds")
         ?.toList()
         ?.distinct()
         ?.sorted()
         ?.let { ids -> if (ids.contains(initialUserId)) ids else (ids + initialUserId).sorted() }
         ?: listOf(initialUserId)
+    val availableUserIds by produceState(initialValue = baseUserIds, key1 = packageName) {
+        val base = baseUserIds.toMutableSet()
+        if (Shell.getShell().isRoot) {
+            val hasClone = withContext(Dispatchers.IO) {
+                val result = Shell.cmd("pm path --user 999 $packageName").exec()
+                result.isSuccess && result.out.isNotEmpty()
+            }
+            if (hasClone) {
+                base.add(999)
+            }
+        }
+        value = base.toList().sorted()
+    }
     var selectedUserId by remember { mutableStateOf(initialUserId) }
 
     val context = LocalContext.current
@@ -70,6 +87,11 @@ fun ApplicationScreen(activity: ApplicationActivity) {
         isWhitelisted.value = AppConfigs.isWhiteApp(packageName, selectedUserId)
         isBackgroundPlayAllowed.value = AppConfigs.isBackgroundPlayAllowed(packageName, selectedUserId)
         isLocationUseAllowed.value = AppConfigs.isLocationUseAllowed(packageName, selectedUserId)
+    }
+    LaunchedEffect(availableUserIds) {
+        if (!availableUserIds.contains(selectedUserId)) {
+            selectedUserId = availableUserIds.firstOrNull() ?: initialUserId
+        }
     }
 
     // 冻结豁免任意一项是否已开启

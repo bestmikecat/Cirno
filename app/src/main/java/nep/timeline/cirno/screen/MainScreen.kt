@@ -88,8 +88,7 @@ private data class HomeAppItem(
     val appInfo: ApplicationInfo,
     val appName: String,
     val userId: Int,
-    val tags: List<SpecialTag>,
-    val availableUserIds: List<Int>
+    val tags: List<SpecialTag>
 )
 
 private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
@@ -176,25 +175,14 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
     }
     val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = context) {
         value = withContext(Dispatchers.Default) {
-            val appInfos = getInstalledApps(context)
-            val userIdsByPackage = appInfos
-                .groupBy { it.packageName }
-                .mapValues { entry ->
-                    entry.value
-                        .map { PKGUtils.getUserId(it.uid) }
-                        .distinct()
-                        .sorted()
-                }
-            appInfos
+            getInstalledApps(context)
                 .map { appInfo ->
                     val userId = PKGUtils.getUserId(appInfo.uid)
-                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
                     HomeAppItem(
                         appInfo = appInfo,
                         appName = appInfo.loadLabel(context.packageManager).toString(),
                         userId = userId,
-                        tags = getSpecialTags(appInfo.packageName, userId),
-                        availableUserIds = availableUserIds
+                        tags = getSpecialTags(appInfo.packageName, userId)
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
@@ -211,13 +199,12 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
         }
     }
 
-    fun enterAppPage(appName: String, userId: String, packageName: String, availableUserIds: List<Int>) {
+    fun enterAppPage(appName: String, userId: String, packageName: String) {
         val intent = Intent()
         intent.setClass(context, ApplicationActivity::class.java)
         intent.putExtra("appName", appName)
         intent.putExtra("userId", userId)
         intent.putExtra("packageName", packageName)
-        intent.putExtra("userIds", availableUserIds.toIntArray())
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         context.startActivity(intent)
     }
@@ -235,7 +222,7 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
 
         Row(
             modifier = (if (canEnter)
-                Modifier.clickable { enterAppPage(appName, userId.toString(), app.appInfo.packageName, app.availableUserIds) }
+                Modifier.clickable { enterAppPage(appName, userId.toString(), app.appInfo.packageName) }
             else Modifier)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
