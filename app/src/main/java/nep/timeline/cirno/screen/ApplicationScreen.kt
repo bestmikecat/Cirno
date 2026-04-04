@@ -96,6 +96,9 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     // 冻结豁免任意一项是否已开启
     fun anyExemptionEnabled() = isBackgroundPlayAllowed.value || isLocationUseAllowed.value
+    fun markChanged() {
+        activity.setResult(android.app.Activity.RESULT_OK)
+    }
 
     Scaffold(
         topBar = {
@@ -189,9 +192,11 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     ).show()
                                     return@SuperSwitch
                                 }
+                                val changed = isWhitelisted.value != newValue
                                 isWhitelisted.value = newValue
                                 AppConfigs.setWhiteApp(packageName, selectedUserId, newValue)
-                                ConfigManager.manager.saveConfigSU()
+                                if (changed) markChanged()
+                                if (changed) ConfigManager.manager.saveConfigSU()
                             }
                         )
                     }
@@ -221,13 +226,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     ).show()
                                     return@SuperSwitch
                                 }
+                                val changed = isBackgroundPlayAllowed.value != newValue
                                 isBackgroundPlayAllowed.value = newValue
                                 AppConfigs.setBackgroundPlayAllowed(
                                     packageName,
                                     selectedUserId,
                                     newValue
                                 )
-                                ConfigManager.manager.saveConfigSU()
+                                if (changed) markChanged()
+                                if (changed) ConfigManager.manager.saveConfigSU()
                             }
                         )
                         SuperSwitch(
@@ -244,13 +251,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     ).show()
                                     return@SuperSwitch
                                 }
+                                val changed = isLocationUseAllowed.value != newValue
                                 isLocationUseAllowed.value = newValue
                                 AppConfigs.setLocationUseAllowed(
                                     packageName,
                                     selectedUserId,
                                     newValue
                                 )
-                                ConfigManager.manager.saveConfigSU()
+                                if (changed) markChanged()
+                                if (changed) ConfigManager.manager.saveConfigSU()
                             }
                         )
                     }

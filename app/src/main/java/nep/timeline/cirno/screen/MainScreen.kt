@@ -1,10 +1,13 @@
 package nep.timeline.cirno.screen
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,7 +91,8 @@ private data class HomeAppItem(
     val appInfo: ApplicationInfo,
     val appName: String,
     val userId: Int,
-    val tags: List<SpecialTag>
+    val tags: List<SpecialTag>,
+    val availableUserIds: List<Int>
 )
 
 private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): List<SpecialTag> {
@@ -114,6 +118,14 @@ private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): Lis
 fun MainScreen() {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
+    var refreshTick by remember { mutableStateOf(0) }
+    val appDetailLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            refreshTick++
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -150,7 +162,11 @@ fun MainScreen() {
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
-                0 -> HomeTab(bottomInset = innerPadding.calculateBottomPadding())
+                0 -> HomeTab(
+                    bottomInset = innerPadding.calculateBottomPadding(),
+                    refreshKey = refreshTick,
+                    onOpenApp = { intent -> appDetailLauncher.launch(intent) }
+                )
                 1 -> SettingScreen(bottomInset = innerPadding.calculateBottomPadding())
             }
         }
@@ -159,7 +175,11 @@ fun MainScreen() {
 
 @OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
-private fun HomeTab(bottomInset: Dp = 0.dp) {
+private fun HomeTab(
+    bottomInset: Dp = 0.dp,
+    refreshKey: Int = 0,
+    onOpenApp: (Intent) -> Unit
+) {
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.background,
@@ -177,20 +197,31 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
     val isRootState by produceState<Boolean?>(initialValue = null) {
         value = withContext(Dispatchers.IO) { Shell.getShell().isRoot }
     }
-    val readConfigState by produceState<Boolean?>(initialValue = null) {
+    val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshKey) {
         value = withContext(Dispatchers.IO) { ConfigManager.manager.readConfigSU() }
     }
-    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = context) {
+    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey) {
         value = withContext(Dispatchers.Default) {
-            getInstalledApps(context)
+            val appInfos = getInstalledApps(context)
+            val userIdsByPackage = appInfos
+                .groupBy { it.packageName }
+                .mapValues { entry ->
+                    entry.value
+                        .map { PKGUtils.getUserId(it.uid) }
+                        .distinct()
+                        .sorted()
+                }
+            appInfos
                 .map { appInfo ->
                     val userId = PKGUtils.getUserId(appInfo.uid)
                     val tagUserIds = listOf(0, 999, userId).distinct()
+                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
                     HomeAppItem(
                         appInfo = appInfo,
                         appName = appInfo.loadLabel(context.packageManager).toString(),
                         userId = userId,
-                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds)
+                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds),
+                        availableUserIds = availableUserIds
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
@@ -207,14 +238,14 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
         }
     }
 
-    fun enterAppPage(appName: String, userId: String, packageName: String) {
+    fun enterAppPage(appName: String, userId: String, packageName: String, availableUserIds: List<Int>) {
         val intent = Intent()
         intent.setClass(context, ApplicationActivity::class.java)
         intent.putExtra("appName", appName)
         intent.putExtra("userId", userId)
         intent.putExtra("packageName", packageName)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(intent)
+        intent.putExtra("userIds", availableUserIds.toIntArray())
+        onOpenApp(intent)
     }
 
     @Composable
@@ -230,7 +261,14 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
 
         Row(
             modifier = (if (canEnter)
-                Modifier.clickable { enterAppPage(appName, userId.toString(), app.appInfo.packageName) }
+                Modifier.clickable {
+                    enterAppPage(
+                        appName,
+                        userId.toString(),
+                        app.appInfo.packageName,
+                        app.availableUserIds
+                    )
+                }
             else Modifier)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
