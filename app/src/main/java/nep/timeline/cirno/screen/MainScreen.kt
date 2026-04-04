@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +66,7 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.NavigationBar
 import top.yukonga.miuix.kmp.basic.NavigationBarItem
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
@@ -200,7 +200,11 @@ private fun HomeTab(
     val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshKey) {
         value = withContext(Dispatchers.IO) { ConfigManager.manager.readConfigSU() }
     }
-    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey) {
+    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey, key2 = readConfigState) {
+        if (readConfigState == null) {
+            value = null
+            return@produceState
+        }
         value = withContext(Dispatchers.Default) {
             val appInfos = getInstalledApps(context)
             val userIdsByPackage = appInfos
@@ -342,7 +346,7 @@ private fun HomeTab(
             val allApps = apps
             if (allApps == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MiuixTheme.colorScheme.primary)
+                    InfiniteProgressIndicator()
                 }
                 return@Surface
             }
