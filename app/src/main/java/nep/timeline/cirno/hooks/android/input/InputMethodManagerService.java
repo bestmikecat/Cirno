@@ -43,6 +43,15 @@ public class InputMethodManagerService extends MethodHook {
     @Override
     public XC_MethodHook getTargetHook() {
         return new AbstractMethodHook() {
+            private String getPackageNameFromId(String id) {
+                if (id == null)
+                    return null;
+                int slash = id.indexOf('/');
+                if (slash <= 0)
+                    return id;
+                return id.substring(0, slash);
+            }
+
             @Override
             @SuppressWarnings("unchecked")
             protected void beforeMethod(MethodHookParam param) {
@@ -89,9 +98,10 @@ public class InputMethodManagerService extends MethodHook {
                                 try {
                                     Object map = XposedHelpers.getObjectField(settings, "mMethodMap");
                                     if (map != null) {
-                                        if (map.getClass().getTypeName().equals("com.android.server.inputmethod.InputMethodMap")) {
-                                            InputMethodData.inputMethods = (Map<String, InputMethodInfo>)
-                                                    XposedHelpers.getObjectField(map, "mMap");
+                                        if (map.getClass().getTypeName()
+                                                .equals("com.android.server.inputmethod.InputMethodMap")) {
+                                            InputMethodData.inputMethods = (Map<String, InputMethodInfo>) XposedHelpers
+                                                    .getObjectField(map, "mMap");
                                         } else {
                                             InputMethodData.inputMethods = (Map<String, InputMethodInfo>) map;
                                         }
@@ -112,19 +122,23 @@ public class InputMethodManagerService extends MethodHook {
                         }
 
                         InputMethodInfo inputMethodInfo = inputMethodMap.get(id);
+                        String pkgFromId = getPackageNameFromId(id);
+                        String pkgName = inputMethodInfo == null ? pkgFromId : inputMethodInfo.getPackageName();
+                        if (pkgFromId != null && pkgName != null && !pkgFromId.equals(pkgName)) {
+                            // id 是来源真值，避免输入法映射缓存导致包名错误
+                            pkgName = pkgFromId;
+                        }
 
-                        if (inputMethodInfo != null && !inputMethodInfo.equals(InputMethodData.currentInputMethodInfo)) {
-                            InputMethodData.currentInputMethodInfo = inputMethodInfo;
-                            AppRecord appRecord = AppService.get(inputMethodInfo.getPackageName(), userId);
-                            if (appRecord != InputMethodData.currentInputMethodApp) {
-                                AppRecord oldApp = InputMethodData.currentInputMethodApp;
-                                InputMethodData.currentInputMethodApp = appRecord;
-                                if (appRecord != null) {
-                                    FreezerService.thaw(appRecord);
-                                }
-                                if (oldApp != null) {
-                                    FreezerHandler.sendFreezeMessage(oldApp, 3000);
-                                }
+                        InputMethodData.currentInputMethodInfo = inputMethodInfo;
+                        AppRecord appRecord = AppService.get(pkgName, userId);
+                        if (appRecord != InputMethodData.currentInputMethodApp) {
+                            AppRecord oldApp = InputMethodData.currentInputMethodApp;
+                            InputMethodData.currentInputMethodApp = appRecord;
+                            if (appRecord != null) {
+                                FreezerService.thaw(appRecord);
+                            }
+                            if (oldApp != null) {
+                                FreezerHandler.sendFreezeMessage(oldApp, 3000);
                             }
                         }
                     }
