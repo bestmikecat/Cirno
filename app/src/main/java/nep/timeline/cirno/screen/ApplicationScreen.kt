@@ -1,14 +1,19 @@
 package nep.timeline.cirno.screen
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -27,6 +32,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -37,8 +43,14 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun ApplicationScreen(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName")!!
     val packageName = activity.intent.getStringExtra("packageName")!!
-    var userId = activity.intent.getStringExtra("userId")
-    if (userId == null) userId = "0"
+    val initialUserId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
+    val availableUserIds = activity.intent.getIntArrayExtra("userIds")
+        ?.toList()
+        ?.distinct()
+        ?.sorted()
+        ?.let { ids -> if (ids.contains(initialUserId)) ids else (ids + initialUserId).sorted() }
+        ?: listOf(initialUserId)
+    var selectedUserId by remember { mutableStateOf(initialUserId) }
 
     val context = LocalContext.current
 
@@ -50,12 +62,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
-    val isWhitelisted =
-        remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId.toInt())) }
-    val isBackgroundPlayAllowed =
-        remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId.toInt())) }
-    val isLocationUseAllowed =
-        remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId.toInt())) }
+    val isWhitelisted = remember { mutableStateOf(false) }
+    val isBackgroundPlayAllowed = remember { mutableStateOf(false) }
+    val isLocationUseAllowed = remember { mutableStateOf(false) }
+
+    LaunchedEffect(packageName, selectedUserId) {
+        isWhitelisted.value = AppConfigs.isWhiteApp(packageName, selectedUserId)
+        isBackgroundPlayAllowed.value = AppConfigs.isBackgroundPlayAllowed(packageName, selectedUserId)
+        isLocationUseAllowed.value = AppConfigs.isLocationUseAllowed(packageName, selectedUserId)
+    }
 
     // 冻结豁免任意一项是否已开启
     fun anyExemptionEnabled() = isBackgroundPlayAllowed.value || isLocationUseAllowed.value
@@ -64,7 +79,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
         topBar = {
             TopAppBar(
                 title = appName,
-                largeTitle = appName + (if (userId == "0") "" else "  #$userId"),
+                largeTitle = appName + (if (selectedUserId == 0) "" else "  #$selectedUserId"),
                 color = Color.Transparent,
                 modifier = Modifier
                     .hazeEffect(hazeState) { style = hazeStyle }
@@ -86,6 +101,48 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                     bottom = 16.dp
                 )
             ) {
+                if (availableUserIds.size > 1) {
+                    item {
+                        SmallTitle(
+                            text = "配置用户",
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 12.dp)
+                            ) {
+                                availableUserIds.forEach { userId ->
+                                    val selected = userId == selectedUserId
+                                    Surface(
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                            .clickable { selectedUserId = userId },
+                                        color = if (selected) MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else MiuixTheme.colorScheme.surfaceVariant
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = if (userId == 0) "用户 0" else "用户 $userId",
+                                                style = MiuixTheme.textStyles.body2,
+                                                color = if (selected) MiuixTheme.colorScheme.primary
+                                                else MiuixTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 item {
                     SmallTitle(
                         text = "基本设置",
@@ -111,7 +168,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     return@SuperSwitch
                                 }
                                 isWhitelisted.value = newValue
-                                AppConfigs.setWhiteApp(packageName, userId.toInt(), newValue)
+                                AppConfigs.setWhiteApp(packageName, selectedUserId, newValue)
                                 ConfigManager.manager.saveConfigSU()
                             }
                         )
@@ -145,7 +202,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                 isBackgroundPlayAllowed.value = newValue
                                 AppConfigs.setBackgroundPlayAllowed(
                                     packageName,
-                                    userId.toInt(),
+                                    selectedUserId,
                                     newValue
                                 )
                                 ConfigManager.manager.saveConfigSU()
@@ -168,7 +225,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                 isLocationUseAllowed.value = newValue
                                 AppConfigs.setLocationUseAllowed(
                                     packageName,
-                                    userId.toInt(),
+                                    selectedUserId,
                                     newValue
                                 )
                                 ConfigManager.manager.saveConfigSU()
