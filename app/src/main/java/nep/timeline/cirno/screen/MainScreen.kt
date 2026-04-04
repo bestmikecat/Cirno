@@ -93,12 +93,19 @@ private data class HomeAppItem(
 
 private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): List<SpecialTag> {
     val tags = mutableListOf<SpecialTag>()
-    if (userIds.any { AppConfigs.isWhiteApp(packageName, it) })
-        tags += SpecialTag("白名单", Color(0xFF4CAF50))
-    if (userIds.any { AppConfigs.isBackgroundPlayAllowed(packageName, it) })
-        tags += SpecialTag("后台播放", Color(0xFF2196F3))
-    if (userIds.any { AppConfigs.isLocationUseAllowed(packageName, it) })
-        tags += SpecialTag("位置使用", Color(0xFFFF9800))
+    fun addTagForUser(baseLabel: String, color: Color, userId: Int) {
+        val label = if (userId == 0) baseLabel else "$baseLabel($userId)"
+        tags += SpecialTag(label, color)
+    }
+
+    userIds.forEach { userId ->
+        if (AppConfigs.isWhiteApp(packageName, userId))
+            addTagForUser("白名单", Color(0xFF4CAF50), userId)
+        if (AppConfigs.isBackgroundPlayAllowed(packageName, userId))
+            addTagForUser("后台播放", Color(0xFF2196F3), userId)
+        if (AppConfigs.isLocationUseAllowed(packageName, userId))
+            addTagForUser("位置使用", Color(0xFFFF9800), userId)
+    }
     return tags
 }
 
