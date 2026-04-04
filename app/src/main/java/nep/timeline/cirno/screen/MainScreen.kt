@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,6 +25,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -78,10 +78,18 @@ import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // 特殊配置标签定义
 private data class SpecialTag(val label: String, val color: Color)
+private data class HomeAppItem(
+    val appInfo: ApplicationInfo,
+    val appName: String,
+    val userId: Int,
+    val tags: List<SpecialTag>
+)
 
 private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
     val tags = mutableListOf<SpecialTag>()
@@ -145,8 +153,6 @@ fun MainScreen() {
 @OptIn(ExperimentalEncodingApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun HomeTab(bottomInset: Dp = 0.dp) {
-    val handler = Handler(Looper.getMainLooper())
-
     val hazeState = rememberHazeState()
     val hazeStyle = HazeStyle(
         backgroundColor = MiuixTheme.colorScheme.background,
@@ -161,13 +167,30 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
             !CommonConstants.isWhitelistApps(it.packageName) && !PKGUtils.isSystemApp(it)
         }
     }
+    val isRootState by produceState<Boolean?>(initialValue = null) {
+        value = withContext(Dispatchers.IO) { Shell.getShell().isRoot }
+    }
+    val readConfigState by produceState<Boolean?>(initialValue = null) {
+        value = withContext(Dispatchers.IO) { ConfigManager.manager.readConfigSU() }
+    }
+    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = context) {
+        value = withContext(Dispatchers.Default) {
+            getInstalledApps(context)
+                .map { appInfo ->
+                    val userId = PKGUtils.getUserId(appInfo.uid)
+                    HomeAppItem(
+                        appInfo = appInfo,
+                        appName = appInfo.loadLabel(context.packageManager).toString(),
+                        userId = userId,
+                        tags = getSpecialTags(appInfo.packageName, userId)
+                    )
+                }
+                .sortedBy { it.appName.lowercase() }
+        }
+    }
 
-    val readConfig = ConfigManager.manager.readConfigSU()
-    val apps = remember { mutableStateOf<List<ApplicationInfo>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        handler.post { apps.value = getInstalledApps(context) }
-        if (!Shell.getShell().isRoot) {
+    LaunchedEffect(isRootState) {
+        if (isRootState == false) {
             Toast.makeText(
                 context,
                 "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用",
@@ -187,24 +210,26 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
     }
 
     @Composable
-    fun AppItem(appInfo: ApplicationInfo, packageManager: PackageManager) {
-        val appName = appInfo.loadLabel(packageManager).toString()
-        val appIcon = appInfo.loadIcon(packageManager)
-        val userId = PKGUtils.getUserId(appInfo.uid)
-        val tags = getSpecialTags(appInfo.packageName, userId)
+    fun AppItem(app: HomeAppItem, packageManager: PackageManager, canEnter: Boolean) {
+        val appIcon = remember(app.appInfo.packageName, app.appInfo.uid) {
+            app.appInfo.loadIcon(packageManager).toBitmap().asImageBitmap()
+        }
+        val appName = app.appName
+        val userId = app.userId
+        val tags = app.tags
         val hasAnyTag = tags.isNotEmpty()
         val primaryTagColor = tags.firstOrNull()?.color
 
         Row(
-            modifier = (if (Shell.getShell().isRoot && readConfig)
-                Modifier.clickable { enterAppPage(appName, userId.toString(), appInfo.packageName) }
+            modifier = (if (canEnter)
+                Modifier.clickable { enterAppPage(appName, userId.toString(), app.appInfo.packageName) }
             else Modifier)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                bitmap = appIcon.toBitmap().asImageBitmap(),
+                bitmap = appIcon,
                 contentDescription = null,
                 modifier = Modifier
                     .size(44.dp)
@@ -220,7 +245,7 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = (if (userId == 0) "" else "$userId · ") + appInfo.packageName,
+                    text = (if (userId == 0) "" else "$userId · ") + app.appInfo.packageName,
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.onBackground.copy(alpha = 0.55f),
                     maxLines = 1,
@@ -268,7 +293,8 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
                 .fillMaxSize(),
             color = MiuixTheme.colorScheme.background
         ) {
-            if (apps.value.isEmpty()) {
+            val allApps = apps
+            if (allApps == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MiuixTheme.colorScheme.primary)
                 }
@@ -276,15 +302,10 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
             }
 
             val packageManager = context.packageManager
+            val canEnter = isRootState == true && readConfigState == true
 
-            val specialApps = apps.value.filter { appInfo ->
-                val uid = PKGUtils.getUserId(appInfo.uid)
-                getSpecialTags(appInfo.packageName, uid).isNotEmpty()
-            }
-            val normalApps = apps.value.filter { appInfo ->
-                val uid = PKGUtils.getUserId(appInfo.uid)
-                getSpecialTags(appInfo.packageName, uid).isEmpty()
-            }
+            val specialApps = allApps.filter { it.tags.isNotEmpty() }
+            val normalApps = allApps.filter { it.tags.isEmpty() }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -355,28 +376,34 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
                 if (specialApps.isNotEmpty()) {
                     item {
                         SmallTitle(text = "特殊配置应用", modifier = Modifier.padding(top = 8.dp))
+                    }
+                    items(
+                        items = specialApps,
+                        key = { "${it.appInfo.packageName}:${it.appInfo.uid}" }
+                    ) { app ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp)
                         ) {
-                            specialApps.forEach { appInfo ->
-                                AppItem(appInfo, packageManager)
-                            }
+                            AppItem(app, packageManager, canEnter)
                         }
                     }
                 }
 
                 item {
                     SmallTitle(text = "全部应用", modifier = Modifier.padding(top = 8.dp))
+                }
+                items(
+                    items = normalApps,
+                    key = { "${it.appInfo.packageName}:${it.appInfo.uid}" }
+                ) { app ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
                     ) {
-                        normalApps.forEach { appInfo ->
-                            AppItem(appInfo, packageManager)
-                        }
+                        AppItem(app, packageManager, canEnter)
                     }
                 }
             }
