@@ -10,3 +10,5 @@
 local.properties
 /.acside
 /.codex_cache
+/.kotlin
+/.vscode
