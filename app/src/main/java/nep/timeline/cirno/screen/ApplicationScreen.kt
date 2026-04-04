@@ -146,7 +146,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                             .padding(end = 8.dp)
                                             .clickable { selectedUserId = userId },
                                         color = if (selected) MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                        else MiuixTheme.colorScheme.surfaceVariant
+                                        else MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -156,7 +156,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                                 text = if (userId == 0) "用户 0" else "用户 $userId",
                                                 style = MiuixTheme.textStyles.body2,
                                                 color = if (selected) MiuixTheme.colorScheme.primary
-                                                else MiuixTheme.colorScheme.surfaceVariant
+                                                else MiuixTheme.colorScheme.onSurfaceSecondary
                                             )
                                         }
                                     }
