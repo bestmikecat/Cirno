@@ -19,7 +19,6 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import nep.timeline.cirno.ApplicationActivity
-import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import top.yukonga.miuix.kmp.basic.Card
@@ -112,11 +111,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                     return@SuperSwitch
                                 }
                                 isWhitelisted.value = newValue
-                                if (newValue) {
-                                    GlobalVars.applicationSettings.whiteApps.add("$packageName#$userId")
-                                } else {
-                                    GlobalVars.applicationSettings.whiteApps.remove("$packageName#$userId")
-                                }
+                                AppConfigs.setWhiteApp(packageName, userId.toInt(), newValue)
                                 ConfigManager.manager.saveConfigSU()
                             }
                         )

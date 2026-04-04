@@ -8,6 +8,7 @@ import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
@@ -19,6 +20,21 @@ public class ConfigManagerJson {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
     private final String globalSettingsName = "GlobalSettings.json";
     private final String applicationSettingsName = "ApplicationSettings.json";
+
+    private void ensureApplicationSettingsInitialized() {
+        if (GlobalVars.applicationSettings == null) {
+            GlobalVars.applicationSettings = new ApplicationSettings();
+        }
+        if (GlobalVars.applicationSettings.whiteApps == null) {
+            GlobalVars.applicationSettings.whiteApps = new HashSet<>();
+        }
+        if (GlobalVars.applicationSettings.backgroundPlayApps == null) {
+            GlobalVars.applicationSettings.backgroundPlayApps = new HashSet<>();
+        }
+        if (GlobalVars.applicationSettings.locationUseApps == null) {
+            GlobalVars.applicationSettings.locationUseApps = new HashSet<>();
+        }
+    }
 
     public void readConfig() {
         try {
@@ -46,9 +62,11 @@ public class ConfigManagerJson {
                     saveConfig();
                 }
             }
+            ensureApplicationSettingsInitialized();
         } catch (JsonSyntaxException | JsonIOException e) {
             GlobalVars.globalSettings = new GlobalSettings();
             GlobalVars.applicationSettings = new ApplicationSettings();
+            ensureApplicationSettingsInitialized();
             saveConfig();
         }
     }
@@ -97,9 +115,11 @@ public class ConfigManagerJson {
                     read = false;
                 }
             }
+            ensureApplicationSettingsInitialized();
         } catch (JsonSyntaxException | JsonIOException e) {
             GlobalVars.globalSettings = new GlobalSettings();
             GlobalVars.applicationSettings = new ApplicationSettings();
+            ensureApplicationSettingsInitialized();
             return false;
         }
 
