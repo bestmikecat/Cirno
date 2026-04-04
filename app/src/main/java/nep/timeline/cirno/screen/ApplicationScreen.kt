@@ -134,7 +134,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                                 text = if (userId == 0) "用户 0" else "用户 $userId",
                                                 style = MiuixTheme.textStyles.body2,
                                                 color = if (selected) MiuixTheme.colorScheme.primary
-                                                else MiuixTheme.colorScheme.onSurfaceVariant
+                                                else MiuixTheme.colorScheme.surfaceVariant
                                             )
                                         }
                                     }
