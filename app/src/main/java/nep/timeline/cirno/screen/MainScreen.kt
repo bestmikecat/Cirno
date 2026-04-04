@@ -91,13 +91,13 @@ private data class HomeAppItem(
     val tags: List<SpecialTag>
 )
 
-private fun getSpecialTags(packageName: String, userId: Int): List<SpecialTag> {
+private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): List<SpecialTag> {
     val tags = mutableListOf<SpecialTag>()
-    if (AppConfigs.isWhiteApp(packageName, userId))
+    if (userIds.any { AppConfigs.isWhiteApp(packageName, it) })
         tags += SpecialTag("白名单", Color(0xFF4CAF50))
-    if (AppConfigs.isBackgroundPlayAllowed(packageName, userId))
+    if (userIds.any { AppConfigs.isBackgroundPlayAllowed(packageName, it) })
         tags += SpecialTag("后台播放", Color(0xFF2196F3))
-    if (AppConfigs.isLocationUseAllowed(packageName, userId))
+    if (userIds.any { AppConfigs.isLocationUseAllowed(packageName, it) })
         tags += SpecialTag("位置使用", Color(0xFFFF9800))
     return tags
 }
@@ -178,11 +178,12 @@ private fun HomeTab(bottomInset: Dp = 0.dp) {
             getInstalledApps(context)
                 .map { appInfo ->
                     val userId = PKGUtils.getUserId(appInfo.uid)
+                    val tagUserIds = listOf(0, 999, userId).distinct()
                     HomeAppItem(
                         appInfo = appInfo,
                         appName = appInfo.loadLabel(context.packageManager).toString(),
                         userId = userId,
-                        tags = getSpecialTags(appInfo.packageName, userId)
+                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds)
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
