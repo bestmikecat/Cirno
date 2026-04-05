@@ -2,7 +2,7 @@ package nep.timeline.cirno.threads;
 
 import android.os.Handler;
 import android.os.Message;
-
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.entity.AppRecord;
 
 public class FreezerHandler {
@@ -22,11 +22,12 @@ public class FreezerHandler {
 
     public static void sendFreezeMessageIgnoreMessages(AppRecord appRecord, long delay) {
         removeAppMessage(appRecord);
+        private static final long FreezeDelayNum = 1000 * GlobalVars.globalSettings.freezeDelay;
 
         Message obtain = handler.obtainMessage(0, appRecord);
-        if (delay < 1)
+        if (FreezeDelayNum < 1)
             handler.sendMessage(obtain);
         else
-            handler.sendMessageDelayed(obtain, delay);
+            handler.sendMessageDelayed(obtain, FreezeDelayNum);
     }
 }
