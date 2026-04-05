@@ -65,7 +65,7 @@ public class ActivityStatsHook extends MethodHook {
                 if (appRecord == null)
                     return;
 
-                if (event == UsageEvents.Event.ACTIVITY_RESUMED)
+                if (event == UsageEvents.Event.ACTIVITY_RESUMED || event == UsageEvents.Event.ACTIVITY_PAUSED)
                     appRecord.getAppState().getActivities().add(activityRecord.getToken());
                 else
                     appRecord.getAppState().getActivities().remove(activityRecord.getToken());
