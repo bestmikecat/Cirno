@@ -14,7 +14,7 @@ public class NetworkManagerHook extends MethodHook {
 
     @Override
     public String getTargetClass() {
-        return (Build.VERSION.SDK_INT >= 36 ? "com.android.net.module.util.netlink" : ((Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) ? "com.android.server.net.NetworkManagementService" : "com.android.server.NetworkManagementService"));
+        return (Build.VERSION.SDK_INT >= 36 ? "com.android.server.ConnectivityService" : ((Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) ? "com.android.server.net.NetworkManagementService" : "com.android.server.NetworkManagementService"));
     }
 
     @Override
