@@ -26,10 +26,9 @@ public class NetworkManagementService {
         int uid = appRecord.getUid();
         if (Build.VERSION.SDK_INT >= 36) {
             Set<Integer> uidSet = new HashSet<>();
-            uidSet.add(uid)
+            uidSet.add(uid);
             XposedHelpers.callMethod(instance, "destroyLiveTcpSocketsByOwnerUids", uidSet);
             Log.d(appRecord.getPackageNameWithUser() + " 断开网络连接");
-            return;
         } else {
             Array.set(uidRangeParcels, 0, XposedHelpers.newInstance(UidRangeParcel, uid, uid));
             Object uidRangeParcels = Array.newInstance(UidRangeParcel, 1);
