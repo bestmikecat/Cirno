@@ -22,7 +22,6 @@ import nep.timeline.cirno.hooks.android.input.InputMethodManagerService;
 import nep.timeline.cirno.hooks.android.intent.PendingIntentHook;
 import nep.timeline.cirno.hooks.android.location.ListenerRegisterHook;
 import nep.timeline.cirno.hooks.android.location.ListenerUnregisterHook;
-import nep.timeline.cirno.hooks.android.network.NetworkManagerHook;
 import nep.timeline.cirno.hooks.android.process.ProcessAddHook;
 import nep.timeline.cirno.hooks.android.process.ProcessRemoveHook;
 import nep.timeline.cirno.hooks.android.recorder.RecorderEventHook;
@@ -32,6 +31,7 @@ import nep.timeline.cirno.hooks.android.signal.SendSignalQuietHook;
 import nep.timeline.cirno.hooks.android.vpn.VpnStateHook;
 import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
 import nep.timeline.cirno.services.BinderService;
+import nep.timeline.cirno.services.NetworkManagementService;
 
 public class AndroidHooks {
     public static void start(ClassLoader classLoader) {
@@ -56,7 +56,7 @@ public class AndroidHooks {
         // InputMethod
         new InputMethodManagerService(classLoader);
         // Network
-        new NetworkManagerHook(classLoader);
+        NetworkManagementService.setInstance(classLoader);
         // Alarms
         new AlarmManagerService(classLoader);
         // Broadcast
