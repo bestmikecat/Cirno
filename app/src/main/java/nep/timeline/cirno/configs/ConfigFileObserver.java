@@ -7,30 +7,38 @@ import java.io.File;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.threads.Handlers;
+import nep.timeline.cirno.log.Log;
 
 public class ConfigFileObserver extends FileObserver {
+    private static final String TARGET_FILE = "ApplicationSettings.json";
+
     public ConfigFileObserver() {
-        super(GlobalVars.CONFIG_DIR, DELETE | DELETE_SELF | MODIFY | MOVE_SELF);
+        super(GlobalVars.CONFIG_DIR, FileObserver.DELETE | FileObserver.DELETE_SELF | FileObserver.MODIFY | FileObserver.MOVE_SELF);
         reInit();
         ConfigManager.readConfig();
     }
 
     @Override
     public void onEvent(int event, String path) {
+        if (path == null) return;
+        Log.i("配置监听：EVENT " + event + "Path " + path);
         Handler handler = Handlers.config;
         handler.removeCallbacksAndMessages(null);
-        switch (event & ALL_EVENTS) {
-            case DELETE:
-            case DELETE_SELF: {
+        switch (event & FileObserver.ALL_EVENTS) {
+            case FileObserver.DELETE:
+            case FileObserver.DELETE_SELF: {
                 handler.postDelayed(() -> {
                     ConfigManager.readConfig();
                     reInit();
                 }, 2000);
+                Log.i("配置目录被删除");
                 break;
             }
-            case MODIFY:
-            case MOVE_SELF: {
+            case FileObserver.MODIFY:
+            case FileObserver.MOVE_SELF: {
+                if (!TARGET_FILE.equals(path)) break;
                 handler.postDelayed(ConfigManager::readConfig, 2000);
+                Log.i("配置热更新：配置目录被修改");
             }
         }
     }

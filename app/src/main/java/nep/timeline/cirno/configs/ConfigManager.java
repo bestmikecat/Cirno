@@ -5,7 +5,6 @@ public class ConfigManager {
 
     public static void readConfig() {
         manager.readConfig();
-        manager.saveConfig();
     }
 
     public static void saveConfig() {

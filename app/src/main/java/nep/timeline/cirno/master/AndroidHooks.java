@@ -34,10 +34,11 @@ import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
 
 public class AndroidHooks {
+    private static ConfigFileObserver sFileObserver;
     public static void start(ClassLoader classLoader) {
         // Config
-        FileObserver fileObserver = new ConfigFileObserver();
-        fileObserver.startWatching();
+        sFileObserver = new ConfigFileObserver();
+        sFileObserver.startWatching();
 
         // ANR
         new ANRHook(classLoader);
