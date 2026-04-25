@@ -63,11 +63,13 @@ import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.utils.PKGUtils
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.NavigationBar
 import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SearchBar
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -85,7 +87,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// 特殊配置标签定义
 private data class SpecialTag(val label: String, val color: Color)
 private data class HomeAppItem(
     val appInfo: ApplicationInfo,
@@ -101,14 +102,10 @@ private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): Lis
         val label = if (userId == 0) baseLabel else "$baseLabel($userId)"
         tags += SpecialTag(label, color)
     }
-
     userIds.forEach { userId ->
-        if (AppConfigs.isWhiteApp(packageName, userId))
-            addTagForUser("白名单", Color(0xFF4CAF50), userId)
-        if (AppConfigs.isBackgroundPlayAllowed(packageName, userId))
-            addTagForUser("后台播放", Color(0xFF2196F3), userId)
-        if (AppConfigs.isLocationUseAllowed(packageName, userId))
-            addTagForUser("位置使用", Color(0xFFFF9800), userId)
+        if (AppConfigs.isWhiteApp(packageName, userId)) addTagForUser("白名单", Color(0xFF4CAF50), userId)
+        if (AppConfigs.isBackgroundPlayAllowed(packageName, userId)) addTagForUser("后台播放", Color(0xFF2196F3), userId)
+        if (AppConfigs.isLocationUseAllowed(packageName, userId)) addTagForUser("位置使用", Color(0xFFFF9800), userId)
     }
     return tags
 }
@@ -119,6 +116,7 @@ fun MainScreen() {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var refreshTick by remember { mutableStateOf(0) }
+
     val appDetailLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -194,12 +192,22 @@ private fun HomeTab(
             !CommonConstants.isWhitelistApps(it.packageName) && !PKGUtils.isSystemApp(it)
         }
     }
+
     val isRootState by produceState<Boolean?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) { Shell.getShell().isRoot }
+        value = withContext(Dispatchers.IO) {
+            Shell.getShell().isRoot
+        }
     }
+
     val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshKey) {
-        value = withContext(Dispatchers.IO) { ConfigManager.manager.readConfigSU() }
+        value = withContext(Dispatchers.IO) {
+            ConfigManager.manager.readConfigSU()
+        }
     }
+
+    // 搜索相关状态
+    var searchText by remember { mutableStateOf("") }
+
     val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey, key2 = readConfigState) {
         if (readConfigState == null) {
             value = null
@@ -215,6 +223,7 @@ private fun HomeTab(
                         .distinct()
                         .sorted()
                 }
+
             appInfos
                 .map { appInfo ->
                     val userId = PKGUtils.getUserId(appInfo.uid)
@@ -264,16 +273,14 @@ private fun HomeTab(
         val primaryTagColor = tags.firstOrNull()?.color
 
         Row(
-            modifier = (if (canEnter)
-                Modifier.clickable {
-                    enterAppPage(
-                        appName,
-                        userId.toString(),
-                        app.appInfo.packageName,
-                        app.availableUserIds
-                    )
-                }
-            else Modifier)
+            modifier = (if (canEnter) Modifier.clickable {
+                enterAppPage(
+                    appName,
+                    userId.toString(),
+                    app.appInfo.packageName,
+                    app.availableUserIds
+                )
+            } else Modifier)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -351,11 +358,18 @@ private fun HomeTab(
                 return@Surface
             }
 
+            // 根据搜索文本过滤应用
+            val filteredApps = if (searchText.isBlank()) {
+                allApps
+            } else {
+                allApps.filter { it.appName.contains(searchText, ignoreCase = true) }
+            }
+
             val packageManager = context.packageManager
             val canEnter = isRootState == true && readConfigState == true
 
-            val specialApps = allApps.filter { it.tags.isNotEmpty() }
-            val normalApps = allApps.filter { it.tags.isEmpty() }
+            val specialApps = filteredApps.filter { it.tags.isNotEmpty() }
+            val normalApps = filteredApps.filter { it.tags.isEmpty() }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -364,6 +378,44 @@ private fun HomeTab(
                     bottom = padding.calculateBottomPadding() + bottomInset + 16.dp
                 )
             ) {
+                item {
+                    SearchBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .padding(top = 4.dp),
+                        inputField = {
+                            InputField(
+                                query = searchText,
+                                onQueryChange = { searchText = it },
+                                onSearch = { },
+                                expanded = searchText.isNotEmpty(),
+                                onExpandedChange = { },
+                                label = "搜索应用"
+                            )
+                        },
+                        expanded = searchText.isNotEmpty(),
+                        onExpandedChange = { },
+                        outsideEndAction = if (searchText.isNotEmpty()) {
+                            {
+                                Text(
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .clickable(
+                                            interactionSource = null,
+                                            indication = null
+                                        ) {
+                                            searchText = ""
+                                        },
+                                    text = "清除",
+                                    color = MiuixTheme.colorScheme.primary
+                                )
+                            }
+                        } else null,
+                        content = {}
+                    )
+                }
+
                 item {
                     Card(
                         modifier = Modifier
@@ -393,9 +445,7 @@ private fun HomeTab(
                             Box(
                                 modifier = Modifier
                                     .background(
-                                        color = if (GlobalVars.isModuleActive)
-                                            Color(0xFF4CAF50).copy(alpha = 0.15f)
-                                        else Color.Gray.copy(alpha = 0.15f),
+                                        color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
                                         shape = RoundedCornerShape(20.dp)
                                     )
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -405,9 +455,7 @@ private fun HomeTab(
                                         modifier = Modifier
                                             .size(7.dp)
                                             .background(
-                                                color = if (GlobalVars.isModuleActive) Color(
-                                                    0xFF4CAF50
-                                                ) else Color.Gray,
+                                                color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50) else Color.Gray,
                                                 shape = CircleShape
                                             )
                                     )
@@ -419,6 +467,23 @@ private fun HomeTab(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+
+                if (normalApps.isEmpty() && specialApps.isEmpty() && searchText.isNotEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "未找到相关应用",
+                                style = MiuixTheme.textStyles.body2,
+                                color = MiuixTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                            )
                         }
                     }
                 }
@@ -442,7 +507,10 @@ private fun HomeTab(
                 }
 
                 item {
-                    SmallTitle(text = "全部应用", modifier = Modifier.padding(top = 8.dp))
+                    SmallTitle(
+                        text = if (searchText.isNotEmpty()) "搜索结果" else "全部应用",
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                 }
                 items(
                     items = normalApps,
@@ -468,18 +536,10 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
         backgroundColor = MiuixTheme.colorScheme.background,
         tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.67f))
     )
-
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
-    // 冻结延时状态（秒）
-    val freezeDelay = remember {
-        mutableStateOf(GlobalVars.globalSettings.freezeDelay)
-    }
-
-    // 日志输出状态
-    val logEnabled = remember {
-        mutableStateOf(GlobalVars.globalSettings.logEnabled)
-    }
+    val freezeDelay = remember { mutableStateOf(GlobalVars.globalSettings.freezeDelay) }
+    val logEnabled = remember { mutableStateOf(GlobalVars.globalSettings.logEnabled) }
 
     Scaffold(
         topBar = {
