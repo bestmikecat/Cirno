@@ -1,10 +1,9 @@
 package nep.timeline.cirno.configs.settings;
 
+import java.util.Set;
 import java.util.HashMap;
-import java.util.Map;
 
-import nep.timeline.cirno.configs.policy.AppPolicy;
+import nep.timeline.cirno.configs.policy.Capability;
 
-public class ApplicationSettings {
-    public Map<String, AppPolicy> appPolicies = new HashMap<>();
+public class ApplicationSettings extends HashMap<String, Set<Capability>> {
 }

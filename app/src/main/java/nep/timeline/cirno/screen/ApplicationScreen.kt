@@ -38,16 +38,14 @@ import kotlinx.coroutines.withContext
 private data class CapabilitySpec(
     val capability: Capability,
     val title: String,
-    val summary: String,
-    val conflictWith: Set<Capability> = emptySet()
+    val summary: String
 )
 
 private val baseCapabilitySpecs = listOf(
     CapabilitySpec(
         capability = Capability.WHITE_LIST,
         title = "白名单",
-        summary = "白名单应用不会被 Cirno 冻结",
-        conflictWith = setOf(Capability.ALLOW_BACKGROUND_AUDIO, Capability.ALLOW_LOCATION)
+        summary = "白名单应用不会被 Cirno 冻结"
     )
 )
 
@@ -55,14 +53,12 @@ private val exemptionCapabilitySpecs = listOf(
     CapabilitySpec(
         capability = Capability.ALLOW_BACKGROUND_AUDIO,
         title = "后台播放",
-        summary = "允许应用在播放音频时不被冻结，推荐音乐类应用",
-        conflictWith = setOf(Capability.WHITE_LIST)
+        summary = "允许应用在播放音频时不被冻结，推荐音乐类应用"
     ),
     CapabilitySpec(
         capability = Capability.ALLOW_LOCATION,
         title = "位置使用",
-        summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用",
-        conflictWith = setOf(Capability.WHITE_LIST)
+        summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用"
     )
 )
 
@@ -115,16 +111,21 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     fun isEnabled(capability: Capability): Boolean = capabilityStates.value[capability] == true
 
+    fun anyExemptionEnabled(): Boolean = exemptionCapabilitySpecs.any { isEnabled(it.capability) }
+
     fun applyCapability(spec: CapabilitySpec, newValue: Boolean) {
         val current = isEnabled(spec.capability)
         if (current == newValue) return
 
         if (newValue) {
-            val conflictEnabled = spec.conflictWith.firstOrNull { isEnabled(it) }
-            if (conflictEnabled != null) {
+            val isWhiteList = spec.capability == Capability.WHITE_LIST
+            val whiteListEnabled = isEnabled(Capability.WHITE_LIST)
+            val conflict = (isWhiteList && anyExemptionEnabled()) || (!isWhiteList && whiteListEnabled)
+
+            if (conflict) {
                 Toast.makeText(
                     context,
-                    "${spec.title}不能与${allSpecs.first { it.capability == conflictEnabled }.title}同时开启",
+                    "白名单不能与任何冻结豁免同时开启",
                     Toast.LENGTH_SHORT
                 ).show()
                 return

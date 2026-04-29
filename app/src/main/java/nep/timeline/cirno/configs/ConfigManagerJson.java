@@ -8,7 +8,6 @@ import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
@@ -24,9 +23,6 @@ public class ConfigManagerJson {
     private void ensureApplicationSettingsInitialized() {
         if (GlobalVars.applicationSettings == null) {
             GlobalVars.applicationSettings = new ApplicationSettings();
-        }
-        if (GlobalVars.applicationSettings.appPolicies == null) {
-            GlobalVars.applicationSettings.appPolicies = new HashMap<>();
         }
     }
 

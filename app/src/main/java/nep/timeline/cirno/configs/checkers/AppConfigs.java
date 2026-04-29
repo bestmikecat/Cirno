@@ -1,49 +1,46 @@
 package nep.timeline.cirno.configs.checkers;
 
 import nep.timeline.cirno.GlobalVars;
-import nep.timeline.cirno.configs.policy.AppPolicy;
 import nep.timeline.cirno.configs.policy.Capability;
 import nep.timeline.cirno.configs.policy.PolicyKey;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
 
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.Set;
 
 public class AppConfigs {
     private static ApplicationSettings getSafeSettings() {
         if (GlobalVars.applicationSettings == null) {
             GlobalVars.applicationSettings = new ApplicationSettings();
         }
-        if (GlobalVars.applicationSettings.appPolicies == null) {
-            GlobalVars.applicationSettings.appPolicies = new HashMap<>();
-        }
         return GlobalVars.applicationSettings;
     }
 
-    private static AppPolicy getOrCreatePolicy(String pkg, int userId) {
+    private static Set<Capability> getOrCreatePolicy(String pkg, int userId) {
         String key = PolicyKey.of(pkg, userId);
-        AppPolicy appPolicy = getSafeSettings().appPolicies.get(key);
-        if (appPolicy == null) {
-            appPolicy = new AppPolicy();
-            getSafeSettings().appPolicies.put(key, appPolicy);
+        Set<Capability> capabilities = getSafeSettings().get(key);
+        if (capabilities == null) {
+            capabilities = EnumSet.noneOf(Capability.class);
+            getSafeSettings().put(key, capabilities);
         }
-        if (appPolicy.capabilities == null) {
-            appPolicy.capabilities = EnumSet.noneOf(Capability.class);
-        }
-        return appPolicy;
+        return capabilities;
     }
 
     public static boolean hasCapability(String pkg, int userId, Capability capability) {
-        AppPolicy policy = getSafeSettings().appPolicies.get(PolicyKey.of(pkg, userId));
-        return policy != null && policy.capabilities != null && policy.capabilities.contains(capability);
+        Set<Capability> policy = getSafeSettings().get(PolicyKey.of(pkg, userId));
+        return policy != null && policy.contains(capability);
     }
 
     public static void setCapability(String pkg, int userId, Capability capability, boolean enabled) {
-        AppPolicy policy = getOrCreatePolicy(pkg, userId);
+        Set<Capability> policy = getOrCreatePolicy(pkg, userId);
         if (enabled) {
-            policy.capabilities.add(capability);
+            policy.add(capability);
         } else {
-            policy.capabilities.remove(capability);
+            policy.remove(capability);
+        }
+
+        if (policy.isEmpty()) {
+            getSafeSettings().remove(PolicyKey.of(pkg, userId));
         }
     }
 
