@@ -8,7 +8,7 @@ import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
@@ -25,14 +25,8 @@ public class ConfigManagerJson {
         if (GlobalVars.applicationSettings == null) {
             GlobalVars.applicationSettings = new ApplicationSettings();
         }
-        if (GlobalVars.applicationSettings.whiteApps == null) {
-            GlobalVars.applicationSettings.whiteApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.backgroundPlayApps == null) {
-            GlobalVars.applicationSettings.backgroundPlayApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.locationUseApps == null) {
-            GlobalVars.applicationSettings.locationUseApps = new HashSet<>();
+        if (GlobalVars.applicationSettings.appPolicies == null) {
+            GlobalVars.applicationSettings.appPolicies = new HashMap<>();
         }
     }
 

@@ -24,6 +24,7 @@ import dev.chrisbanes.haze.hazeEffect
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
+import nep.timeline.cirno.configs.policy.Capability
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -33,6 +34,37 @@ import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private data class CapabilitySpec(
+    val capability: Capability,
+    val title: String,
+    val summary: String,
+    val conflictWith: Set<Capability> = emptySet()
+)
+
+private val baseCapabilitySpecs = listOf(
+    CapabilitySpec(
+        capability = Capability.WHITE_LIST,
+        title = "白名单",
+        summary = "白名单应用不会被 Cirno 冻结",
+        conflictWith = setOf(Capability.ALLOW_BACKGROUND_AUDIO, Capability.ALLOW_LOCATION)
+    )
+)
+
+private val exemptionCapabilitySpecs = listOf(
+    CapabilitySpec(
+        capability = Capability.ALLOW_BACKGROUND_AUDIO,
+        title = "后台播放",
+        summary = "允许应用在播放音频时不被冻结，推荐音乐类应用",
+        conflictWith = setOf(Capability.WHITE_LIST)
+    ),
+    CapabilitySpec(
+        capability = Capability.ALLOW_LOCATION,
+        title = "位置使用",
+        summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用",
+        conflictWith = setOf(Capability.WHITE_LIST)
+    )
+)
 
 @Composable
 fun ApplicationScreen(activity: ApplicationActivity) {
@@ -64,14 +96,16 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
-    val isWhitelisted = remember { mutableStateOf(false) }
-    val isBackgroundPlayAllowed = remember { mutableStateOf(false) }
-    val isLocationUseAllowed = remember { mutableStateOf(false) }
+    val allSpecs = remember { baseCapabilitySpecs + exemptionCapabilitySpecs }
+    val capabilityStates = remember {
+        mutableStateOf(allSpecs.associate { it.capability to false })
+    }
 
     LaunchedEffect(packageName, selectedUserId) {
-        isWhitelisted.value = AppConfigs.isWhiteApp(packageName, selectedUserId)
-        isBackgroundPlayAllowed.value = AppConfigs.isBackgroundPlayAllowed(packageName, selectedUserId)
-        isLocationUseAllowed.value = AppConfigs.isLocationUseAllowed(packageName, selectedUserId)
+        val nextState = allSpecs.associate { spec ->
+            spec.capability to AppConfigs.hasCapability(packageName, selectedUserId, spec.capability)
+        }
+        capabilityStates.value = nextState
     }
     LaunchedEffect(availableUserIds) {
         if (!availableUserIds.contains(selectedUserId)) {
@@ -79,15 +113,30 @@ fun ApplicationScreen(activity: ApplicationActivity) {
         }
     }
 
-    fun anyExemptionEnabled() = isBackgroundPlayAllowed.value || isLocationUseAllowed.value
+    fun isEnabled(capability: Capability): Boolean = capabilityStates.value[capability] == true
 
-    val handleToggle = { current: Boolean, newValue: Boolean, stateSetter: (Boolean) -> Unit, configSetter: () -> Unit ->
-        if (current != newValue) {
-            stateSetter(newValue)
-            configSetter()
-            activity.setResult(android.app.Activity.RESULT_OK)
-            ConfigManager.manager.saveConfigSU()
+    fun applyCapability(spec: CapabilitySpec, newValue: Boolean) {
+        val current = isEnabled(spec.capability)
+        if (current == newValue) return
+
+        if (newValue) {
+            val conflictEnabled = spec.conflictWith.firstOrNull { isEnabled(it) }
+            if (conflictEnabled != null) {
+                Toast.makeText(
+                    context,
+                    "${spec.title}不能与${allSpecs.first { it.capability == conflictEnabled }.title}同时开启",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
         }
+
+        AppConfigs.setCapability(packageName, selectedUserId, spec.capability, newValue)
+        capabilityStates.value = capabilityStates.value.toMutableMap().apply {
+            put(spec.capability, newValue)
+        }
+        activity.setResult(android.app.Activity.RESULT_OK)
+        ConfigManager.manager.saveConfigSU()
     }
 
     HazeScaffold(
@@ -154,26 +203,16 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 SectionCard {
-                    SuperSwitch(
-                        title = "白名单",
-                        summary = "白名单应用不会被 Cirno 冻结",
-                        checked = isWhitelisted.value,
-                        onCheckedChange = { newValue ->
-                            if (newValue && anyExemptionEnabled()) {
-                                Toast.makeText(
-                                    context,
-                                    "白名单不能与冻结豁免同时开启",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@SuperSwitch
+                    baseCapabilitySpecs.forEach { spec ->
+                        SuperSwitch(
+                            title = spec.title,
+                            summary = spec.summary,
+                            checked = isEnabled(spec.capability),
+                            onCheckedChange = { newValue ->
+                                applyCapability(spec, newValue)
                             }
-                            handleToggle(
-                                isWhitelisted.value, newValue,
-                                { isWhitelisted.value = it },
-                                { AppConfigs.setWhiteApp(packageName, selectedUserId, newValue) }
-                            )
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -183,46 +222,16 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 SectionCard {
-                    SuperSwitch(
-                        title = "后台播放",
-                        summary = "允许应用在播放音频时不被冻结，推荐音乐类应用",
-                        checked = isBackgroundPlayAllowed.value,
-                        onCheckedChange = { newValue ->
-                            if (newValue && isWhitelisted.value) {
-                                Toast.makeText(
-                                    context,
-                                    "冻结豁免不能与白名单同时开启",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@SuperSwitch
+                    exemptionCapabilitySpecs.forEach { spec ->
+                        SuperSwitch(
+                            title = spec.title,
+                            summary = spec.summary,
+                            checked = isEnabled(spec.capability),
+                            onCheckedChange = { newValue ->
+                                applyCapability(spec, newValue)
                             }
-                            handleToggle(
-                                isBackgroundPlayAllowed.value, newValue,
-                                { isBackgroundPlayAllowed.value = it },
-                                { AppConfigs.setBackgroundPlayAllowed(packageName, selectedUserId, newValue) }
-                            )
-                        }
-                    )
-                    SuperSwitch(
-                        title = "位置使用",
-                        summary = "允许应用在使用位置信息时不被冻结，推荐导航地图类应用",
-                        checked = isLocationUseAllowed.value,
-                        onCheckedChange = { newValue ->
-                            if (newValue && isWhitelisted.value) {
-                                Toast.makeText(
-                                    context,
-                                    "冻结豁免不能与白名单同时开启",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@SuperSwitch
-                            }
-                            handleToggle(
-                                isLocationUseAllowed.value, newValue,
-                                { isLocationUseAllowed.value = it },
-                                { AppConfigs.setLocationUseAllowed(packageName, selectedUserId, newValue) }
-                            )
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

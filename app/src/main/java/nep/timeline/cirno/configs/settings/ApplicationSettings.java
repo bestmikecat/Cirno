@@ -1,10 +1,10 @@
 package nep.timeline.cirno.configs.settings;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+
+import nep.timeline.cirno.configs.policy.AppPolicy;
 
 public class ApplicationSettings {
-    public Set<String> whiteApps = new HashSet<>();
-    public Set<String> backgroundPlayApps = new HashSet<>();
-    public Set<String> locationUseApps = new HashSet<>();
+    public Map<String, AppPolicy> appPolicies = new HashMap<>();
 }
