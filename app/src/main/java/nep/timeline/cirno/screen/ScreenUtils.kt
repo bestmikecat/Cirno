@@ -25,7 +25,7 @@ fun rememberHazeStyle(): HazeStyle {
     val colorScheme = MiuixTheme.colorScheme
     return HazeStyle(
         backgroundColor = colorScheme.surface,
-        tint = HazeTint(colorScheme.surface.copy(0.67f))
+        tint = HazeTint(colorScheme.surface.copy(alpha = 0f))
     )
 }
 

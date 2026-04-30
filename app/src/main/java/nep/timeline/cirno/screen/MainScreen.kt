@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -87,6 +86,16 @@ private data class HomeAppItem(
     val tags: List<SpecialTag>,
     val availableUserIds: List<Int>
 )
+
+private fun buildAppIntent(context: Context, app: HomeAppItem): Intent {
+    return Intent().apply {
+        setClass(context, ApplicationActivity::class.java)
+        putExtra("appName", app.appName)
+        putExtra("userId", app.userId.toString())
+        putExtra("packageName", app.appInfo.packageName)
+        putExtra("userIds", app.availableUserIds.toIntArray())
+    }
+}
 
 private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): List<SpecialTag> {
     val tags = mutableListOf<SpecialTag>()
@@ -229,6 +238,25 @@ private fun AppItem(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppSectionCard(
+    apps: List<HomeAppItem>,
+    packageManager: PackageManager,
+    canEnter: Boolean,
+    onOpenApp: (HomeAppItem) -> Unit
+) {
+    SectionCard {
+        apps.forEach { app ->
+            AppItem(
+                app = app,
+                packageManager = packageManager,
+                canEnter = canEnter,
+                onClick = { onOpenApp(app) }
+            )
         }
     }
 }
@@ -450,26 +478,13 @@ private fun HomeTab(
                 item {
                     SectionTitle(text = "特殊配置应用", modifier = Modifier.padding(top = 8.dp))
                 }
-                items(
-                    items = specialApps,
-                    key = { "${it.appInfo.packageName}:${it.appInfo.uid}" }
-                ) { app ->
-                    SectionCard {
-                        AppItem(
-                            app = app,
-                            packageManager = packageManager,
-                            canEnter = canEnter,
-                            onClick = {
-                                val intent = Intent()
-                                intent.setClass(context, ApplicationActivity::class.java)
-                                intent.putExtra("appName", app.appName)
-                                intent.putExtra("userId", app.userId.toString())
-                                intent.putExtra("packageName", app.appInfo.packageName)
-                                intent.putExtra("userIds", app.availableUserIds.toIntArray())
-                                onOpenApp(intent)
-                            }
-                        )
-                    }
+                item {
+                    AppSectionCard(
+                        apps = specialApps,
+                        packageManager = packageManager,
+                        canEnter = canEnter,
+                        onOpenApp = { app -> onOpenApp(buildAppIntent(context, app)) }
+                    )
                 }
             }
 
@@ -479,26 +494,13 @@ private fun HomeTab(
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
-            items(
-                items = normalApps,
-                key = { "${it.appInfo.packageName}:${it.appInfo.uid}" }
-            ) { app ->
-                SectionCard {
-                    AppItem(
-                        app = app,
-                        packageManager = packageManager,
-                        canEnter = canEnter,
-                        onClick = {
-                            val intent = Intent()
-                            intent.setClass(context, ApplicationActivity::class.java)
-                            intent.putExtra("appName", app.appName)
-                            intent.putExtra("userId", app.userId.toString())
-                            intent.putExtra("packageName", app.appInfo.packageName)
-                            intent.putExtra("userIds", app.availableUserIds.toIntArray())
-                            onOpenApp(intent)
-                        }
-                    )
-                }
+            item {
+                AppSectionCard(
+                    apps = normalApps,
+                    packageManager = packageManager,
+                    canEnter = canEnter,
+                    onOpenApp = { app -> onOpenApp(buildAppIntent(context, app)) }
+                )
             }
         }
     }
