@@ -52,7 +52,7 @@ private val exemptionCapabilitySpecs = listOf(
     CapabilitySpec(
         capability = Capability.ALLOW_NETWORK_MESSAGE,
         title = "网络解冻",
-        summary = "在应用收到网络通通知时解冻，需使用 ReKernel，推荐微信"
+        summary = "应用收到网络通知时临时解冻，冻结时保留 TCP 连接，需使用 ReKernel，推荐微信"
     ),
     CapabilitySpec(
         capability = Capability.ALLOW_BACKGROUND_AUDIO,

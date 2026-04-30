@@ -104,6 +104,7 @@ private fun getSpecialTagsForUsers(packageName: String, userIds: List<Int>): Lis
     }
     userIds.forEach { userId ->
         if (AppConfigs.isWhiteApp(packageName, userId)) addTagForUser("白名单", Color(0xFF4CAF50), userId)
+        if (AppConfigs.isNetworkMessageAllowed(packageName, userId)) addTagForUser("网络解冻", Color(0xFF9C27B0), userId)
         if (AppConfigs.isBackgroundPlayAllowed(packageName, userId)) addTagForUser("后台播放", Color(0xFF2196F3), userId)
         if (AppConfigs.isLocationUseAllowed(packageName, userId)) addTagForUser("位置使用", Color(0xFFFF9800), userId)
     }

@@ -110,11 +110,14 @@ public class BinderService {
                                         if (appRecords == null || appRecords.isEmpty())
                                             return;
                                         for (AppRecord appRecord : appRecords) {
+                                            if (appRecord == null)
+                                                continue;
+
                                             boolean networkMessageAllowed = AppConfigs.isNetworkMessageAllowed(
                                                 appRecord.getPackageName(),
                                                 appRecord.getUserId()
-                                            );      
-                                            if (appRecord == null || !networkMessageAllowed)
+                                            );
+                                            if (!networkMessageAllowed)
                                                 continue;
 
                                             FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Network", 3000);
