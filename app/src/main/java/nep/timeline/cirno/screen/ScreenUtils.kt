@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -25,8 +26,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun rememberHazeStyle(): HazeStyle {
     return HazeStyle(
-        backgroundColor = Color.Transparent,
-        tint = null
+        backgroundColor = MiuixTheme.colorScheme.surface,
+        tint = HazeTint(MiuixTheme.colorScheme.surface.copy(0.67f))
     )
 }
 
