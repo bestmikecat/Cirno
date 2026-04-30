@@ -186,7 +186,6 @@ private fun AppItem(
         app.appInfo.loadIcon(packageManager).toBitmap().asImageBitmap()
     }
     val tags = app.tags
-    val primaryTagColor = tags.firstOrNull()?.color
 
     Row(
         modifier = (if (canEnter) Modifier.clickable(onClick = onClick) else Modifier)
@@ -206,7 +205,7 @@ private fun AppItem(
             Text(
                 text = app.appName,
                 style = MiuixTheme.textStyles.subtitle,
-                color = primaryTagColor ?: MiuixTheme.colorScheme.onBackground,
+                color = MiuixTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
