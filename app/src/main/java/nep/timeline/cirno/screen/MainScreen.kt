@@ -50,7 +50,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.topjohnwu.superuser.Shell
-import dev.chrisbanes.haze.hazeEffect
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.GlobalVars
@@ -341,13 +340,13 @@ private fun HomeTab(
 
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
-            SmallTopAppBar(
-                title = "Cirno",
-                color = Color.Transparent,
-                modifier = Modifier
-                    .hazeEffect(hazeState) { style = hazeStyle }
-                    .fillMaxWidth()
-            )
+            HazeTopBar(hazeState = hazeState, hazeStyle = hazeStyle) {
+                SmallTopAppBar(
+                    title = "Cirno",
+                    color = Color.Transparent,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     ) { padding ->
         val allFiltered = filteredApps
@@ -515,14 +514,14 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
 
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
-            SmallTopAppBar(
-                title = "设置",
-                color = Color.Transparent,
-                modifier = Modifier
-                    .hazeEffect(hazeState) { style = hazeStyle }
-                    .fillMaxWidth(),
-                scrollBehavior = scrollBehavior
-            )
+            HazeTopBar(hazeState = hazeState, hazeStyle = hazeStyle) {
+                SmallTopAppBar(
+                    title = "设置",
+                    color = Color.Transparent,
+                    modifier = Modifier.fillMaxWidth(),
+                    scrollBehavior = scrollBehavior
+                )
+            }
         }
     ) { padding ->
         LazyColumn(

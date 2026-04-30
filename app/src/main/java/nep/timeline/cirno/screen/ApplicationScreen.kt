@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.topjohnwu.superuser.Shell
-import dev.chrisbanes.haze.hazeEffect
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
@@ -142,15 +141,15 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
-            TopAppBar(
-                title = appName,
-                largeTitle = appName + (if (selectedUserId == 0) "" else "  #$selectedUserId"),
-                color = Color.Transparent,
-                modifier = Modifier
-                    .hazeEffect(hazeState) { style = hazeStyle }
-                    .fillMaxWidth(),
-                scrollBehavior = scrollBehavior
-            )
+            HazeTopBar(hazeState = hazeState, hazeStyle = hazeStyle) {
+                TopAppBar(
+                    title = appName,
+                    largeTitle = appName + (if (selectedUserId == 0) "" else "  #$selectedUserId"),
+                    color = Color.Transparent,
+                    modifier = Modifier.fillMaxWidth(),
+                    scrollBehavior = scrollBehavior
+                )
+            }
         }
     ) { padding ->
         LazyColumn(

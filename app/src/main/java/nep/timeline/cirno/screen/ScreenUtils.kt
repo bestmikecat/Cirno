@@ -1,17 +1,19 @@
 package nep.timeline.cirno.screen
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import top.yukonga.miuix.kmp.basic.Card
@@ -22,11 +24,27 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun rememberHazeStyle(): HazeStyle {
-    val colorScheme = MiuixTheme.colorScheme
     return HazeStyle(
-        backgroundColor = colorScheme.surface,
-        tint = HazeTint(colorScheme.surface.copy(alpha = 0f))
+        backgroundColor = Color.Transparent,
+        tint = null
     )
+}
+
+@Composable
+fun HazeTopBar(
+    hazeState: HazeState,
+    hazeStyle: HazeStyle,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .hazeEffect(hazeState) { style = hazeStyle }
+    ) {
+        // Keep the same background layer as the page so both themes stay visually continuous.
+        content()
+    }
 }
 
 @Composable
