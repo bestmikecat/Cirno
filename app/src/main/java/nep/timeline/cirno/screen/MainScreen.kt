@@ -329,7 +329,10 @@ private fun HomeTab(
     val filteredApps by remember(apps, searchText) {
         derivedStateOf {
             if (searchText.isBlank()) apps
-            else apps?.filter { it.appName.contains(searchText, ignoreCase = true) }
+            else apps?.filter {
+                it.appName.contains(searchText, ignoreCase = true) ||
+                    it.appInfo.packageName.contains(searchText, ignoreCase = true)
+            }
         }
     }
 
