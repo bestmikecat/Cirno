@@ -6,6 +6,7 @@ import java.util.Set;
 
 import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.entity.AppRecord;
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.log.Log;
 
 public class NetworkManagementService {
@@ -20,6 +21,14 @@ public class NetworkManagementService {
         Class<?> inetDiagCls = XposedHelpers.findClassIfExists("com.android.net.module.util.netlink.InetDiagMessage",
                 instance);
         int uid = appRecord.getUid();
+        boolean networkMessageAllowed = AppConfigs.isNetworkMessageAllowed(
+            appRecord.getPackageName(),
+            appRecord.getUserId()
+        );
+        if (networkMessageAllowed) {
+            Log.d(appRecord.getPackageNameWithUser() + "保持连接");
+            return;
+        }      
         if (inetDiagCls != null) {
             uids.add(uid);
             XposedHelpers.callStaticMethod(inetDiagCls, "destroyLiveTcpSocketsByOwnerUids", uids);

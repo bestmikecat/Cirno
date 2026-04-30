@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
@@ -102,6 +103,21 @@ public class BinderService {
                                                 continue;
 
                                             FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Binder(" + (oneway == 1 ? "ASYNC" : "SYNC") + "), 类型: " + bindertype, 3000);
+                                        }
+                                    } else if (type.equals("Network")) {
+                                        int targetUid = StringUtils.StringToInteger(params.get("target"));
+                                        List<AppRecord> appRecords = AppService.getByUid(targetUid);
+                                        if (appRecords == null || appRecords.isEmpty())
+                                            return;
+                                        for (AppRecord appRecord : appRecords) {
+                                            boolean networkMessageAllowed = AppConfigs.isNetworkMessageAllowed(
+                                                appRecord.getPackageName(),
+                                                appRecord.getUserId()
+                                            );      
+                                            if (appRecord == null || !networkMessageAllowed)
+                                                continue;
+
+                                            FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Network", 3000);
                                         }
                                     }
                                 });

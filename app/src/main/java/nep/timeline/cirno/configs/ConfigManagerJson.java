@@ -34,6 +34,9 @@ public class ConfigManagerJson {
         if (GlobalVars.applicationSettings.whiteApps == null) {
             GlobalVars.applicationSettings.whiteApps = new HashSet<>();
         }
+        if (GlobalVars.applicationSettings.networkMessageApps == null) {
+            GlobalVars.applicationSettings.networkMessageApps = new HashSet<>();
+        }
     }
 
     public void readConfig() {

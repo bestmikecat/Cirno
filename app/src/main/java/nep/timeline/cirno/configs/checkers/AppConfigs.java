@@ -22,6 +22,9 @@ public class AppConfigs {
         if (GlobalVars.applicationSettings.whiteApps == null) {
             GlobalVars.applicationSettings.whiteApps = new HashSet<>();
         }
+        if (GlobalVars.applicationSettings.networkMessageApps == null) {
+            GlobalVars.applicationSettings.networkMessageApps = new HashSet<>();
+        }
         return GlobalVars.applicationSettings;
     }
 
@@ -33,6 +36,8 @@ public class AppConfigs {
                 return getSafeSettings().backgroundPlayApps;
             case ALLOW_LOCATION:
                 return getSafeSettings().locationUseApps;
+            case ALLOW_NETWORK_MESSAGE:
+                return getSafeSettings().networkMessageApps;
             default:
                 throw new IllegalArgumentException("Unsupported capability: " + capability);
         }
@@ -64,6 +69,10 @@ public class AppConfigs {
         return hasCapability(pkg, userId, Capability.ALLOW_LOCATION);
     }
 
+    public static boolean isNetworkMessageAllowed(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.ALLOW_NETWORK_MESSAGE);
+    }
+
     public static void setWhiteApp(String pkg, int userId, boolean enabled) {
         setCapability(pkg, userId, Capability.WHITE_LIST, enabled);
     }
@@ -74,5 +83,9 @@ public class AppConfigs {
 
     public static void setLocationUseAllowed(String pkg, int userId, boolean allowed) {
         setCapability(pkg, userId, Capability.ALLOW_LOCATION, allowed);
+    }
+
+    public static void setNetworkMessageAllowed(String pkg, int userId, boolean allowed) {
+        setCapability(pkg, userId, Capability.ALLOW_NETWORK_MESSAGE, allowed);
     }
 }

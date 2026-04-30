@@ -7,4 +7,5 @@ public class ApplicationSettings {
     public Set<String> backgroundPlayApps = new HashSet<>();
     public Set<String> locationUseApps = new HashSet<>();
     public Set<String> whiteApps = new HashSet<>();
+    public Set<String> networkMessageApps = new HashSet<>();
 }
