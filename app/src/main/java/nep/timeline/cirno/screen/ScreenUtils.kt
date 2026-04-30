@@ -24,8 +24,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun rememberHazeStyle(): HazeStyle {
     val colorScheme = MiuixTheme.colorScheme
     return HazeStyle(
-        backgroundColor = colorScheme.background,
-        tint = HazeTint(colorScheme.background.copy(0.67f))
+        backgroundColor = colorScheme.surface,
+        tint = HazeTint(colorScheme.surface.copy(0.67f))
     )
 }
 
@@ -48,7 +48,7 @@ fun HazeScaffold(
             modifier = Modifier
                 .hazeSource(state = hazeState)
                 .fillMaxSize(),
-            color = MiuixTheme.colorScheme.background
+            color = MiuixTheme.colorScheme.surface
         ) {
             content(padding)
         }
