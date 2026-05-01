@@ -5,6 +5,10 @@ on:
     branches: [ "legacy" ]
   pull_request:
     branches: [ "legacy" ]
+    
+permissions:
+  contents: read
+  actions: read 
 
 jobs:
   build:
@@ -42,6 +46,46 @@ jobs:
           name: Cirno-Release
           path: ${{steps.sign_app.outputs.signedReleaseFile}}
           if-no-files-found: warn
+
+      - name: Publish to Telegram via bot
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          TG_CHAT_THREAD: ${{ secrets.TG_CHAT_THREAD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_SHA: ${{ github.sha }}
+          WORKFLOW_NAME: "ci-build"
+        run: |
+          WORKFLOW_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/actions/workflows" \
+            | jq -r --arg name "$WORKFLOW_NAME" '.workflows[] | select(.name==$name) | .id')
           
-      - name: Publish to Telegram Group
-        run: curl -F document=@"${{steps.sign_app.outputs.signedReleaseFile}}" --form-string caption="${{ github.event.head_commit.message }}" "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendDocument?chat_id=${{ secrets.TG_CHAT_ID }}&message_thread_id=${{ secrets.TG_CHAT_THREAD }}"
+          LAST_SUCCESS_SHA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/actions/workflows/$WORKFLOW_ID/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].head_sha')
+          
+          if [ -z "$LAST_SUCCESS_SHA" ]; then
+            echo "未找到成功运行的Action，将使用当前提交作为基提交"
+            LAST_SUCCESS_SHA="$CURRENT_SHA"
+          fi
+          
+          COMPARE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO/compare/$LAST_SUCCESS_SHA...$CURRENT_SHA")
+          
+          COMMITS=$(echo "$COMPARE" | jq -r '.commits[]? | "• \(.commit.message | split("\n")[0] | .[0:70])"')
+          
+          if [ -z "$COMMITS" ]; then
+            HISTORY="无新提交"
+          else
+            HISTORY="上次成功构建 (${LAST_SUCCESS_SHA:0:7}) → 当前 (${CURRENT_SHA:0:7}) 的变更：%0A$COMMITS"
+          fi
+          
+          CAPTION=$(echo "$HISTORY" | head -c 900)
+          if [ ${#HISTORY} -gt 900 ]; then
+            CAPTION="${CAPTION}...（已截断）"
+          fi
+          
+          curl -F document=@"${{ steps.sign_app.outputs.signedReleaseFile }}" \
+            --form-string caption="$CAPTION" \
+            "https://api.telegram.org/bot$TG_BOT_TOKEN/sendDocument?chat_id=$TG_CHAT_ID&message_thread_id=$TG_CHAT_THREAD"
