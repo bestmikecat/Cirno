@@ -47,6 +47,14 @@ jobs:
           path: ${{steps.sign_app.outputs.signedReleaseFile}}
           if-no-files-found: warn
 
+      - name: 重命名 APK
+        id: rename
+        run: |
+          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || echo "unknown")
+          NEW_NAME="Cirno-${VERSION}-${{ github.run_number }}.apk"
+          cp "${{ steps.sign_app.outputs.signedReleaseFile }}" "$NEW_NAME"
+          echo "new_file=$NEW_NAME" >> $GITHUB_OUTPUT
+
       - name: Publish to Telegram via bot
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
@@ -85,6 +93,6 @@ jobs:
             CAPTION="${CAPTION}...（已截断）"
           fi
           
-          curl -F document=@"${{ steps.sign_app.outputs.signedReleaseFile }}" \
+          curl -F document=@"${{ steps.rename.outputs.new_file }}" \
             --form-string caption="$CAPTION" \
             "https://api.telegram.org/bot$TG_BOT_TOKEN/sendDocument?chat_id=$TG_CHAT_ID&message_thread_id=$TG_CHAT_THREAD"
