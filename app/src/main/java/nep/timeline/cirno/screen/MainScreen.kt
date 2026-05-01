@@ -98,8 +98,8 @@ private data class SettingsUiState(
 )
 
 @Composable
-private fun FullScreenLoading() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+private fun FullScreenLoading(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         InfiniteProgressIndicator()
     }
 }
@@ -236,45 +236,6 @@ fun MainScreen() {
             ConfigManager.manager.readConfigSU()
         }
     }
-    val hasErrorState by produceState<Boolean?>(initialValue = null, key1 = refreshTick, key2 = isRootState, key3 = readConfigState) {
-        value = withContext(Dispatchers.IO) {
-            if (isRootState != true || readConfigState != true) {
-                return@withContext false
-            }
-
-            val currentBootId = readRootText(GlobalVars.BOOT_ID_FILE)
-            val flaggedBootId = readRootText(GlobalVars.ERROR_FLAG_FILE)
-            currentBootId != null && currentBootId == flaggedBootId
-        }
-    }
-    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshTick, key2 = isRootState, key3 = readConfigState) {
-        value = withContext(Dispatchers.IO) {
-            if (readConfigState != true) {
-                return@withContext null
-            }
-
-            val appInfos = getInstalledApps(context)
-            val userIdsByPackage = getInstalledUserIdsByPackage(
-                appInfos = appInfos,
-                hasRoot = isRootState == true
-            )
-
-            appInfos
-                .map { appInfo ->
-                    val userId = PKGUtils.getUserId(appInfo.uid)
-                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
-                    val tagUserIds = (availableUserIds + 0).distinct().sorted()
-                    HomeAppItem(
-                        appInfo = appInfo,
-                        appName = appInfo.loadLabel(context.packageManager).toString(),
-                        userId = userId,
-                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds),
-                        availableUserIds = availableUserIds
-                    )
-                }
-                .sortedBy { it.appName.lowercase() }
-        }
-    }
 
     val appDetailLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -321,14 +282,13 @@ fun MainScreen() {
         }
 
         val settings = GlobalVars.globalSettings
-        if (isRootState == null || readConfigState == null || hasErrorState == null || apps == null || settings == null) {
+        if (isRootState == null || readConfigState == null || settings == null) {
             FullScreenLoading()
             return@HazeScaffold
         }
 
         val readyIsRootState: Boolean = isRootState!!
-        val readyApps: List<HomeAppItem> = apps!!
-        val readyHasErrorState: Boolean = hasErrorState!!
+        val shouldLoadHomeTab = pagerState.currentPage == 0 && pagerState.currentPageOffsetFraction == 0f
 
         HorizontalPager(
             state = pagerState,
@@ -337,9 +297,9 @@ fun MainScreen() {
             when (page) {
                 0 -> HomeTab(
                     bottomInset = innerPadding.calculateBottomPadding(),
+                    refreshKey = refreshTick,
                     isRootState = readyIsRootState,
-                    hasErrorState = readyHasErrorState,
-                    apps = readyApps,
+                    shouldLoad = shouldLoadHomeTab,
                     onOpenApp = { intent -> appDetailLauncher.launch(intent) }
                 )
                 1 -> SettingScreen(
@@ -440,19 +400,66 @@ private fun AppSectionCard(
 @Composable
 private fun HomeTab(
     bottomInset: Dp = 0.dp,
+    refreshKey: Int = 0,
     isRootState: Boolean,
-    hasErrorState: Boolean,
-    apps: List<HomeAppItem>,
+    shouldLoad: Boolean,
     onOpenApp: (Intent) -> Unit
 ) {
     val context = LocalContext.current
 
+    val hasErrorState by produceState(initialValue = false, key1 = refreshKey, key2 = isRootState, key3 = shouldLoad) {
+        if (!shouldLoad) {
+            value = false
+            return@produceState
+        }
+
+        value = withContext(Dispatchers.IO) {
+            if (!isRootState) {
+                return@withContext false
+            }
+
+            val currentBootId = readRootText(GlobalVars.BOOT_ID_FILE)
+            val flaggedBootId = readRootText(GlobalVars.ERROR_FLAG_FILE)
+            currentBootId != null && currentBootId == flaggedBootId
+        }
+    }
+
     var searchText by remember { mutableStateOf("") }
+
+    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey, key2 = isRootState, key3 = shouldLoad) {
+        if (!shouldLoad) {
+            value = null
+            return@produceState
+        }
+
+        value = withContext(Dispatchers.IO) {
+            val appInfos = getInstalledApps(context)
+            val userIdsByPackage = getInstalledUserIdsByPackage(
+                appInfos = appInfos,
+                hasRoot = isRootState
+            )
+
+            appInfos
+                .map { appInfo ->
+                    val userId = PKGUtils.getUserId(appInfo.uid)
+                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
+                    val tagUserIds = (availableUserIds + 0).distinct().sorted()
+                    HomeAppItem(
+                        appInfo = appInfo,
+                        appName = appInfo.loadLabel(context.packageManager).toString(),
+                        userId = userId,
+                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds),
+                        availableUserIds = availableUserIds
+                    )
+                }
+                .sortedBy { it.appName.lowercase() }
+        }
+    }
 
     val filteredApps by remember(apps, searchText) {
         derivedStateOf {
             if (searchText.isBlank()) apps
-            else apps.filter {
+            else apps?.filter {
                 it.appName.contains(searchText, ignoreCase = true) ||
                     it.appInfo.packageName.contains(searchText, ignoreCase = true)
             }
@@ -461,7 +468,7 @@ private fun HomeTab(
 
     val partitionedApps by remember(filteredApps) {
         derivedStateOf {
-            filteredApps.partition { it.tags.isNotEmpty() }
+            filteredApps?.partition { it.tags.isNotEmpty() }
         }
     }
 
@@ -476,9 +483,22 @@ private fun HomeTab(
             }
         }
     ) { padding ->
+        if (!shouldLoad) {
+            FullScreenLoading(
+                modifier = Modifier.padding(top = padding.calculateTopPadding())
+            )
+            return@HazeScaffold
+        }
+
+        val allFiltered = filteredApps
+        if (allFiltered == null) {
+            FullScreenLoading()
+            return@HazeScaffold
+        }
+
         val packageManager = context.packageManager
         val canEnter = isRootState
-        val (specialApps, normalApps) = partitionedApps
+        val (specialApps, normalApps) = partitionedApps ?: (emptyList<HomeAppItem>() to emptyList())
         val moduleStatus = when {
             !GlobalVars.isModuleActive -> ModuleStatus.INACTIVE
             hasErrorState -> ModuleStatus.ERROR
