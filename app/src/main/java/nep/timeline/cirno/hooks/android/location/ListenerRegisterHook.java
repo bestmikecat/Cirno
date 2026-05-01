@@ -3,9 +3,6 @@ package nep.timeline.cirno.hooks.android.location;
 import android.location.LocationManager;
 import android.location.LocationRequest;
 import android.os.Binder;
-import android.os.IBinder;
-
-import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook;
 import nep.timeline.cirno.entity.AppRecord;
@@ -57,9 +54,8 @@ public class ListenerRegisterHook extends MethodHook {
                     if (appRecord == null)
                         return;
 
-                    Set<IBinder> set = appRecord.getAppState().getLocationListeners();
-                    if (set.add(listener.asBinder()))
-                        LocationHandler.call(appRecord, set);
+                    if (appRecord.getAppState().addLocationListener(listener.asBinder()))
+                        LocationHandler.call(appRecord);
                 });
             }
         };

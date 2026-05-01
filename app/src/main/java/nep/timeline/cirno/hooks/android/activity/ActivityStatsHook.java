@@ -65,19 +65,19 @@ public class ActivityStatsHook extends MethodHook {
                 if (appRecord == null)
                     return;
 
-                if (event == UsageEvents.Event.ACTIVITY_RESUMED || event == UsageEvents.Event.ACTIVITY_PAUSED)
-                    appRecord.getAppState().getActivities().add(activityRecord.getToken());
-                else
-                    appRecord.getAppState().getActivities().remove(activityRecord.getToken());
+                boolean changed = event == UsageEvents.Event.ACTIVITY_RESUMED || event == UsageEvents.Event.ACTIVITY_PAUSED
+                        ? appRecord.getAppState().addActivity(activityRecord.getToken())
+                        : appRecord.getAppState().removeActivity(activityRecord.getToken());
 
-                if (appRecord.getAppState().getActivities().isEmpty()) {
-                    if (appRecord.getAppState().setVisible(false)) {
-                        Log.d(appRecord.getPackageNameWithUser() + " 进入后台");
-                        FreezerHandler.sendFreezeMessage(appRecord);
-                    }
-                } else if (appRecord.getAppState().setVisible(true)) {
+                if (!changed)
+                    return;
+
+                if (appRecord.getAppState().isVisible()) {
                     Log.d(appRecord.getPackageNameWithUser() + " 进入前台");
                     FreezerService.thaw(appRecord);
+                } else {
+                    Log.d(appRecord.getPackageNameWithUser() + " 进入后台");
+                    FreezerHandler.sendFreezeMessage(appRecord);
                 }
             }
         };

@@ -58,4 +58,60 @@ public class AppState {
         vpn = value;
         return true;
     }
+
+    public synchronized boolean addActivity(IBinder activity) {
+        if (!activities.add(activity) || visible)
+            return false;
+        visible = true;
+        return true;
+    }
+
+    public synchronized boolean removeActivity(IBinder activity) {
+        if (!activities.remove(activity) || !activities.isEmpty() || !visible)
+            return false;
+        visible = false;
+        return true;
+    }
+
+    public synchronized boolean addLocationListener(IBinder listener) {
+        if (!locationListeners.add(listener) || location)
+            return false;
+        location = true;
+        return true;
+    }
+
+    public synchronized boolean removeLocationListener(IBinder listener) {
+        if (!locationListeners.remove(listener) || !locationListeners.isEmpty() || !location)
+            return false;
+        location = false;
+        return true;
+    }
+
+    public synchronized boolean addAudioInterface(int interfaceId) {
+        if (!interfaceIds.add(interfaceId) || audio)
+            return false;
+        audio = true;
+        return true;
+    }
+
+    public synchronized boolean removeAudioInterface(int interfaceId) {
+        if (!interfaceIds.remove(interfaceId) || !interfaceIds.isEmpty() || !audio)
+            return false;
+        audio = false;
+        return true;
+    }
+
+    public synchronized boolean addRecordingId(int recordingId) {
+        if (!recodingIds.add(recordingId) || recording)
+            return false;
+        recording = true;
+        return true;
+    }
+
+    public synchronized boolean removeRecordingId(int recordingId) {
+        if (!recodingIds.remove(recordingId) || !recodingIds.isEmpty() || !recording)
+            return false;
+        recording = false;
+        return true;
+    }
 }

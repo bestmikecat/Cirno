@@ -1,9 +1,6 @@
 package nep.timeline.cirno.hooks.android.location;
 
 import android.os.Binder;
-import android.os.IBinder;
-
-import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook;
 import nep.timeline.cirno.entity.AppRecord;
@@ -54,9 +51,8 @@ public class ListenerUnregisterHook extends MethodHook {
                     if (appRecord == null)
                         return;
 
-                    Set<IBinder> set = appRecord.getAppState().getLocationListeners();
-                    if (set.remove(listener.asBinder()))
-                        LocationHandler.call(appRecord, set);
+                    if (appRecord.getAppState().removeLocationListener(listener.asBinder()))
+                        LocationHandler.call(appRecord);
                 });
             }
         };

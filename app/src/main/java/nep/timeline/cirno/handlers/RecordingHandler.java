@@ -1,7 +1,5 @@
 package nep.timeline.cirno.handlers;
 
-import java.util.Set;
-
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
@@ -13,20 +11,17 @@ public class RecordingHandler {
     public static final int RECORDER_STATE_STOPPED = 1;
 
     public static void call(AppRecord appRecord, int event, int riid) {
-        Set<Integer> set = appRecord.getAppState().getRecodingIds();
-        if (event == RECORDER_STATE_STARTED)
-            set.add(riid);
-        else
-            set.remove(riid);
-
-        if (set.isEmpty()) {
-            if (appRecord.getAppState().setRecording(false)) {
-                Log.d("应用 " + appRecord.getPackageNameWithUser() + " 停止录音");
-                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
-            }
-        } else if (appRecord.getAppState().setRecording(true)) {
+        if (event == RECORDER_STATE_STARTED) {
+            if (!appRecord.getAppState().addRecordingId(riid))
+                return;
             Log.d("应用 " + appRecord.getPackageNameWithUser() + " 开始录音");
             FreezerService.thaw(appRecord);
+            return;
+        }
+
+        if (appRecord.getAppState().removeRecordingId(riid)) {
+            Log.d("应用 " + appRecord.getPackageNameWithUser() + " 停止录音");
+            FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
         }
     }
 }
