@@ -483,16 +483,28 @@ private fun HomeTab(
             }
         }
     ) { padding ->
+        val contentLoading: @Composable () -> Unit = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                        bottom = padding.calculateBottomPadding() + bottomInset + 16.dp
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                InfiniteProgressIndicator()
+            }
+        }
+
         if (!shouldLoad) {
-            FullScreenLoading(
-                modifier = Modifier.padding(top = padding.calculateTopPadding())
-            )
+            contentLoading()
             return@HazeScaffold
         }
 
         val allFiltered = filteredApps
         if (allFiltered == null) {
-            FullScreenLoading()
+            contentLoading()
             return@HazeScaffold
         }
 
