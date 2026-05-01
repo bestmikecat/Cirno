@@ -134,7 +134,6 @@ fun ApplicationScreen(activity: ApplicationActivity) {
             HazeTopBar(hazeState = hazeState, hazeStyle = hazeStyle) {
                 SmallTopAppBar(
                     title = appName,
-                    largeTitle = appName + (if (selectedUserId == 0) "" else "  #$selectedUserId"),
                     color = Color.Transparent,
                     modifier = Modifier.fillMaxWidth()
                 )

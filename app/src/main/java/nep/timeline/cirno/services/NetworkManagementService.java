@@ -15,10 +15,6 @@ public class NetworkManagementService {
     public static volatile ClassLoader instance;
     private static Object mNetdService;
     private static Class<?> UidRangeParcel;
-    private static boolean networkMessageAllowed = AppConfigs.isNetworkMessageAllowed(
-        appRecord.getPackageName(),
-        appRecord.getUserId()
-    );
 
     public static void setInstance(Object obj, ClassLoader classLoader) {
         instance = classLoader;
@@ -48,6 +44,10 @@ public class NetworkManagementService {
     }
 
     public static void socketDestroy(AppRecord appRecord) {
+        boolean networkMessageAllowed = AppConfigs.isNetworkMessageAllowed(
+            appRecord.getPackageName(),
+            appRecord.getUserId()
+        );
         if (networkMessageAllowed) {
             Log.d(appRecord.getPackageNameWithUser() + "保持连接");
             return;
