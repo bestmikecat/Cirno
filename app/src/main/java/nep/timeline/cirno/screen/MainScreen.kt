@@ -103,12 +103,30 @@ private enum class ModuleStatus(
 
 private val logOutputModeItems = listOf("框架", "文件")
 
+private val logLevelItems = listOf("不输出", "信息", "调试")
+
 private fun getLogOutputModeIndex(mode: String?): Int {
     return if (mode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
 }
 
 private fun getLogOutputModeValue(index: Int): String {
     return if (index == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
+}
+
+private fun getLogLevelIndex(level: String?): Int {
+    return when (level) {
+        GlobalSettings.LOG_LEVEL_NONE -> 0
+        GlobalSettings.LOG_LEVEL_DEBUG -> 2
+        else -> 1
+    }
+}
+
+private fun getLogLevelValue(index: Int): String {
+    return when (index) {
+        0 -> GlobalSettings.LOG_LEVEL_NONE
+        2 -> GlobalSettings.LOG_LEVEL_DEBUG
+        else -> GlobalSettings.LOG_LEVEL_INFO
+    }
 }
 
 private val userInfoRegex = Regex("""UserInfo\{(\d+):""")
@@ -353,7 +371,7 @@ private fun HomeTab(
 
     val hasErrorState by produceState(initialValue = false, key1 = refreshKey, key2 = isRootState, key3 = readConfigState) {
         value = withContext(Dispatchers.IO) {
-            if (isRootState != true || readConfigState != true || GlobalVars.globalSettings?.logEnabled != true) {
+            if (isRootState != true || readConfigState != true) {
                 return@withContext false
             }
 
@@ -598,7 +616,7 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
     val freezeDelay = remember { mutableStateOf(GlobalVars.globalSettings.freezeDelay) }
-    val logEnabled = remember { mutableStateOf(GlobalVars.globalSettings.logEnabled) }
+    val logLevel = remember { mutableStateOf(getLogLevelIndex(GlobalVars.globalSettings.logLevel)) }
     val logOutputMode = remember { mutableStateOf(getLogOutputModeIndex(GlobalVars.globalSettings.logOutputMode)) }
 
     HazeScaffold(
@@ -664,21 +682,27 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 SectionCard {
-                    SwitchPreference(
-                        title = "日志输出",
-                        summary = "在 /data/system/Cirno/log 中输出 Cirno 日志",
-                        checked = logEnabled.value,
-                        onCheckedChange = { newValue ->
-                            logEnabled.value = newValue
-                            GlobalVars.globalSettings.logEnabled = newValue
+                    OverlayDropdownPreference(
+                        title = "日志分级",
+                        summary = "选择不输出、仅信息或完整调试日志",
+                        items = logLevelItems,
+                        selectedIndex = logLevel.value,
+                        onSelectedIndexChange = { selectedIndex ->
+                            logLevel.value = selectedIndex
+                            GlobalVars.globalSettings.logLevel = getLogLevelValue(selectedIndex)
                             ConfigManager.manager.saveConfigSU()
                         }
                     )
                     OverlayDropdownPreference(
                         title = "日志输出位置",
-                        summary = "选择 Cirno 日志输出到框架日志还是文件",
+                        summary = if (logLevel.value == 0) {
+                            "普通日志已关闭，但错误日志会同时输出到文件与框架"
+                        } else {
+                            "选择将日志输出至 LSPosed 框架或输出至 /data/system/Cirno/log 内的文件"
+                        },
                         items = logOutputModeItems,
                         selectedIndex = logOutputMode.value,
+                        enabled = logLevel.value != 0,
                         onSelectedIndexChange = { selectedIndex ->
                             logOutputMode.value = selectedIndex
                             GlobalVars.globalSettings.logOutputMode = getLogOutputModeValue(selectedIndex)

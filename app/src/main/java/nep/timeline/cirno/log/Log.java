@@ -54,8 +54,11 @@ public class Log {
         e(msg + " 失败: " + throwable.getMessage());
     }
 
-    private static boolean isLogEnabled() {
-        return GlobalVars.globalSettings != null && GlobalVars.globalSettings.logEnabled;
+    private static String getLogLevel() {
+        if (GlobalVars.globalSettings == null || GlobalVars.globalSettings.logLevel == null) {
+            return GlobalSettings.LOG_LEVEL_INFO;
+        }
+        return GlobalVars.globalSettings.logLevel;
     }
 
     private static String getLogOutputMode() {
@@ -65,16 +68,31 @@ public class Log {
         return GlobalVars.globalSettings.logOutputMode;
     }
 
-    public static void execute(String level, String msg) {
-        if (!isLogEnabled()) {
-            return;
+    private static boolean shouldLog(String level) {
+        String logLevel = getLogLevel();
+        if (GlobalSettings.LOG_LEVEL_DEBUG.equals(logLevel)) {
+            return "信息".equals(level) || "调试".equals(level);
         }
+        if (GlobalSettings.LOG_LEVEL_INFO.equals(logLevel)) {
+            return "信息".equals(level);
+        }
+        return false;
+    }
 
+    public static void execute(String level, String msg) {
         String formatted = simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg;
         Handlers.log.post(() -> {
             if ("错误".equals(level)) {
                 updateErrorFlag();
+                fileLog(formatted);
+                xposedLog(formatted);
+                return;
             }
+
+            if (!shouldLog(level)) {
+                return;
+            }
+
             if (GlobalSettings.LOG_OUTPUT_FRAMEWORK.equals(getLogOutputMode())) {
                 xposedLog(formatted);
             } else {
