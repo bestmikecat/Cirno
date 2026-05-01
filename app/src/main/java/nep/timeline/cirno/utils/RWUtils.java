@@ -55,7 +55,7 @@ public class RWUtils {
             writer.write(Integer.toString(value));
             return true;
         } catch (FileNotFoundException ignored) {
-            Log.e(path + " | 文件不存在, 此进程可能已死亡, 或者你的设备不支持cgroup v2");
+            Log.w(path + " | 文件不存在, 此进程可能已死亡, 或者你的设备不支持cgroup v2");
             return false;
         }
     }
