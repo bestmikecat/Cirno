@@ -28,7 +28,7 @@ import nep.timeline.cirno.configs.policy.Capability
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private data class CapabilitySpec(
@@ -193,7 +193,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                 )
                 SectionCard {
                     baseCapabilitySpecs.forEach { spec ->
-                        SuperSwitch(
+                        SwitchPreference(
                             title = spec.title,
                             summary = spec.summary,
                             checked = isEnabled(spec.capability),
@@ -212,7 +212,7 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                 )
                 SectionCard {
                     exemptionCapabilitySpecs.forEach { spec ->
-                        SuperSwitch(
+                        SwitchPreference(
                             title = spec.title,
                             summary = spec.summary,
                             checked = isEnabled(spec.capability),

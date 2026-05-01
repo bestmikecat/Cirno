@@ -70,7 +70,7 @@ import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
-import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.VerticalSplit
@@ -649,7 +649,7 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
                 SectionCard {
-                    SuperSwitch(
+                    SwitchPreference(
                         title = "日志输出",
                         summary = "在 /data/system/Cirno/log 中输出 Cirno 日志",
                         checked = logEnabled.value,

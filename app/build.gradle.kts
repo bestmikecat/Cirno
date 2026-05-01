@@ -9,7 +9,7 @@ plugins {
 
 configure<ApplicationExtension> {
     namespace = "nep.timeline.cirno"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 31
@@ -49,8 +49,9 @@ dependencies {
     implementation(libs.chrisbanes.haze)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation("top.yukonga.miuix.kmp:miuix:0.8.8")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.8")
+    implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.0")
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)
