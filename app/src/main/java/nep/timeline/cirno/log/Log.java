@@ -10,11 +10,11 @@ import java.util.Locale;
 
 import de.robv.android.xposed.XposedBridge;
 import nep.timeline.cirno.GlobalVars;
+import nep.timeline.cirno.configs.settings.GlobalSettings;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.RWUtils;
 
 public class Log {
-    private final static boolean logEnabled = GlobalVars.globalSettings.logEnabled;
     private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
     private final static File currentLog = new File(GlobalVars.LOG_DIR, "current.log");
 
@@ -54,15 +54,32 @@ public class Log {
         e(msg + " 失败: " + throwable.getMessage());
     }
 
+    private static boolean isLogEnabled() {
+        return GlobalVars.globalSettings != null && GlobalVars.globalSettings.logEnabled;
+    }
+
+    private static String getLogOutputMode() {
+        if (GlobalVars.globalSettings == null || GlobalVars.globalSettings.logOutputMode == null) {
+            return GlobalSettings.LOG_OUTPUT_FILE;
+        }
+        return GlobalVars.globalSettings.logOutputMode;
+    }
+
     public static void execute(String level, String msg) {
-        if (!logEnabled) {
+        if (!isLogEnabled()) {
             return;
         }
+
+        String formatted = simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg;
         Handlers.log.post(() -> {
             if ("错误".equals(level)) {
                 updateErrorFlag();
             }
-            fileLog(simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg);
+            if (GlobalSettings.LOG_OUTPUT_FRAMEWORK.equals(getLogOutputMode())) {
+                xposedLog(formatted);
+            } else {
+                fileLog(formatted);
+            }
         });
     }
 

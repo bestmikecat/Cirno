@@ -57,6 +57,7 @@ import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
+import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.utils.PKGUtils
 import nep.timeline.cirno.utils.RWUtils
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -71,6 +72,7 @@ import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
+import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Settings
@@ -97,6 +99,16 @@ private enum class ModuleStatus(
     INACTIVE("未激活", "Cirno 未激活，请检查模块状态", Color.Gray),
     ACTIVE("已激活", "Cirno 已激活，功能正常运行", Color(0xFF4CAF50)),
     ERROR("错误", "Cirno 发生错误，请将日志发送至开发者处理", Color(0xFFF44336))
+}
+
+private val logOutputModeItems = listOf("框架", "文件")
+
+private fun getLogOutputModeIndex(mode: String?): Int {
+    return if (mode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
+}
+
+private fun getLogOutputModeValue(index: Int): String {
+    return if (index == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
 }
 
 private val userInfoRegex = Regex("""UserInfo\{(\d+):""")
@@ -587,6 +599,7 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
 
     val freezeDelay = remember { mutableStateOf(GlobalVars.globalSettings.freezeDelay) }
     val logEnabled = remember { mutableStateOf(GlobalVars.globalSettings.logEnabled) }
+    val logOutputMode = remember { mutableStateOf(getLogOutputModeIndex(GlobalVars.globalSettings.logOutputMode)) }
 
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
@@ -658,6 +671,17 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                         onCheckedChange = { newValue ->
                             logEnabled.value = newValue
                             GlobalVars.globalSettings.logEnabled = newValue
+                            ConfigManager.manager.saveConfigSU()
+                        }
+                    )
+                    OverlayDropdownPreference(
+                        title = "日志输出位置",
+                        summary = "选择 Cirno 日志输出到框架日志还是文件",
+                        items = logOutputModeItems,
+                        selectedIndex = logOutputMode.value,
+                        onSelectedIndexChange = { selectedIndex ->
+                            logOutputMode.value = selectedIndex
+                            GlobalVars.globalSettings.logOutputMode = getLogOutputModeValue(selectedIndex)
                             ConfigManager.manager.saveConfigSU()
                         }
                     )

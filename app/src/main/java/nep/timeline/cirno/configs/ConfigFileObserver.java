@@ -21,7 +21,7 @@ public class ConfigFileObserver extends FileObserver {
     @Override
     public void onEvent(int event, String path) {
         if (path == null) return;
-        Log.i("配置监听：EVENT " + event + "Path " + path);
+        Log.d("配置监听：EVENT " + event + "Path " + path);
         Handler handler = Handlers.config;
         handler.removeCallbacksAndMessages(null);
         switch (event & FileObserver.ALL_EVENTS) {
@@ -31,14 +31,14 @@ public class ConfigFileObserver extends FileObserver {
                     ConfigManager.readConfig();
                     reInit();
                 }, 2000);
-                Log.i("配置目录被删除");
+                Log.d("配置目录被删除");
                 break;
             }
             case FileObserver.MODIFY:
             case FileObserver.MOVE_SELF: {
                 if (!TARGET_FILE.equals(path)) break;
                 handler.postDelayed(ConfigManager::readConfig, 2000);
-                Log.i("配置热更新：配置目录被修改");
+                Log.d("配置热更新：配置目录被修改");
             }
         }
     }

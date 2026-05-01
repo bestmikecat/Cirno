@@ -28,13 +28,13 @@ public class AudioHandler {
         if (event == PLAYER_STATE_STARTED) {
             if (appRecord.getAppState().addAudioInterface(interfaceId) && backgroundPlayAllowed) {
                 FreezerService.thaw(appRecord);
-                Log.i("🎵 音频播放: " + appRecord.getPackageNameWithUser());
+                Log.d("🎵 音频播放: " + appRecord.getPackageNameWithUser());
             }
         } else if (event == PLAYER_STATE_PAUSED || event == PLAYER_STATE_STOPPED ||
                 event == PLAYER_STATE_RELEASED || event == PLAYER_STATE_IDLE) {
 
             if (appRecord.getAppState().removeAudioInterface(interfaceId) && backgroundPlayAllowed) {
-                Log.i("🔇 音频停止: " + appRecord.getPackageNameWithUser());
+                Log.d("🔇 音频停止: " + appRecord.getPackageNameWithUser());
                 FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
             }
         }
