@@ -97,6 +97,13 @@ private data class SettingsUiState(
     val logOutputMode: Int
 )
 
+@Composable
+private fun FullScreenLoading() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        InfiniteProgressIndicator()
+    }
+}
+
 private enum class ModuleStatus(
     val label: String,
     val summary: String,
@@ -215,12 +222,57 @@ private fun getInstalledUserIdsByPackage(
 
 @Composable
 fun MainScreen() {
+    val context = LocalContext.current
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var refreshTick by remember { mutableStateOf(0) }
+    val isRootState by produceState<Boolean?>(initialValue = null) {
+        value = withContext(Dispatchers.IO) {
+            Shell.getShell().isRoot
+        }
+    }
     val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshTick) {
         value = withContext(Dispatchers.IO) {
             ConfigManager.manager.readConfigSU()
+        }
+    }
+    val hasErrorState by produceState<Boolean?>(initialValue = null, key1 = refreshTick, key2 = isRootState, key3 = readConfigState) {
+        value = withContext(Dispatchers.IO) {
+            if (isRootState != true || readConfigState != true) {
+                return@withContext false
+            }
+
+            val currentBootId = readRootText(GlobalVars.BOOT_ID_FILE)
+            val flaggedBootId = readRootText(GlobalVars.ERROR_FLAG_FILE)
+            currentBootId != null && currentBootId == flaggedBootId
+        }
+    }
+    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshTick, key2 = isRootState, key3 = readConfigState) {
+        value = withContext(Dispatchers.IO) {
+            if (readConfigState != true) {
+                return@withContext null
+            }
+
+            val appInfos = getInstalledApps(context)
+            val userIdsByPackage = getInstalledUserIdsByPackage(
+                appInfos = appInfos,
+                hasRoot = isRootState == true
+            )
+
+            appInfos
+                .map { appInfo ->
+                    val userId = PKGUtils.getUserId(appInfo.uid)
+                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
+                    val tagUserIds = (availableUserIds + 0).distinct().sorted()
+                    HomeAppItem(
+                        appInfo = appInfo,
+                        appName = appInfo.loadLabel(context.packageManager).toString(),
+                        userId = userId,
+                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds),
+                        availableUserIds = availableUserIds
+                    )
+                }
+                .sortedBy { it.appName.lowercase() }
         }
     }
 
@@ -258,27 +310,41 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
+        LaunchedEffect(isRootState) {
+            if (isRootState == false) {
+                Toast.makeText(
+                    context,
+                    "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        val settings = GlobalVars.globalSettings
+        if (isRootState == null || readConfigState == null || hasErrorState == null || apps == null || settings == null) {
+            FullScreenLoading()
+            return@HazeScaffold
+        }
+
+        val readyIsRootState: Boolean = isRootState!!
+        val readyApps: List<HomeAppItem> = apps!!
+        val readyHasErrorState: Boolean = hasErrorState!!
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            if (readConfigState == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    InfiniteProgressIndicator()
-                }
-                return@HorizontalPager
-            }
-
             when (page) {
                 0 -> HomeTab(
                     bottomInset = innerPadding.calculateBottomPadding(),
-                    refreshKey = refreshTick,
-                    readConfigState = readConfigState,
+                    isRootState = readyIsRootState,
+                    hasErrorState = readyHasErrorState,
+                    apps = readyApps,
                     onOpenApp = { intent -> appDetailLauncher.launch(intent) }
                 )
                 1 -> SettingScreen(
                     bottomInset = innerPadding.calculateBottomPadding(),
-                    readConfigState = readConfigState
+                    settings = settings
                 )
             }
         }
@@ -374,75 +440,19 @@ private fun AppSectionCard(
 @Composable
 private fun HomeTab(
     bottomInset: Dp = 0.dp,
-    refreshKey: Int = 0,
-    readConfigState: Boolean?,
+    isRootState: Boolean,
+    hasErrorState: Boolean,
+    apps: List<HomeAppItem>,
     onOpenApp: (Intent) -> Unit
 ) {
     val context = LocalContext.current
 
-    val isRootState by produceState<Boolean?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) {
-            Shell.getShell().isRoot
-        }
-    }
-
-    val hasErrorState by produceState(initialValue = false, key1 = refreshKey, key2 = isRootState, key3 = readConfigState) {
-        value = withContext(Dispatchers.IO) {
-            if (isRootState != true || readConfigState != true) {
-                return@withContext false
-            }
-
-            val currentBootId = readRootText(GlobalVars.BOOT_ID_FILE)
-            val flaggedBootId = readRootText(GlobalVars.ERROR_FLAG_FILE)
-            currentBootId != null && currentBootId == flaggedBootId
-        }
-    }
-
     var searchText by remember { mutableStateOf("") }
-
-    val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey, key2 = readConfigState) {
-        if (readConfigState == null) {
-            value = null
-            return@produceState
-        }
-        value = withContext(Dispatchers.IO) {
-            val appInfos = getInstalledApps(context)
-            val userIdsByPackage = getInstalledUserIdsByPackage(
-                appInfos = appInfos,
-                hasRoot = isRootState == true
-            )
-
-            appInfos
-                .map { appInfo ->
-                    val userId = PKGUtils.getUserId(appInfo.uid)
-                    val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
-                    val tagUserIds = (availableUserIds + 0).distinct().sorted()
-                    HomeAppItem(
-                        appInfo = appInfo,
-                        appName = appInfo.loadLabel(context.packageManager).toString(),
-                        userId = userId,
-                        tags = getSpecialTagsForUsers(appInfo.packageName, tagUserIds),
-                        availableUserIds = availableUserIds
-                    )
-                }
-                .sortedBy { it.appName.lowercase() }
-        }
-    }
-
-    LaunchedEffect(isRootState) {
-        if (isRootState == false) {
-            Toast.makeText(
-                context,
-                "检测到您未授予 Cirno Root 权限，UI 管理功能无法使用",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
 
     val filteredApps by remember(apps, searchText) {
         derivedStateOf {
             if (searchText.isBlank()) apps
-            else apps?.filter {
+            else apps.filter {
                 it.appName.contains(searchText, ignoreCase = true) ||
                     it.appInfo.packageName.contains(searchText, ignoreCase = true)
             }
@@ -451,7 +461,7 @@ private fun HomeTab(
 
     val partitionedApps by remember(filteredApps) {
         derivedStateOf {
-            filteredApps?.partition { it.tags.isNotEmpty() }
+            filteredApps.partition { it.tags.isNotEmpty() }
         }
     }
 
@@ -466,17 +476,9 @@ private fun HomeTab(
             }
         }
     ) { padding ->
-        val allFiltered = filteredApps
-        if (allFiltered == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                InfiniteProgressIndicator()
-            }
-            return@HazeScaffold
-        }
-
         val packageManager = context.packageManager
-        val canEnter = isRootState == true && readConfigState == true
-        val (specialApps, normalApps) = partitionedApps ?: (emptyList<HomeAppItem>() to emptyList())
+        val canEnter = isRootState
+        val (specialApps, normalApps) = partitionedApps
         val moduleStatus = when {
             !GlobalVars.isModuleActive -> ModuleStatus.INACTIVE
             hasErrorState -> ModuleStatus.ERROR
@@ -628,18 +630,9 @@ private fun HomeTab(
 }
 
 @Composable
-fun SettingScreen(bottomInset: Dp = 0.dp, readConfigState: Boolean?) {
+fun SettingScreen(bottomInset: Dp = 0.dp, settings: GlobalSettings) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
-
-    if (readConfigState != true) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            InfiniteProgressIndicator()
-        }
-        return
-    }
-
-    val settings = GlobalVars.globalSettings ?: return
 
     var uiState by remember(settings.freezeDelay, settings.logLevel, settings.logOutputMode) {
         mutableStateOf(
