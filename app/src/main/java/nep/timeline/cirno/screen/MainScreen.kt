@@ -86,6 +86,8 @@ private data class HomeAppItem(
     val availableUserIds: List<Int>
 )
 
+private val userInfoRegex = Regex("""UserInfo\{(\d+):""")
+
 private fun buildAppIntent(context: Context, app: HomeAppItem): Intent {
     return Intent().apply {
         setClass(context, ApplicationActivity::class.java)
@@ -116,6 +118,39 @@ private fun getInstalledApps(context: Context): List<ApplicationInfo> {
     return packageManager.getInstalledApplications(PackageManager.GET_META_DATA).filter {
         !CommonConstants.isWhitelistApps(it.packageName) && !PKGUtils.isSystemApp(it)
     }
+}
+
+private fun getInstalledUserIdsByPackage(
+    appInfos: List<ApplicationInfo>,
+    hasRoot: Boolean
+): Map<String, List<Int>> {
+    val userIdsByPackage = appInfos
+        .groupBy { it.packageName }
+        .mapValuesTo(linkedMapOf()) { entry ->
+            entry.value
+                .mapTo(linkedSetOf()) { PKGUtils.getUserId(it.uid) }
+        }
+
+    if (!hasRoot) {
+        return userIdsByPackage.mapValues { it.value.toList().sorted() }
+    }
+
+    val userIds = Shell.cmd("pm list users").exec().out
+        .mapNotNull { line -> userInfoRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull() }
+        .distinct()
+
+    userIds.forEach { userId ->
+        val result = Shell.cmd("pm list packages --user $userId").exec()
+        if (!result.isSuccess) return@forEach
+
+        result.out.forEach { line ->
+            val packageName = line.removePrefix("package:").trim()
+            val knownUserIds = userIdsByPackage[packageName] ?: return@forEach
+            knownUserIds.add(userId)
+        }
+    }
+
+    return userIdsByPackage.mapValues { it.value.toList().sorted() }
 }
 
 @Composable
@@ -287,22 +322,18 @@ private fun HomeTab(
             value = null
             return@produceState
         }
-        value = withContext(Dispatchers.Default) {
+        value = withContext(Dispatchers.IO) {
             val appInfos = getInstalledApps(context)
-            val userIdsByPackage = appInfos
-                .groupBy { it.packageName }
-                .mapValues { entry ->
-                    entry.value
-                        .map { PKGUtils.getUserId(it.uid) }
-                        .distinct()
-                        .sorted()
-                }
+            val userIdsByPackage = getInstalledUserIdsByPackage(
+                appInfos = appInfos,
+                hasRoot = isRootState == true
+            )
 
             appInfos
                 .map { appInfo ->
                     val userId = PKGUtils.getUserId(appInfo.uid)
-                    val tagUserIds = listOf(0, 999, userId).distinct()
                     val availableUserIds = userIdsByPackage[appInfo.packageName] ?: listOf(userId)
+                    val tagUserIds = (availableUserIds + 0).distinct().sorted()
                     HomeAppItem(
                         appInfo = appInfo,
                         appName = appInfo.loadLabel(context.packageManager).toString(),

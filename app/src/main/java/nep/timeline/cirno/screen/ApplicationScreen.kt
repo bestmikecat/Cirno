@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.topjohnwu.superuser.Shell
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
@@ -31,8 +30,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 private data class CapabilitySpec(
     val capability: Capability,
@@ -77,18 +74,8 @@ fun ApplicationScreen(activity: ApplicationActivity) {
         ?.sorted()
         ?.let { ids -> if (ids.contains(initialUserId)) ids else (ids + initialUserId).sorted() }
         ?: listOf(initialUserId)
-    val availableUserIds by produceState(initialValue = baseUserIds, key1 = packageName) {
-        val base = baseUserIds.toMutableSet()
-        if (Shell.getShell().isRoot) {
-            val hasClone = withContext(Dispatchers.IO) {
-                val result = Shell.cmd("pm path --user 999 $packageName").exec()
-                result.isSuccess && result.out.isNotEmpty()
-            }
-            if (hasClone) {
-                base.add(999)
-            }
-        }
-        value = base.toList().sorted()
+    val availableUserIds by produceState(initialValue = baseUserIds, key1 = baseUserIds) {
+        value = baseUserIds
     }
     var selectedUserId by remember { mutableStateOf(initialUserId) }
 
