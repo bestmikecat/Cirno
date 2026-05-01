@@ -3,6 +3,7 @@ package nep.timeline.cirno.screen
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.widget.Toast
@@ -581,6 +582,7 @@ private fun HomeTab(
 
 @Composable
 fun SettingScreen(bottomInset: Dp = 0.dp) {
+    val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
     val freezeDelay = remember { mutableStateOf(GlobalVars.globalSettings.freezeDelay) }
@@ -657,6 +659,60 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                             logEnabled.value = newValue
                             GlobalVars.globalSettings.logEnabled = newValue
                             ConfigManager.manager.saveConfigSU()
+                        }
+                    )
+                }
+            }
+
+            item {
+                SectionTitle(
+                    text = "关于 Cirno",
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                SectionCard {
+                    BasicComponent(
+                        title = "QQ群",
+                        summary = "点击加入 Cirno QQ 群",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://qm.qq.com/q/jPqwiLpHs6"))
+                            )
+                        }
+                    )
+                    BasicComponent(
+                        title = "Telegram 群",
+                        summary = "点击加入 Cirno Telegram 群",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/cirnoadk"))
+                            )
+                        }
+                    )
+                    BasicComponent(
+                        title = "GitHub",
+                        summary = "查看 Cirno 项目主页",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Adkimsm/Cirno"))
+                            )
+                        }
+                    )
+                    BasicComponent(
+                        title = "酷安",
+                        summary = "查看开发者酷安主页",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://www.coolapk.com/u/31449483"))
+                            )
+                        }
+                    )
+                    BasicComponent(
+                        title = "原项目",
+                        summary = "查看 Freezer-Team 的原始项目",
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/Freezer-Team/Cirno"))
+                            )
                         }
                     )
                 }
