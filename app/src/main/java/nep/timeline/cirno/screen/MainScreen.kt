@@ -91,6 +91,12 @@ private data class HomeAppItem(
     val availableUserIds: List<Int>
 )
 
+private data class SettingsUiState(
+    val freezeDelay: Int,
+    val logLevel: Int,
+    val logOutputMode: Int
+)
+
 private enum class ModuleStatus(
     val label: String,
     val summary: String,
@@ -212,6 +218,11 @@ fun MainScreen() {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
     var refreshTick by remember { mutableStateOf(0) }
+    val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshTick) {
+        value = withContext(Dispatchers.IO) {
+            ConfigManager.manager.readConfigSU()
+        }
+    }
 
     val appDetailLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -251,13 +262,24 @@ fun MainScreen() {
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
+            if (readConfigState == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    InfiniteProgressIndicator()
+                }
+                return@HorizontalPager
+            }
+
             when (page) {
                 0 -> HomeTab(
                     bottomInset = innerPadding.calculateBottomPadding(),
                     refreshKey = refreshTick,
+                    readConfigState = readConfigState,
                     onOpenApp = { intent -> appDetailLauncher.launch(intent) }
                 )
-                1 -> SettingScreen(bottomInset = innerPadding.calculateBottomPadding())
+                1 -> SettingScreen(
+                    bottomInset = innerPadding.calculateBottomPadding(),
+                    readConfigState = readConfigState
+                )
             }
         }
     }
@@ -353,6 +375,7 @@ private fun AppSectionCard(
 private fun HomeTab(
     bottomInset: Dp = 0.dp,
     refreshKey: Int = 0,
+    readConfigState: Boolean?,
     onOpenApp: (Intent) -> Unit
 ) {
     val context = LocalContext.current
@@ -360,12 +383,6 @@ private fun HomeTab(
     val isRootState by produceState<Boolean?>(initialValue = null) {
         value = withContext(Dispatchers.IO) {
             Shell.getShell().isRoot
-        }
-    }
-
-    val readConfigState by produceState<Boolean?>(initialValue = null, key1 = refreshKey) {
-        value = withContext(Dispatchers.IO) {
-            ConfigManager.manager.readConfigSU()
         }
     }
 
@@ -611,13 +628,36 @@ private fun HomeTab(
 }
 
 @Composable
-fun SettingScreen(bottomInset: Dp = 0.dp) {
+fun SettingScreen(bottomInset: Dp = 0.dp, readConfigState: Boolean?) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
 
-    val freezeDelay = remember { mutableStateOf(GlobalVars.globalSettings.freezeDelay) }
-    val logLevel = remember { mutableStateOf(getLogLevelIndex(GlobalVars.globalSettings.logLevel)) }
-    val logOutputMode = remember { mutableStateOf(getLogOutputModeIndex(GlobalVars.globalSettings.logOutputMode)) }
+    if (readConfigState != true) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            InfiniteProgressIndicator()
+        }
+        return
+    }
+
+    val settings = GlobalVars.globalSettings ?: return
+
+    var uiState by remember(settings.freezeDelay, settings.logLevel, settings.logOutputMode) {
+        mutableStateOf(
+            SettingsUiState(
+                freezeDelay = settings.freezeDelay,
+                logLevel = getLogLevelIndex(settings.logLevel),
+                logOutputMode = getLogOutputModeIndex(settings.logOutputMode)
+            )
+        )
+    }
+
+    fun saveSettings(nextState: SettingsUiState) {
+        uiState = nextState
+        settings.freezeDelay = nextState.freezeDelay
+        settings.logLevel = getLogLevelValue(nextState.logLevel)
+        settings.logOutputMode = getLogOutputModeValue(nextState.logOutputMode)
+        ConfigManager.manager.saveConfigSU()
+    }
 
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
@@ -649,18 +689,16 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                         summary = "应用进入后台后延迟冻结的时间，单位秒",
                         endActions = {
                             Text(
-                                text = "${freezeDelay.value}",
+                                text = "${uiState.freezeDelay}",
                                 fontSize = MiuixTheme.textStyles.body2.fontSize,
                                 color = MiuixTheme.colorScheme.onSurfaceVariantActions,
                             )
                         },
                         bottomAction = {
                             Slider(
-                                value = freezeDelay.value.toFloat(),
+                                value = uiState.freezeDelay.toFloat(),
                                 onValueChange = {
-                                    freezeDelay.value = it.toInt()
-                                    GlobalVars.globalSettings.freezeDelay = freezeDelay.value
-                                    ConfigManager.manager.saveConfigSU()
+                                    saveSettings(uiState.copy(freezeDelay = it.toInt()))
                                 },
                                 valueRange = 0f..10f,
                                 steps = 9,
@@ -686,27 +724,23 @@ fun SettingScreen(bottomInset: Dp = 0.dp) {
                         title = "日志分级",
                         summary = "选择不输出、仅信息或完整调试日志",
                         items = logLevelItems,
-                        selectedIndex = logLevel.value,
+                        selectedIndex = uiState.logLevel,
                         onSelectedIndexChange = { selectedIndex ->
-                            logLevel.value = selectedIndex
-                            GlobalVars.globalSettings.logLevel = getLogLevelValue(selectedIndex)
-                            ConfigManager.manager.saveConfigSU()
+                            saveSettings(uiState.copy(logLevel = selectedIndex))
                         }
                     )
                     OverlayDropdownPreference(
                         title = "日志输出位置",
-                        summary = if (logLevel.value == 0) {
+                        summary = if (uiState.logLevel == 0) {
                             "普通日志已关闭，但错误日志会同时输出到文件与框架"
                         } else {
                             "选择将日志输出至 LSPosed 框架或输出至 /data/system/Cirno/log 内的文件"
                         },
                         items = logOutputModeItems,
-                        selectedIndex = logOutputMode.value,
-                        enabled = logLevel.value != 0,
+                        selectedIndex = uiState.logOutputMode,
+                        enabled = uiState.logLevel != 0,
                         onSelectedIndexChange = { selectedIndex ->
-                            logOutputMode.value = selectedIndex
-                            GlobalVars.globalSettings.logOutputMode = getLogOutputModeValue(selectedIndex)
-                            ConfigManager.manager.saveConfigSU()
+                            saveSettings(uiState.copy(logOutputMode = selectedIndex))
                         }
                     )
                 }
