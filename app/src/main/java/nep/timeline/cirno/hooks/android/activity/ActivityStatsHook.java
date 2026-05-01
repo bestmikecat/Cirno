@@ -73,7 +73,7 @@ public class ActivityStatsHook extends MethodHook {
                 if (appRecord.getAppState().getActivities().isEmpty()) {
                     if (appRecord.getAppState().setVisible(false)) {
                         Log.d(appRecord.getPackageNameWithUser() + " 进入后台");
-                        FreezerHandler.sendFreezeMessage(appRecord, 3000);
+                        FreezerHandler.sendFreezeMessage(appRecord);
                     }
                 } else if (appRecord.getAppState().setVisible(true)) {
                     Log.d(appRecord.getPackageNameWithUser() + " 进入前台");

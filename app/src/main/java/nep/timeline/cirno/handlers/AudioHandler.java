@@ -46,7 +46,7 @@ public class AudioHandler {
             if (set.isEmpty() && backgroundPlayAllowed) {
                 appRecord.getAppState().setAudio(false);
                 Log.i("🔇 音频停止: " + appRecord.getPackageNameWithUser());
-                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord, 6000);
+                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
             }
         }
     }

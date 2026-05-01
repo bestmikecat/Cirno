@@ -118,6 +118,6 @@ public class FreezerService {
             Log.i(appRecord.getPackageNameWithUser() + " " + reason);
 
         thaw(appRecord);
-        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord, interval);
+        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
     }
 }

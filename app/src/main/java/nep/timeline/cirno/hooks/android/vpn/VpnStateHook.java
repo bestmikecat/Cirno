@@ -54,7 +54,7 @@ public class VpnStateHook extends MethodHook {
 
                     if (("DISCONNECTED".equals(state) || "FAILED".equals(state)) && appRecord.getAppState().setVpn(false)) {
                         Log.d(appRecord.getPackageNameWithUser() + " 从VPN断开连接");
-                        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord, 3000);
+                        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
                     }
                 }
             }

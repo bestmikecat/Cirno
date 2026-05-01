@@ -22,7 +22,7 @@ public class RecordingHandler {
         if (set.isEmpty()) {
             if (appRecord.getAppState().setRecording(false)) {
                 Log.d("应用 " + appRecord.getPackageNameWithUser() + " 停止录音");
-                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord, 3000);
+                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
             }
         } else if (appRecord.getAppState().setRecording(true)) {
             Log.d("应用 " + appRecord.getPackageNameWithUser() + " 开始录音");

@@ -24,7 +24,7 @@ public class ProcessService {
             appRecord.getProcessRecords().add(processRecord);
         }
 
-        FreezerHandler.sendFreezeMessage(appRecord, 3000);
+        FreezerHandler.sendFreezeMessage(appRecord);
     }
 
     public static void removeProcessRecord(ProcessRecord processRecord) {

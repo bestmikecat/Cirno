@@ -138,7 +138,7 @@ public class InputMethodManagerService extends MethodHook {
                                 FreezerService.thaw(appRecord);
                             }
                             if (oldApp != null) {
-                                FreezerHandler.sendFreezeMessage(oldApp, 3000);
+                                FreezerHandler.sendFreezeMessage(oldApp);
                             }
                         }
                     }
