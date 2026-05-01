@@ -18,6 +18,7 @@ import nep.timeline.cirno.hooks.android.binder.MilletBinderTransHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastIntentHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastSkipHook;
+import nep.timeline.cirno.hooks.android.network.NetworkManagerHook;
 import nep.timeline.cirno.hooks.android.input.InputMethodManagerService;
 import nep.timeline.cirno.hooks.android.intent.PendingIntentHook;
 import nep.timeline.cirno.hooks.android.location.ListenerRegisterHook;
@@ -57,7 +58,7 @@ public class AndroidHooks {
         // InputMethod
         new InputMethodManagerService(classLoader);
         // Network
-        NetworkManagementService.setInstance(classLoader);
+        new NetworkManagerHook(classLoader);
         // Alarms
         new AlarmManagerService(classLoader);
         // Broadcast
