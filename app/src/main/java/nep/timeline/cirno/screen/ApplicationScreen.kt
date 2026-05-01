@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,11 +25,9 @@ import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.configs.policy.Capability
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -81,8 +81,6 @@ fun ApplicationScreen(activity: ApplicationActivity) {
 
     val context = LocalContext.current
 
-    val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
-
     val allSpecs = remember { baseCapabilitySpecs + exemptionCapabilitySpecs }
     val capabilityStates = remember {
         mutableStateOf(allSpecs.associate { it.capability to false })
@@ -134,12 +132,11 @@ fun ApplicationScreen(activity: ApplicationActivity) {
     HazeScaffold(
         topBar = { hazeState, hazeStyle ->
             HazeTopBar(hazeState = hazeState, hazeStyle = hazeStyle) {
-                TopAppBar(
+                SmallTopAppBar(
                     title = appName,
                     largeTitle = appName + (if (selectedUserId == 0) "" else "  #$selectedUserId"),
                     color = Color.Transparent,
-                    modifier = Modifier.fillMaxWidth(),
-                    scrollBehavior = scrollBehavior
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -168,7 +165,8 @@ fun ApplicationScreen(activity: ApplicationActivity) {
                                 Surface(
                                     modifier = Modifier
                                         .padding(end = 8.dp)
-                                        .clickable { selectedUserId = userId },
+                                        .clickable { selectedUserId = userId }
+                                        .clip(RoundedCornerShape(3.dp)),
                                     color = if (selected) MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     else MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f)
                                 ) {
