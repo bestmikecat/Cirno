@@ -50,12 +50,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.topjohnwu.superuser.Shell
+import com.topjohnwu.superuser.io.SuFile
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.utils.PKGUtils
+import nep.timeline.cirno.utils.RWUtils
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -86,7 +88,28 @@ private data class HomeAppItem(
     val availableUserIds: List<Int>
 )
 
+private enum class ModuleStatus(
+    val label: String,
+    val summary: String,
+    val color: Color
+) {
+    INACTIVE("未激活", "Cirno 未激活，请检查模块状态", Color.Gray),
+    ACTIVE("已激活", "Cirno 已激活，功能正常运行", Color(0xFF4CAF50)),
+    ERROR("错误", "Cirno 发生错误，请将日志发送至开发者处理", Color(0xFFF44336))
+}
+
 private val userInfoRegex = Regex("""UserInfo\{(\d+):""")
+
+private fun readRootText(path: String): String? {
+    val file = SuFile(path)
+    if (!file.exists()) {
+        return null
+    }
+
+    return RWUtils.readConfig(file)
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+}
 
 private fun buildAppIntent(context: Context, app: HomeAppItem): Intent {
     return Intent().apply {
@@ -315,6 +338,18 @@ private fun HomeTab(
         }
     }
 
+    val hasErrorState by produceState(initialValue = false, key1 = refreshKey, key2 = isRootState, key3 = readConfigState) {
+        value = withContext(Dispatchers.IO) {
+            if (isRootState != true || readConfigState != true || GlobalVars.globalSettings?.logEnabled != true) {
+                return@withContext false
+            }
+
+            val currentBootId = readRootText(GlobalVars.BOOT_ID_FILE)
+            val flaggedBootId = readRootText(GlobalVars.ERROR_FLAG_FILE)
+            currentBootId != null && currentBootId == flaggedBootId
+        }
+    }
+
     var searchText by remember { mutableStateOf("") }
 
     val apps by produceState<List<HomeAppItem>?>(initialValue = null, key1 = refreshKey, key2 = readConfigState) {
@@ -394,6 +429,11 @@ private fun HomeTab(
         val packageManager = context.packageManager
         val canEnter = isRootState == true && readConfigState == true
         val (specialApps, normalApps) = partitionedApps ?: (emptyList<HomeAppItem>() to emptyList())
+        val moduleStatus = when {
+            !GlobalVars.isModuleActive -> ModuleStatus.INACTIVE
+            hasErrorState -> ModuleStatus.ERROR
+            else -> ModuleStatus.ACTIVE
+        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -456,7 +496,7 @@ private fun HomeTab(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (GlobalVars.isModuleActive) "Cirno 已激活，功能正常运行" else "Cirno 未激活，请检查模块状态",
+                                text = moduleStatus.summary,
                                 style = MiuixTheme.textStyles.footnote1,
                                 color = MiuixTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
@@ -464,7 +504,7 @@ private fun HomeTab(
                         Box(
                             modifier = Modifier
                                 .background(
-                                    color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50).copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f),
+                                    color = moduleStatus.color.copy(alpha = 0.15f),
                                     shape = RoundedCornerShape(20.dp)
                                 )
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -474,15 +514,15 @@ private fun HomeTab(
                                     modifier = Modifier
                                         .size(7.dp)
                                         .background(
-                                            color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50) else Color.Gray,
+                                            color = moduleStatus.color,
                                             shape = CircleShape
                                         )
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
-                                    text = if (GlobalVars.isModuleActive) "已激活" else "未激活",
+                                    text = moduleStatus.label,
                                     style = MiuixTheme.textStyles.footnote1,
-                                    color = if (GlobalVars.isModuleActive) Color(0xFF4CAF50) else Color.Gray
+                                    color = moduleStatus.color
                                 )
                             }
                         }

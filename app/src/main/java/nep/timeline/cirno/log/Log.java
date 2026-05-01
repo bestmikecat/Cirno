@@ -58,7 +58,12 @@ public class Log {
         if (!logEnabled) {
             return;
         }
-        Handlers.log.post(() -> fileLog(simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg));
+        Handlers.log.post(() -> {
+            if ("错误".equals(level)) {
+                updateErrorFlag();
+            }
+            fileLog(simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg);
+        });
     }
 
     public static void xposedLog(String msg) {
@@ -70,6 +75,17 @@ public class Log {
             RWUtils.writeStringToFile(currentLog, msg, true);
         } catch (IOException e) {
             xposedLog("Log write failed: " + e.getMessage() + " msg: " + msg);
+        }
+    }
+
+    private static void updateErrorFlag() {
+        try {
+            String bootId = RWUtils.readConfig(GlobalVars.BOOT_ID_FILE).trim();
+            if (!bootId.isEmpty()) {
+                RWUtils.writeStringToFile(new File(GlobalVars.ERROR_FLAG_FILE), bootId, false);
+            }
+        } catch (IOException e) {
+            xposedLog("Error flag write failed: " + e.getMessage());
         }
     }
 }
