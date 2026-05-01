@@ -55,7 +55,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           CURRENT_SHA: ${{ github.sha }}
-          WORKFLOW_NAME: "ci-build"
+          WORKFLOW_NAME: "Android CI"
         run: |
           WORKFLOW_ID=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO/actions/workflows" \
@@ -66,7 +66,6 @@ jobs:
             | jq -r '.workflow_runs[0].head_sha')
           
           if [ -z "$LAST_SUCCESS_SHA" ]; then
-            echo "未找到成功运行的Action，将使用当前提交作为基提交"
             LAST_SUCCESS_SHA="$CURRENT_SHA"
           fi
           
