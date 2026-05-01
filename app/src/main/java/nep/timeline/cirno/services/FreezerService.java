@@ -30,17 +30,6 @@ public class FreezerService {
                 appRecord.getUserId()
         );
 
-        // 如果后台播放开关关闭，忽略音频播放状态
-        if (!backgroundPlayAllowed && appRecord.getAppState().isAudio()) {
-            return;
-        }
-
-        // 如果位置使用开关关闭，忽略位置使用状态
-        if (!locationUseAllowed && appRecord.getAppState().isLocation()) {
-            return;
-        }
-
-        // 原有的其他条件检查（只有当开关启用时才检查）
         if (backgroundPlayAllowed && appRecord.getAppState().isAudio()) {
             return;
         }

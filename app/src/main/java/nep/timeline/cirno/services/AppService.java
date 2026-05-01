@@ -28,7 +28,9 @@ public class AppService {
         if (applicationInfo == null)
             return null;
 
-        return appRecords.put(packageName, new AppRecord(applicationInfo));
+        AppRecord appRecord = new AppRecord(applicationInfo);
+        appRecords.put(packageName, appRecord);
+        return appRecord;
     }
 
     public static List<AppRecord> getByUid(int uid) {

@@ -38,11 +38,11 @@ public class AppState {
         return true;
     }
 
-    // ✅ 修改：setAudio 总是返回 true（这样调用者知道已经设置过了）
     public synchronized boolean setAudio(boolean value) {
-        boolean changed = (audio != value);
+        if (audio == value)
+            return false;
         audio = value;
-        return true;  // ✅ 总是返回 true，表示已处理
+        return true;
     }
 
     public synchronized boolean setRecording(boolean value) {
