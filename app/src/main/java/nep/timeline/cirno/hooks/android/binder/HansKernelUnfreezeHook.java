@@ -8,6 +8,9 @@ import nep.timeline.cirno.services.FreezerService;
 import nep.timeline.cirno.utils.SystemChecker;
 
 public class HansKernelUnfreezeHook extends MethodHook {
+    private static final int BINDER_SYNC_TYPE = 1;
+    private static final long TEMP_UNFREEZE_INTERVAL_MS = 3000L;
+
     public HansKernelUnfreezeHook(ClassLoader classLoader) {
         super(classLoader);
     }
@@ -38,11 +41,11 @@ public class HansKernelUnfreezeHook extends MethodHook {
                 }
 
                 int type = (int) param.args[0];
-                if (type != 1) // Sync binder
+                if (type != BINDER_SYNC_TYPE)
                     return;
                 int target = (int) param.args[4];
 
-                FreezerService.temporaryUnfreezeIfNeed(target, "Binder", 3000);
+                FreezerService.temporaryUnfreezeIfNeed(target, "Binder", TEMP_UNFREEZE_INTERVAL_MS);
             }
         };
     }

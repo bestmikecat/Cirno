@@ -83,8 +83,7 @@ public class FreezerService {
 
     public static void temporaryUnfreezeIfNeed(int uid, String reason, long interval) {
         List<AppRecord> appRecords = AppService.getByUid(uid);
-
-        if (appRecords == null || appRecords.isEmpty())
+        if (appRecords.isEmpty())
             return;
 
         for (AppRecord appRecord : appRecords) {

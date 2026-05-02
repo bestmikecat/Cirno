@@ -27,6 +27,7 @@ public class BinderService {
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static final int NETLINK_UNIT_DEFAULT = 22;
     private static final int NETLINK_UNIT_MAX = 26;
+    private static final long TEMP_UNFREEZE_INTERVAL_MS = 3000L;
     public static boolean received = false;
     private static boolean isRunning = false;
 
@@ -48,7 +49,7 @@ public class BinderService {
         executorService.execute(() -> {
             try {
                 int netlinkUnit;
-                int configNetlinkUnit = GlobalVars.globalSettings.netlinkUnit;
+                int configNetlinkUnit = GlobalVars.globalSettings == null ? 0 : GlobalVars.globalSettings.netlinkUnit;
                 if (configNetlinkUnit >= NETLINK_UNIT_DEFAULT && configNetlinkUnit <= NETLINK_UNIT_MAX) {
                     netlinkUnit = configNetlinkUnit;
                 } else {
@@ -96,18 +97,18 @@ public class BinderService {
                                             return;
 
                                         List<AppRecord> appRecords = AppService.getByUid(targetUid);
-                                        if (appRecords == null || appRecords.isEmpty())
+                                        if (appRecords.isEmpty())
                                             return;
                                         for (AppRecord appRecord : appRecords) {
                                             if (appRecord == null)
                                                 continue;
 
-                                            FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Binder(" + (oneway == 1 ? "ASYNC" : "SYNC") + "), 类型: " + bindertype, 3000);
+                                            FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Binder(" + (oneway == 1 ? "ASYNC" : "SYNC") + "), 类型: " + bindertype, TEMP_UNFREEZE_INTERVAL_MS);
                                         }
                                     } else if (type.equals("Network")) {
                                         int targetUid = StringUtils.StringToInteger(params.get("target"));
                                         List<AppRecord> appRecords = AppService.getByUid(targetUid);
-                                        if (appRecords == null || appRecords.isEmpty())
+                                        if (appRecords.isEmpty())
                                             return;
                                         for (AppRecord appRecord : appRecords) {
                                             if (appRecord == null)
@@ -120,7 +121,7 @@ public class BinderService {
                                             if (!networkMessageAllowed)
                                                 continue;
 
-                                            FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Network", 3000);
+                                            FreezerService.temporaryUnfreezeIfNeed(appRecord, "内核Network", TEMP_UNFREEZE_INTERVAL_MS);
                                         }
                                     }
                                 });

@@ -10,6 +10,8 @@ import nep.timeline.cirno.services.FreezerService;
 import nep.timeline.cirno.utils.SystemChecker;
 
 public class MilletBinderTransHook extends MethodHook {
+    private static final long TEMP_UNFREEZE_INTERVAL_MS = 3000L;
+
     public MilletBinderTransHook(ClassLoader classLoader) {
         super(classLoader);
     }
@@ -47,7 +49,7 @@ public class MilletBinderTransHook extends MethodHook {
 
                 int dstUid = (int) param.args[0];
 
-                FreezerService.temporaryUnfreezeIfNeed(dstUid, "Binder", 3000);
+                FreezerService.temporaryUnfreezeIfNeed(dstUid, "Binder", TEMP_UNFREEZE_INTERVAL_MS);
             }
         };
     }

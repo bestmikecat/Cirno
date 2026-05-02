@@ -4,6 +4,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Process;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,23 +40,23 @@ public class AppService {
                 putAppToCacheByUid(uid);
             List<AppRecord> records = UID_RECORD_MAP.get(uid);
             if (records == null)
-                return new ArrayList<>();
+                return Collections.emptyList();
             return records;
         } catch (Throwable ignored) {
 
         }
-        return null;
+        return Collections.emptyList();
     }
 
     private static synchronized void putAppToCacheByUid(int uid) {
         if (uid <= Process.SYSTEM_UID) {
-            UID_RECORD_MAP.put(uid, null);
+            UID_RECORD_MAP.put(uid, Collections.emptyList());
             return;
         }
 
         String[] keys = ActivityManagerService.getPackagesForUid(uid);
         if (keys == null || keys.length == 0) {
-            UID_RECORD_MAP.put(uid, null);
+            UID_RECORD_MAP.put(uid, Collections.emptyList());
             return;
         }
 

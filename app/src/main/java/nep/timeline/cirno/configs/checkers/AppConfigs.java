@@ -44,10 +44,16 @@ public class AppConfigs {
     }
 
     public static boolean hasCapability(String pkg, int userId, Capability capability) {
+        if (pkg == null || pkg.isEmpty()) {
+            return false;
+        }
         return getCapabilityApps(capability).contains(PolicyKey.of(pkg, userId));
     }
 
     public static void setCapability(String pkg, int userId, Capability capability, boolean enabled) {
+        if (pkg == null || pkg.isEmpty()) {
+            return;
+        }
         Set<String> apps = getCapabilityApps(capability);
         String key = PolicyKey.of(pkg, userId);
         if (enabled) {
@@ -61,31 +67,63 @@ public class AppConfigs {
         return hasCapability(pkg, userId, Capability.WHITE_LIST);
     }
 
+    public static boolean isWhiteApp(String pkg) {
+        return isWhiteApp(pkg, 0);
+    }
+
     public static boolean isBackgroundPlayAllowed(String pkg, int userId) {
         return hasCapability(pkg, userId, Capability.ALLOW_BACKGROUND_AUDIO);
+    }
+
+    public static boolean isBackgroundPlayAllowed(String pkg) {
+        return isBackgroundPlayAllowed(pkg, 0);
     }
 
     public static boolean isLocationUseAllowed(String pkg, int userId) {
         return hasCapability(pkg, userId, Capability.ALLOW_LOCATION);
     }
 
+    public static boolean isLocationUseAllowed(String pkg) {
+        return isLocationUseAllowed(pkg, 0);
+    }
+
     public static boolean isNetworkMessageAllowed(String pkg, int userId) {
         return hasCapability(pkg, userId, Capability.ALLOW_NETWORK_MESSAGE);
+    }
+
+    public static boolean isNetworkMessageAllowed(String pkg) {
+        return isNetworkMessageAllowed(pkg, 0);
     }
 
     public static void setWhiteApp(String pkg, int userId, boolean enabled) {
         setCapability(pkg, userId, Capability.WHITE_LIST, enabled);
     }
 
+    public static void setWhiteApp(String pkg, boolean enabled) {
+        setWhiteApp(pkg, 0, enabled);
+    }
+
     public static void setBackgroundPlayAllowed(String pkg, int userId, boolean allowed) {
         setCapability(pkg, userId, Capability.ALLOW_BACKGROUND_AUDIO, allowed);
+    }
+
+    public static void setBackgroundPlayAllowed(String pkg, boolean allowed) {
+        setBackgroundPlayAllowed(pkg, 0, allowed);
     }
 
     public static void setLocationUseAllowed(String pkg, int userId, boolean allowed) {
         setCapability(pkg, userId, Capability.ALLOW_LOCATION, allowed);
     }
 
+    public static void setLocationUseAllowed(String pkg, boolean allowed) {
+        setLocationUseAllowed(pkg, 0, allowed);
+    }
+
     public static void setNetworkMessageAllowed(String pkg, int userId, boolean allowed) {
         setCapability(pkg, userId, Capability.ALLOW_NETWORK_MESSAGE, allowed);
+    }
+
+    public static void setNetworkMessageAllowed(String pkg, boolean allowed) {
+        setNetworkMessageAllowed(pkg, 0, allowed);
     }
 }
