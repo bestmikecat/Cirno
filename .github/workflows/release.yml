@@ -61,7 +61,7 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          TG_CHAT_THREAD: ${{ secrets.TG_CHAT_THREAD }}
+          TG_CHAT_THREAD: ${{ secrets.TG_CHAT_RELEASE_THREAD }}
           RELEASE_BODY: ${{ github.event.release.body }}
           VERSION: ${{ steps.rename.outputs.version }}
         run: |
