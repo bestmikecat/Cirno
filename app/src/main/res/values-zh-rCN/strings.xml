@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name" translatable="false">Cirno</string>
+  <string name="app_description">第三方 Android 冻结器，在后台冻结应用以提升设备流畅度</string>
+  <string name="search">搜索</string>
+  <string name="app_info">应用信息</string>
+  <string name="frozen_info">冻结信息</string>
+  <string name="white_app">白名单</string>
+  <string name="black_app">黑名单</string>
+  <string name="direct_app">强制冻结</string>
+  <string name="background_play">后台播放</string>
+  <string name="location_check">后台定位</string>
+  <string name="other_config">其他配置</string>
+  <string name="not_active">此模块尚未被 Xposed 激活！</string>
+  <string name="app_list">应用列表</string>
+  <string name="main">主页</string>
+  <string name="settings">设置</string>
+  <string name="interval_freeze_delay">冻结延迟</string>
+  <string name="log_print">日志输出</string>
+  <string name="log_file">文件</string>
+  <string name="log_xposed">Xposed</string>
+  <string name="log_level">日志级别</string>
+  <string name="log_close">关闭</string>
+  <string name="log_info">信息</string>
+  <string name="log_debug">调试</string>
+  <string name="foreground_service">前台服务</string>
+  <string name="netreceive_unfreeze">网络解冻</string>
+  <string name="battery_opt">电池优化</string>
+  <string name="version">版本</string>
+  <string name="xposed_version">Xposed 版本</string>
+  <string name="android_version">Android 版本</string>
+  <string name="working">工作中</string>
+  <string name="crying">哭泣</string>
+  <string name="fools_day">Cirno 将于今晚停止更新，届时模块也将停止工作！</string>
+  <string name="cancel">取消</string>
+  <string name="process">进程</string>
+  <string name="is_frozen">是否冻结</string>
+  <string name="freezing">冻结中</string>
+  <string name="frozen_wrong">冻结错误</string>
+  <string name="system_not_flagged_but_frozen">Cirno 已正确执行冻结操作，但系统尚未处理该状态</string>
+  <string name="about">关于</string>
+  <string name="home_about_freezer">关于 Cirno</string>
+  <string name="home_click_to_learn_freezer">了解如何使用 Cirno 并开发脚本。</string>
+  <string name="system_fingerprint">系统指纹</string>
+  <string name="hook_type">Hook 类型</string>
+  <string name="unknown">未知</string>
+  <string name="manager_version">管理器版本</string>
+  <string name="error">错误</string>
+  <string name="internal_error">Cirno 遇到内部错误，请检查日志！</string>
+  <string name="navigation_style">导航样式</string>
+  <string name="blur_ui">模糊</string>
+  <string name="blur_ui_desc">为顶部栏和导航栏启用模糊效果</string>
+  <string name="normal">默认</string>
+  <string name="floating">悬浮</string>
+  <string name="apple_floating">iOS风格悬浮</string>
+  <string name="not_implemented_yet">未实现</string>
+  <string-array name="dropdownOptions">
+    <item>用户应用</item>
+    <item>系统应用</item>
+  </string-array>
+</resources>
