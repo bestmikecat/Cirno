@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "35.0.0"
 
-      - name: 重命名 APK
+      - name: rename APK
         id: rename
         run: |
           VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || echo "unknown")
@@ -47,7 +47,17 @@ jobs:
           echo "new_file=$NEW_NAME" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: 发送到 Telegram
+      - name: Upload apk to Release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.rename.outputs.new_file }}
+          asset_name: ${{ steps.rename.outputs.new_file }}
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Send to Telegram
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
