@@ -23,7 +23,11 @@ public class Log {
     }
 
     static {
-        i("冻结延时: " + 1000 * GlobalVars.globalSettings.freezeDelay + "ms");
+        int freezeDelay = 5;
+        if (GlobalVars.globalSettings != null) {
+            freezeDelay = GlobalVars.globalSettings.freezeDelay;
+        }
+        i("冻结延时: " + 1000 * freezeDelay + "ms");
     }
 
     public static void d(String msg) {

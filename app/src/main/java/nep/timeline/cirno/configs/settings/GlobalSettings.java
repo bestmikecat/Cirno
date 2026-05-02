@@ -11,4 +11,8 @@ public class GlobalSettings {
     public int freezeDelay = 5;
     public String logLevel = LOG_LEVEL_INFO;
     public String logOutputMode = LOG_OUTPUT_FILE;
+
+    public int mainType;
+    public int navigationStyle;
+    public boolean blurUI = true;
 }

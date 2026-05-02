@@ -1,4 +1,7 @@
 import com.android.build.api.dsl.ApplicationExtension
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import org.gradle.kotlin.dsl.configure
 
 plugins {
@@ -20,13 +23,23 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val freezerType = "Cirno"
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            val buildTime = SimpleDateFormat("MMddHHmm", Locale.getDefault()).format(Date())
+            buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+            buildConfigField("String", "FREEZER_TYPE", "\"$freezerType\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            val buildTime = SimpleDateFormat("MMddHHmm", Locale.getDefault()).format(Date())
+            buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+            buildConfigField("String", "FREEZER_TYPE", "\"$freezerType\"")
         }
     }
     compileOptions {
@@ -47,11 +60,20 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     implementation(libs.chrisbanes.haze)
+    implementation("androidx.navigation3:navigation3-runtime:1.1.1")
+    implementation("androidx.navigation3:navigation3-runtime-android:1.1.1")
+    implementation("androidx.navigationevent:navigationevent-compose:1.0.0-alpha10")
+    implementation("io.github.kyant0:backdrop:1.0.6")
+    implementation("com.google.accompanist:accompanist-drawablepainter:0.37.3")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("com.kongzue.dialogx:DialogX:0.0.49")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-navigation3-ui:0.9.0")
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)

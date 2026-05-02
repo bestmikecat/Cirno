@@ -1,7 +1,61 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Cirno</string>
-    <string name="package_name" translatable="false">nep.timeline.cirno</string>
-    <string name="app_description">Third-party Android Freezer, Frozen applications in the background to improve device smoothness</string>
-    <string name="navigationeventdispatcher">NavigationEventDispatcher</string>
+  <string name="app_name" translatable="false">Cirno</string>
+  <string name="app_description">Third-party Android Freezer, Frozen applications in the background to improve device smoothness</string>
+  <string name="search">Search</string>
+  <string name="app_info">App Info</string>
+  <string name="frozen_info">Frozen Info</string>
+  <string name="white_app">Whitelist</string>
+  <string name="black_app">Blacklist</string>
+  <string name="direct_app">Force freeze</string>
+  <string name="background_play">Background play</string>
+  <string name="location_check">Location Check</string>
+  <string name="other_config">Other Config</string>
+  <string name="not_active">This module has not been activated by Xposed!</string>
+  <string name="app_list">App list</string>
+  <string name="main">Main</string>
+  <string name="settings">Settings</string>
+  <string name="interval_freeze_delay">Interval freeze delay</string>
+  <string name="log_print">Log Print</string>
+  <string name="log_file">File</string>
+  <string name="log_xposed">Xposed</string>
+  <string name="log_level">Log Level</string>
+  <string name="log_close">Close</string>
+  <string name="log_info">Info</string>
+  <string name="log_debug">Debug</string>
+  <string name="foreground_service">Foreground service</string>
+  <string name="netreceive_unfreeze">NetReceive unfreeze</string>
+  <string name="battery_opt">Battery Opt</string>
+  <string name="version">Version</string>
+  <string name="xposed_version">Xposed Version</string>
+  <string name="android_version">Android Version</string>
+  <string name="working">Working</string>
+  <string name="crying">Crying</string>
+  <string name="fools_day">Cirno will stop updating tonight, and the module will stop working at that time!</string>
+  <string name="cancel">Cancel</string>
+  <string name="process">Process</string>
+  <string name="is_frozen">Is Frozen</string>
+  <string name="freezing">Freezing</string>
+  <string name="frozen_wrong">Freezing error</string>
+  <string name="system_not_flagged_but_frozen">Cirno has executed the freeze operation correctly, but the system has not processed it</string>
+  <string name="about">About</string>
+  <string name="home_about_freezer">About Cirno</string>
+  <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
+  <string name="system_fingerprint">System Fingerprint</string>
+  <string name="hook_type">Hook Type</string>
+  <string name="unknown">Unknown</string>
+  <string name="manager_version">Manager Version</string>
+  <string name="error">Error</string>
+  <string name="internal_error">Cirno encountered an internal error. Please check the logs!</string>
+  <string name="navigation_style">Navigation style</string>
+  <string name="blur_ui">Blur</string>
+  <string name="blur_ui_desc">Enable the blur effect for the top and navigation bars</string>
+  <string name="normal">Default</string>
+  <string name="floating">Floating</string>
+  <string name="apple_floating">Apple-style floating</string>
+  <string name="not_implemented_yet">NaN</string>
+  <string-array name="dropdownOptions">
+    <item>User Apps</item>
+    <item>System Apps</item>
+  </string-array>
 </resources>

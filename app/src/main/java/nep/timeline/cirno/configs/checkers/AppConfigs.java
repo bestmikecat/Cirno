@@ -5,26 +5,11 @@ import nep.timeline.cirno.configs.policy.Capability;
 import nep.timeline.cirno.configs.policy.PolicyKey;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class AppConfigs {
     private static ApplicationSettings getSafeSettings() {
-        if (GlobalVars.applicationSettings == null) {
-            GlobalVars.applicationSettings = new ApplicationSettings();
-        }
-        if (GlobalVars.applicationSettings.backgroundPlayApps == null) {
-            GlobalVars.applicationSettings.backgroundPlayApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.locationUseApps == null) {
-            GlobalVars.applicationSettings.locationUseApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.whiteApps == null) {
-            GlobalVars.applicationSettings.whiteApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.networkMessageApps == null) {
-            GlobalVars.applicationSettings.networkMessageApps = new HashSet<>();
-        }
+        GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(GlobalVars.applicationSettings);
         return GlobalVars.applicationSettings;
     }
 

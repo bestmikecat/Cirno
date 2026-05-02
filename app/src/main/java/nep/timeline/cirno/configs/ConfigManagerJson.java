@@ -8,7 +8,6 @@ import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
@@ -22,20 +21,37 @@ public class ConfigManagerJson {
     private final String applicationSettingsName = "ApplicationSettings.json";
 
     private void ensureApplicationSettingsInitialized() {
-        if (GlobalVars.applicationSettings == null) {
-            GlobalVars.applicationSettings = new ApplicationSettings();
-        }
-        if (GlobalVars.applicationSettings.backgroundPlayApps == null) {
-            GlobalVars.applicationSettings.backgroundPlayApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.locationUseApps == null) {
-            GlobalVars.applicationSettings.locationUseApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.whiteApps == null) {
-            GlobalVars.applicationSettings.whiteApps = new HashSet<>();
-        }
-        if (GlobalVars.applicationSettings.networkMessageApps == null) {
-            GlobalVars.applicationSettings.networkMessageApps = new HashSet<>();
+        GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(GlobalVars.applicationSettings);
+    }
+
+    private void resetToDefaults() {
+        GlobalVars.globalSettings = new GlobalSettings();
+        GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(null);
+    }
+
+    private void writeConfigByMode(boolean su) {
+        try {
+            GlobalSettings globalSettings = GlobalVars.globalSettings;
+            if (globalSettings != null) {
+                String globalConfigStr = gson.toJson(globalSettings);
+                if (su) {
+                    RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr, false);
+                } else {
+                    RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr);
+                }
+            }
+
+            ApplicationSettings applicationSettings = GlobalVars.applicationSettings;
+            if (applicationSettings != null) {
+                String applicationConfigStr = gson.toJson(applicationSettings);
+                if (su) {
+                    RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr, false);
+                } else {
+                    RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr);
+                }
+            }
+        } catch (IOException e) {
+            Log.e("Save Config", e);
         }
     }
 
@@ -67,28 +83,13 @@ public class ConfigManagerJson {
             }
             ensureApplicationSettingsInitialized();
         } catch (JsonSyntaxException | JsonIOException e) {
-            GlobalVars.globalSettings = new GlobalSettings();
-            GlobalVars.applicationSettings = new ApplicationSettings();
-            ensureApplicationSettingsInitialized();
+            resetToDefaults();
             saveConfig();
         }
     }
 
     public void saveConfig() {
-        try {
-            GlobalSettings globalSettings = GlobalVars.globalSettings;
-            if (globalSettings != null) {
-                String globalConfigStr = gson.toJson(GlobalVars.globalSettings);
-                RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr);
-            }
-            ApplicationSettings applicationSettings = GlobalVars.applicationSettings;
-            if (applicationSettings != null) {
-                String applicationConfigStr = gson.toJson(GlobalVars.applicationSettings);
-                RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr);
-            }
-        } catch (IOException e) {
-            Log.e("Save Config", e);
-        }
+        writeConfigByMode(false);
     }
 
     public boolean readConfigSU() {
@@ -120,9 +121,7 @@ public class ConfigManagerJson {
             }
             ensureApplicationSettingsInitialized();
         } catch (JsonSyntaxException | JsonIOException e) {
-            GlobalVars.globalSettings = new GlobalSettings();
-            GlobalVars.applicationSettings = new ApplicationSettings();
-            ensureApplicationSettingsInitialized();
+            resetToDefaults();
             return false;
         }
 
@@ -130,19 +129,6 @@ public class ConfigManagerJson {
     }
 
     public void saveConfigSU() {
-        try {
-            GlobalSettings globalSettings = GlobalVars.globalSettings;
-            if (globalSettings != null) {
-                String globalConfigStr = gson.toJson(GlobalVars.globalSettings);
-                RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr, false);
-            }
-            ApplicationSettings applicationSettings = GlobalVars.applicationSettings;
-            if (applicationSettings != null) {
-                String applicationConfigStr = gson.toJson(GlobalVars.applicationSettings);
-                RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr, false);
-            }
-        } catch (IOException e) {
-            Log.e("Save Config", e);
-        }
+        writeConfigByMode(true);
     }
 }
