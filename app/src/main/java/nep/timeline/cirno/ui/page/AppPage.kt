@@ -166,6 +166,7 @@ fun AppPage(
     val type = viewModel.type.collectAsState()
     val updatedApps = viewModel.updatedApps.collectAsState()
     val isLoading = viewModel.filterApps.collectAsState()
+    val hasLoadedMonitorOnce = viewModel.hasLoadedMonitorOnce.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val isActive = remember { mutableStateOf(false) }
@@ -415,7 +416,7 @@ fun AppPage(
             }
 
             AnimatedVisibility(
-                visible = type.value == 2 && updatedApps.value && isLoading.value.isEmpty(),
+                visible = type.value == 2 && hasLoadedMonitorOnce.value && updatedApps.value && isLoading.value.isEmpty(),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {

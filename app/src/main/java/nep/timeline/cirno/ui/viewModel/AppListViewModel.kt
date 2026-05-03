@@ -17,11 +17,13 @@ class AppListViewModel : ViewModel() {
     private val _search = MutableStateFlow("")
     private val _type = MutableStateFlow(0)
     private val _updatedApps = MutableStateFlow(true)
+    private val _hasLoadedMonitorOnce = MutableStateFlow(false)
     val search: StateFlow<String> = _search
     var cacheFilterApps: StateFlow<List<AppItem>> = _cacheFilterApps
     val type: StateFlow<Int> = _type
     var filterApps: StateFlow<List<AppItem>> = _filterApps
     val updatedApps: StateFlow<Boolean> = _updatedApps
+    val hasLoadedMonitorOnce: StateFlow<Boolean> = _hasLoadedMonitorOnce
 
     private fun autoUpdateCacheFilterApps() {
         viewModelScope.launch {
@@ -54,12 +56,7 @@ class AppListViewModel : ViewModel() {
     }
 
     fun getFilterApps(type: Int = _type.value) {
-        var needUpdate = false
-        if ((_type.value == 2 && type != 2) || (type == 2 && _type.value != 2)) {
-            _filterApps.value = emptyList()
-            _updatedApps.value = false
-            needUpdate = true
-        }
+        _updatedApps.value = false
         viewModelScope.launch {
             WindowUtils.handler.post {
                 _filterApps.value = when (type) {
@@ -67,9 +64,10 @@ class AppListViewModel : ViewModel() {
                     1 -> PackageUtils.filter(3)
                     else -> PackageUtils.getFrozenApplication(AppContext.context)
                 }
-
-                if (needUpdate)
-                    _updatedApps.value = true
+                if (type == 2) {
+                    _hasLoadedMonitorOnce.value = true
+                }
+                _updatedApps.value = true
             }
         }
     }
