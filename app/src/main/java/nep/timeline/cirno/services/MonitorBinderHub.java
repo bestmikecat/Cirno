@@ -1,5 +1,6 @@
 package nep.timeline.cirno.services;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -83,6 +84,7 @@ public final class MonitorBinderHub {
         }
     };
 
+    @SuppressLint("MissingPermission")
     public static void publish() {
         try {
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
