@@ -28,6 +28,21 @@ public interface ConfigInterface extends android.os.IInterface {
         }
 
         @Override
+        public boolean setSignal(String key, String value) throws android.os.RemoteException {
+            return false;
+        }
+
+        @Override
+        public String getSignal(String key) throws android.os.RemoteException {
+            return "";
+        }
+
+        @Override
+        public java.util.List<java.lang.String> getManagedAppKeys() throws android.os.RemoteException {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -95,6 +110,27 @@ public interface ConfigInterface extends android.os.IInterface {
                     String result = this.getLastError();
                     reply.writeNoException();
                     reply.writeString(result);
+                    return true;
+                }
+                case TRANSACTION_setSignal: {
+                    String key = data.readString();
+                    String value = data.readString();
+                    boolean result = this.setSignal(key, value);
+                    reply.writeNoException();
+                    reply.writeInt(result ? 1 : 0);
+                    return true;
+                }
+                case TRANSACTION_getSignal: {
+                    String key = data.readString();
+                    String result = this.getSignal(key);
+                    reply.writeNoException();
+                    reply.writeString(result);
+                    return true;
+                }
+                case TRANSACTION_getManagedAppKeys: {
+                    java.util.List<java.lang.String> result = this.getManagedAppKeys();
+                    reply.writeNoException();
+                    reply.writeStringList(result);
                     return true;
                 }
             }
@@ -189,6 +225,54 @@ public interface ConfigInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public boolean setSignal(String key, String value) throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    data.writeString(key);
+                    data.writeString(value);
+                    mRemote.transact(Stub.TRANSACTION_setSignal, data, reply, 0);
+                    reply.readException();
+                    return reply.readInt() != 0;
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
+
+            @Override
+            public String getSignal(String key) throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    data.writeString(key);
+                    mRemote.transact(Stub.TRANSACTION_getSignal, data, reply, 0);
+                    reply.readException();
+                    return reply.readString();
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
+
+            @Override
+            public java.util.List<java.lang.String> getManagedAppKeys() throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_getManagedAppKeys, data, reply, 0);
+                    reply.readException();
+                    return reply.createStringArrayList();
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_getGlobalSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION;
@@ -196,6 +280,9 @@ public interface ConfigInterface extends android.os.IInterface {
         static final int TRANSACTION_setGlobalSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION + 2;
         static final int TRANSACTION_setApplicationSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION + 3;
         static final int TRANSACTION_getLastError = android.os.IBinder.FIRST_CALL_TRANSACTION + 4;
+        static final int TRANSACTION_setSignal = android.os.IBinder.FIRST_CALL_TRANSACTION + 5;
+        static final int TRANSACTION_getSignal = android.os.IBinder.FIRST_CALL_TRANSACTION + 6;
+        static final int TRANSACTION_getManagedAppKeys = android.os.IBinder.FIRST_CALL_TRANSACTION + 7;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.ConfigInterface";
@@ -209,4 +296,10 @@ public interface ConfigInterface extends android.os.IInterface {
     boolean setApplicationSettingsJson(String json) throws android.os.RemoteException;
 
     String getLastError() throws android.os.RemoteException;
+
+    boolean setSignal(String key, String value) throws android.os.RemoteException;
+
+    String getSignal(String key) throws android.os.RemoteException;
+
+    java.util.List<java.lang.String> getManagedAppKeys() throws android.os.RemoteException;
 }

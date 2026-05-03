@@ -1,20 +1,14 @@
 package nep.timeline.cirno;
 
 import java.io.File;
-import java.io.IOException;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import nep.timeline.cirno.master.AndroidHooks;
-import nep.timeline.cirno.utils.RWUtils;
 
 public class HookInit implements IXposedHookLoadPackage {
-    private static String readCurrentBootId() throws IOException {
-        return RWUtils.readConfig(GlobalVars.BOOT_ID_SOURCE).trim();
-    }
-
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam packageParam) {
         String packageName = packageParam.packageName;
@@ -37,17 +31,6 @@ public class HookInit implements IXposedHookLoadPackage {
             return;
 
         try {
-            String currentBootId = readCurrentBootId();
-            RWUtils.writeStringToFile(new File(GlobalVars.BOOT_ID_FILE), currentBootId, false);
-
-            File errorFlagFile = new File(GlobalVars.ERROR_FLAG_FILE);
-            if (errorFlagFile.exists()) {
-                String flaggedBootId = RWUtils.readConfig(GlobalVars.ERROR_FLAG_FILE).trim();
-                if (!currentBootId.equals(flaggedBootId)) {
-                    boolean ignored = errorFlagFile.delete();
-                }
-            }
-
             File source = new File(GlobalVars.LOG_DIR, "current.log");
             File dest = new File(GlobalVars.LOG_DIR, "last.log");
             boolean ignoredDelete = dest.delete();

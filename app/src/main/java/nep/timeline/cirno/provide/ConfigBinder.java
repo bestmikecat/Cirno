@@ -43,4 +43,19 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public String getLastError() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean setSignal(String key, String value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getSignal(String key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public java.util.List<String> getManagedAppKeys() {
+        throw new UnsupportedOperationException();
+    }
 }

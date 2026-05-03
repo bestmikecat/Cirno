@@ -38,6 +38,7 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinder;
 import nep.timeline.cirno.provide.FrozenStateBinder;
 import nep.timeline.cirno.services.AppService;
+import nep.timeline.cirno.ui.utils.ConfigBinderRepository;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class PackageUtils {
@@ -53,57 +54,64 @@ public class PackageUtils {
         Context context = nep.timeline.cirno.ui.utils.AppContext.INSTANCE.getContext();
         PackageManager pm = context.getPackageManager();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
-        List<Integer> userIds = getInstalledUserIdsByPm();
-        Log.d("App list users from pm: " + userIds);
-        for (int userId : userIds) {
-            List<String> packages = getInstalledPackagesForUserByPm(userId);
-            Log.d("User #" + userId + " package count from pm: " + packages.size());
-            int appended = 0;
-            int fallback = 0;
-            for (String pkg : packages) {
-                if (pkg == null || pkg.isEmpty()) {
-                    continue;
+        LinkedHashSet<String> managedKeys = new LinkedHashSet<>(ConfigBinderRepository.INSTANCE.getManagedAppKeySet());
+        if (managedKeys.isEmpty()) {
+            List<Integer> userIds = getInstalledUserIdsByPm();
+            for (int userId : userIds) {
+                for (String pkg : getInstalledPackagesForUserByPm(userId)) {
+                    managedKeys.add(pkg + "#" + userId);
                 }
-                if (CommonConstants.isWhitelistApps(pkg)) {
-                    continue;
-                }
-                ApplicationInfo info = getApplicationInfoAsUser(pm, pkg, userId);
-                boolean system = PKGUtils.isSystemApp(info);
-                if ((type == 1 && system) || (type == 2 && !system)) {
-                    continue;
-                }
-                String appKey = pkg + "#" + userId;
-                if (!seen.add(appKey)) {
-                    continue;
-                }
-
-                AppItem item = new AppItem();
-                item.packageName = pkg;
-                item.userId = userId;
-                try {
-                    item.appName = formatDisplayName(String.valueOf(info.loadLabel(pm)), userId);
-                    item.appIcon = info.loadIcon(pm);
-                } catch (Throwable ignored) {
-                    fallback++;
-                    item.appName = formatDisplayName(pkg, userId);
-                    item.appIcon = new ColorDrawable(0x00000000);
-                }
-                try {
-                    item.packageInfo = pm.getPackageInfo(pkg, PackageManager.GET_META_DATA);
-                } catch (Throwable ignored) {
-                    item.packageInfo = new PackageInfo();
-                    item.packageInfo.packageName = pkg;
-                }
-                item.white = AppConfigs.isWhiteApp(pkg, item.userId);
-                item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
-                item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
-                item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
-                item.socket = item.networkCheck;
-                item.netReceive = item.networkCheck;
-                list.add(item);
-                appended++;
             }
-            Log.d("User #" + userId + " app items appended: " + appended + ", fallback metadata: " + fallback);
+        }
+
+        for (String key : managedKeys) {
+            int split = key.lastIndexOf('#');
+            if (split <= 0 || split >= key.length() - 1) {
+                continue;
+            }
+            String pkg = key.substring(0, split);
+            int userId;
+            try {
+                userId = Integer.parseInt(key.substring(split + 1));
+            } catch (NumberFormatException ignored) {
+                continue;
+            }
+            if (pkg.isEmpty() || CommonConstants.isWhitelistApps(pkg)) {
+                continue;
+            }
+            ApplicationInfo info = getApplicationInfoAsUser(pm, pkg, userId);
+            boolean system = PKGUtils.isSystemApp(info);
+            if ((type == 1 && system) || (type == 2 && !system)) {
+                continue;
+            }
+            String appKey = pkg + "#" + userId;
+            if (!seen.add(appKey)) {
+                continue;
+            }
+
+            AppItem item = new AppItem();
+            item.packageName = pkg;
+            item.userId = userId;
+            try {
+                item.appName = formatDisplayName(String.valueOf(info.loadLabel(pm)), userId);
+                item.appIcon = info.loadIcon(pm);
+            } catch (Throwable ignored) {
+                item.appName = formatDisplayName(pkg, userId);
+                item.appIcon = new ColorDrawable(0x00000000);
+            }
+            try {
+                item.packageInfo = pm.getPackageInfo(pkg, PackageManager.GET_META_DATA);
+            } catch (Throwable ignored) {
+                item.packageInfo = new PackageInfo();
+                item.packageInfo.packageName = pkg;
+            }
+            item.white = AppConfigs.isWhiteApp(pkg, item.userId);
+            item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
+            item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
+            item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
+            item.socket = item.networkCheck;
+            item.netReceive = item.networkCheck;
+            list.add(item);
         }
 
         list.sort(

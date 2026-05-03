@@ -7,6 +7,7 @@ import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.configs.settings.ApplicationSettings
 import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.provide.ConfigBinder
+import java.util.LinkedHashSet
 
 object ConfigBinderRepository {
     private val gson = Gson()
@@ -57,6 +58,24 @@ object ConfigBinderRepository {
             if (msg.isNullOrBlank()) defaultMessage else msg
         } catch (_: Throwable) {
             defaultMessage
+        }
+    }
+
+    fun hasErrorSignal(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.getSignal("error") == "1"
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun getManagedAppKeySet(): Set<String> {
+        val config = ConfigBinder.getInstance() ?: return emptySet()
+        return try {
+            LinkedHashSet(config.getManagedAppKeys() ?: emptyList())
+        } catch (_: Throwable) {
+            emptySet()
         }
     }
 }

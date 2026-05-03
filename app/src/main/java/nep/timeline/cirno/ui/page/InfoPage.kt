@@ -38,18 +38,17 @@ import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
-import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
-import nep.timeline.cirno.utils.RWUtils
 import nep.timeline.cirno.utils.VersionUtils
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
@@ -137,9 +136,7 @@ private fun InfoContent(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
-                val errorFlag = RWUtils.readConfig(GlobalVars.ERROR_FLAG_FILE).trim()
-                val bootId = RWUtils.readConfig(GlobalVars.BOOT_ID_FILE).trim()
-                val hasError = errorFlag.isNotEmpty() && bootId.isNotEmpty() && errorFlag == bootId
+                val hasError = ConfigBinderRepository.hasErrorSignal()
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

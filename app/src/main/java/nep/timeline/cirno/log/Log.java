@@ -11,6 +11,7 @@ import java.util.Locale;
 import de.robv.android.xposed.XposedBridge;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.GlobalSettings;
+import nep.timeline.cirno.services.ConfigBinderHub;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.RWUtils;
 
@@ -87,7 +88,7 @@ public class Log {
         String formatted = simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg;
         Handlers.log.post(() -> {
             if ("错误".equals(level)) {
-                updateErrorFlag();
+                ConfigBinderHub.signalError();
                 fileLog(formatted);
                 xposedLog(formatted);
                 return;
@@ -117,14 +118,4 @@ public class Log {
         }
     }
 
-    private static void updateErrorFlag() {
-        try {
-            String bootId = RWUtils.readConfig(GlobalVars.BOOT_ID_FILE).trim();
-            if (!bootId.isEmpty()) {
-                RWUtils.writeStringToFile(new File(GlobalVars.ERROR_FLAG_FILE), bootId, false);
-            }
-        } catch (IOException e) {
-            xposedLog("Error flag write failed: " + e.getMessage());
-        }
-    }
 }
