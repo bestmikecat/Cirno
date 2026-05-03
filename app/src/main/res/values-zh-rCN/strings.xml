@@ -37,7 +37,7 @@
   <string name="ok">确定</string>
   <string name="cancel">取消</string>
   <string name="process">进程</string>
-  <string name="is_frozen">是否冻结</string>
+  <string name="is_frozen">已冻结</string>
   <string name="freezing">冻结中</string>
   <string name="frozen_wrong">冻结错误</string>
   <string name="system_not_flagged_but_frozen">Cirno 已正确执行冻结操作，但系统尚未处理该状态</string>

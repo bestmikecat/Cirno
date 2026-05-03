@@ -37,7 +37,7 @@
   <string name="ok">OK</string>
   <string name="cancel">Cancel</string>
   <string name="process">Process</string>
-  <string name="is_frozen">Is Frozen</string>
+  <string name="is_frozen">Frozen</string>
   <string name="freezing">Freezing</string>
   <string name="frozen_wrong">Freezing error</string>
   <string name="system_not_flagged_but_frozen">Cirno has executed the freeze operation correctly, but the system has not processed it</string>

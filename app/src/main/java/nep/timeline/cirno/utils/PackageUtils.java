@@ -81,11 +81,11 @@ public class PackageUtils {
                 item.packageName = pkg;
                 item.userId = userId;
                 try {
-                    item.appName = String.valueOf(info.loadLabel(pm));
+                    item.appName = formatDisplayName(String.valueOf(info.loadLabel(pm)), userId);
                     item.appIcon = info.loadIcon(pm);
                 } catch (Throwable ignored) {
                     fallback++;
-                    item.appName = pkg;
+                    item.appName = formatDisplayName(pkg, userId);
                     item.appIcon = new ColorDrawable(0x00000000);
                 }
                 try {
@@ -240,9 +240,9 @@ public class PackageUtils {
                 icon = new ColorDrawable(0x00000000);
             }
             try {
-                appName = String.valueOf(applicationInfo.loadLabel(pm));
+                appName = formatDisplayName(String.valueOf(applicationInfo.loadLabel(pm)), runningApp.userId);
             } catch (Throwable ignored) {
-                appName = runningApp.packageName;
+                appName = formatDisplayName(runningApp.packageName, runningApp.userId);
             }
 
             PackageInfo packageInfo;
@@ -293,6 +293,14 @@ public class PackageUtils {
         } catch (Throwable ignored) {
         }
         return pm.getPackageInfo(packageName, PackageManager.GET_META_DATA);
+    }
+
+    private static String formatDisplayName(String appName, int userId) {
+        String base = appName == null ? "" : appName;
+        if (userId == 0) {
+            return base;
+        }
+        return base + "#" + userId;
     }
 
     private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
