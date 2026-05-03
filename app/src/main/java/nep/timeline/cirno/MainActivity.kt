@@ -5,9 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberSaveable
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.app.App
+import nep.timeline.cirno.ui.dialog.RootDialog
+import nep.timeline.cirno.utils.EnvUtils
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
@@ -22,10 +27,18 @@ class MainActivity : ComponentActivity() {
         AppContext.init(this)
         enableEdgeToEdge()
         setContent {
+            val showRootDialog = rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                if (!EnvUtils.checkRoot()) {
+                    showRootDialog.value = true
+                }
+            }
+
             MiuixTheme(
                 colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
             ) {
                 App(active = true)
+                RootDialog(showDialog = showRootDialog)
             }
         }
     }

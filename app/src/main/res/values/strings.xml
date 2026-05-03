@@ -32,6 +32,9 @@
   <string name="working">Working</string>
   <string name="crying">Crying</string>
   <string name="fools_day">Cirno will stop updating tonight, and the module will stop working at that time!</string>
+  <string name="warning">Warning</string>
+  <string name="not_root">Root access is required. Cirno will now exit.</string>
+  <string name="ok">OK</string>
   <string name="cancel">Cancel</string>
   <string name="process">Process</string>
   <string name="is_frozen">Is Frozen</string>
