@@ -1,0 +1,62 @@
+package nep.timeline.cirno.ui.utils
+
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
+import nep.timeline.cirno.GlobalVars
+import nep.timeline.cirno.binder.BinderService
+import nep.timeline.cirno.configs.settings.ApplicationSettings
+import nep.timeline.cirno.configs.settings.GlobalSettings
+import nep.timeline.cirno.provide.ConfigBinder
+
+object ConfigBinderRepository {
+    private val gson = Gson()
+
+    fun loadIntoMemory(): Boolean {
+        BinderService.register(AppContext.context)
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            val globalJson = config.getGlobalSettingsJson()
+            val appJson = config.getApplicationSettingsJson()
+            val global = gson.fromJson(globalJson, GlobalSettings::class.java) ?: GlobalSettings()
+            val app = ApplicationSettings.ensureInitialized(gson.fromJson(appJson, ApplicationSettings::class.java))
+            GlobalVars.globalSettings = global
+            GlobalVars.applicationSettings = app
+            true
+        } catch (_: JsonSyntaxException) {
+            false
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun saveGlobalSettingsFromMemory(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            val global = GlobalVars.globalSettings ?: GlobalSettings()
+            config.setGlobalSettingsJson(gson.toJson(global))
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun saveApplicationSettingsFromMemory(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            val app = ApplicationSettings.ensureInitialized(GlobalVars.applicationSettings)
+            GlobalVars.applicationSettings = app
+            config.setApplicationSettingsJson(gson.toJson(app))
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun getLastErrorOrDefault(defaultMessage: String): String {
+        val config = ConfigBinder.getInstance() ?: return defaultMessage
+        return try {
+            val msg = config.getLastError()
+            if (msg.isNullOrBlank()) defaultMessage else msg
+        } catch (_: Throwable) {
+            defaultMessage
+        }
+    }
+}

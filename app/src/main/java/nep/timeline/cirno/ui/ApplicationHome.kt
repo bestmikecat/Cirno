@@ -17,11 +17,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.R
-import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -75,9 +75,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.white_app),
                             checked = white.value,
                             onCheckedChange = {
+                                val previous = white.value
                                 white.value = it
                                 AppConfigs.setWhiteApp(packageName, userId, it)
-                                ConfigManager.manager.saveConfigSU()
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    white.value = previous
+                                    AppConfigs.setWhiteApp(packageName, userId, previous)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("白名单更新失败"))
+                                }
                             }
                         )
 
@@ -85,9 +90,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.background_play),
                             checked = backgroundPlay.value,
                             onCheckedChange = {
+                                val previous = backgroundPlay.value
                                 backgroundPlay.value = it
                                 AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
-                                ConfigManager.manager.saveConfigSU()
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    backgroundPlay.value = previous
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("后台播放配置更新失败"))
+                                }
                             }
                         )
 
@@ -95,9 +105,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.location_check),
                             checked = locationUse.value,
                             onCheckedChange = {
+                                val previous = locationUse.value
                                 locationUse.value = it
                                 AppConfigs.setLocationUseAllowed(packageName, userId, it)
-                                ConfigManager.manager.saveConfigSU()
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    locationUse.value = previous
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, previous)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("定位配置更新失败"))
+                                }
                             }
                         )
 
@@ -105,9 +120,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.netreceive_unfreeze),
                             checked = networkMessage.value,
                             onCheckedChange = {
+                                val previous = networkMessage.value
                                 networkMessage.value = it
                                 AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
-                                ConfigManager.manager.saveConfigSU()
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    networkMessage.value = previous
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
+                                }
                             }
                         )
 

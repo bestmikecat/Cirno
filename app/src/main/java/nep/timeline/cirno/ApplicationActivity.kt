@@ -5,9 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.ui.ApplicationHome
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
@@ -16,9 +16,7 @@ class ApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
-        if (!ConfigManager.manager.readConfigSU()) {
-            ConfigManager.manager.readConfig()
-        }
+        ConfigBinderRepository.loadIntoMemory()
         enableEdgeToEdge()
         setContent {
             MiuixTheme(

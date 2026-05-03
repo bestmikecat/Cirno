@@ -14,6 +14,7 @@ import java.util.List;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
+import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
@@ -96,20 +97,19 @@ public final class MonitorBinderHub {
         try {
             long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-                Log.i("MonitorBinder publish skipped: AMS context not ready, reason=" + reason);
                 return;
             }
             Intent intent = new Intent(GlobalVars.TAG + "-Binder");
             Bundle extras = new Bundle();
             extras.putBinder("Application", applicationBinder);
             extras.putBinder("FrozenState", frozenStateBinder);
+            extras.putBinder("Config", (ConfigInterface.Stub) ConfigBinderHub.configBinder);
             intent.putExtras(extras);
             ActivityManagerService.getContext().sendStickyBroadcast(intent);
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
             lastPublishedAtMs = now;
-            Log.i("MonitorBinder published: Application + FrozenState, reason=" + reason + ", intervalMs=" + delta);
         } catch (Throwable ignored) {
-            Log.w("MonitorBinder publish failed, reason=" + reason, ignored);
+            Log.w("MonitorBinder publish failed", ignored);
         }
     }
 
