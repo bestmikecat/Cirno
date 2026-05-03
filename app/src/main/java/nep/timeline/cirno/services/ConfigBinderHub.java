@@ -1,15 +1,18 @@
 package nep.timeline.cirno.services;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.UserManager;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import nep.timeline.cirno.configs.ConfigManager;
 import nep.timeline.cirno.binders.ConfigInterface;
@@ -19,6 +22,7 @@ public final class ConfigBinderHub {
     private static final Object LOCK = new Object();
     private static final AtomicReference<String> LAST_ERROR = new AtomicReference<>("");
     private static final Map<String, String> SIGNALS = new ConcurrentHashMap<>();
+    private static volatile long lastManagedAppsLogAtMs = 0L;
 
     private ConfigBinderHub() {
     }
@@ -94,13 +98,27 @@ public final class ConfigBinderHub {
         @Override
         public List<String> getManagedAppKeys() {
             LinkedHashSet<String> result = new LinkedHashSet<>();
-            for (int userId : getInstalledUserIdsByPm()) {
-                for (String pkg : getInstalledPackagesForUserByPm(userId)) {
+            Context context = ActivityManagerService.getContext();
+            if (context == null) {
+                Log.w("Config binder managed apps skipped: context unavailable");
+                return new ArrayList<>();
+            }
+            List<Integer> userIds = getInstalledUserIdsByFramework(context);
+            int packageCount = 0;
+            for (int userId : userIds) {
+                List<String> packages = getInstalledPackagesForUserByFramework(context.getPackageManager(), userId);
+                packageCount += packages.size();
+                for (String pkg : packages) {
                     if (pkg == null || pkg.isEmpty()) {
                         continue;
                     }
                     result.add(pkg + "#" + userId);
                 }
+            }
+            long now = System.currentTimeMillis();
+            if (now - lastManagedAppsLogAtMs > 30000L) {
+                lastManagedAppsLogAtMs = now;
+                Log.i("Config binder managed apps: users=" + userIds.size() + ", packages=" + packageCount + ", keys=" + result.size());
             }
             return new ArrayList<>(result);
         }
@@ -110,15 +128,35 @@ public final class ConfigBinderHub {
         SIGNALS.put("error", "1");
     }
 
-    private static List<Integer> getInstalledUserIdsByPm() {
+    private static List<Integer> getInstalledUserIdsByFramework(Context context) {
         LinkedHashSet<Integer> userIds = new LinkedHashSet<>();
-        Pattern userPattern = Pattern.compile("UserInfo\\{(\\d+):");
-        List<String> lines = runPmCommand(new String[]{"pm", "list", "users"});
-        for (String line : lines) {
-            Matcher matcher = userPattern.matcher(line);
-            if (matcher.find()) {
-                userIds.add(Integer.parseInt(matcher.group(1)));
+        try {
+            UserManager userManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
+            if (userManager != null) {
+                try {
+                    Method getUsers = userManager.getClass().getMethod("getUsers");
+                    Object usersObj = getUsers.invoke(userManager);
+                    if (usersObj instanceof List) {
+                        for (Object user : (List<?>) usersObj) {
+                            int id = extractUserId(user);
+                            if (id >= 0) {
+                                userIds.add(id);
+                            }
+                        }
+                    }
+                } catch (Throwable ignored) {
+                    Method getUserHandles = userManager.getClass().getMethod("getUserHandles", boolean.class);
+                    Object handlesObj = getUserHandles.invoke(userManager, true);
+                    if (handlesObj instanceof List) {
+                        for (Object handle : (List<?>) handlesObj) {
+                            int id = (int) handle.getClass().getMethod("getIdentifier").invoke(handle);
+                            userIds.add(id);
+                        }
+                    }
+                }
             }
+        } catch (Throwable e) {
+            Log.e("Config binder users query failed", e);
         }
         if (userIds.isEmpty()) {
             userIds.add(0);
@@ -126,39 +164,57 @@ public final class ConfigBinderHub {
         return new ArrayList<>(userIds);
     }
 
-    private static List<String> getInstalledPackagesForUserByPm(int userId) {
+    private static List<String> getInstalledPackagesForUserByFramework(PackageManager packageManager, int userId) {
         LinkedHashSet<String> packages = new LinkedHashSet<>();
-        List<String> lines = runPmCommand(new String[]{"pm", "list", "packages", "--user", String.valueOf(userId)});
-        for (String line : lines) {
-            if (line != null && line.startsWith("package:")) {
-                String pkg = line.substring("package:".length()).trim();
-                if (!pkg.isEmpty()) {
-                    packages.add(pkg);
+        try {
+            Method getInstalledAsUser = packageManager.getClass().getMethod("getInstalledPackagesAsUser", int.class, int.class);
+            Object pkgObj = getInstalledAsUser.invoke(packageManager, PackageManager.GET_META_DATA, userId);
+            if (pkgObj instanceof List) {
+                for (Object item : (List<?>) pkgObj) {
+                    if (item instanceof PackageInfo) {
+                        String pkg = ((PackageInfo) item).packageName;
+                        if (pkg != null && !pkg.isEmpty()) {
+                            packages.add(pkg);
+                        }
+                    }
                 }
+            }
+        } catch (Throwable ignored) {
+            if (userId == 0) {
+                try {
+                    List<PackageInfo> list = packageManager.getInstalledPackages(PackageManager.GET_META_DATA);
+                    for (PackageInfo info : list) {
+                        if (info != null && info.packageName != null && !info.packageName.isEmpty()) {
+                            packages.add(info.packageName);
+                        }
+                    }
+                } catch (Throwable e) {
+                    Log.e("Config binder packages query failed", e);
+                }
+            } else {
+                Log.w("Config binder packages query fallback: user " + userId + " returned no packages");
             }
         }
         return new ArrayList<>(packages);
     }
 
-    private static List<String> runPmCommand(String[] command) {
-        List<String> out = new ArrayList<>();
-        Process process = null;
-        try {
-            process = Runtime.getRuntime().exec(command);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    out.add(line);
-                }
-            }
-            process.waitFor();
-        } catch (Throwable e) {
-            Log.e("Config binder pm command failed", e);
-        } finally {
-            if (process != null) {
-                process.destroy();
-            }
+    private static int extractUserId(Object userObj) {
+        if (userObj == null) {
+            return -1;
         }
-        return out;
+        try {
+            Field idField = userObj.getClass().getField("id");
+            return idField.getInt(userObj);
+        } catch (Throwable ignored) {
+        }
+        try {
+            Method getUserHandle = userObj.getClass().getMethod("getUserHandle");
+            Object id = getUserHandle.invoke(userObj);
+            if (id instanceof Integer) {
+                return (Integer) id;
+            }
+        } catch (Throwable ignored) {
+        }
+        return -1;
     }
 }
