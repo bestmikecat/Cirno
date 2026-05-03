@@ -143,25 +143,29 @@ public class ConfigManagerJson {
         return gson.toJson(settings);
     }
 
-    public boolean applyGlobalSettingsJsonSU(String json) {
+    public boolean applyGlobalSettingsJson(String json) {
+        GlobalSettings oldSettings = GlobalVars.globalSettings;
         try {
             GlobalSettings settings = gson.fromJson(json, GlobalSettings.class);
             GlobalVars.globalSettings = settings == null ? new GlobalSettings() : settings;
-            saveConfigSU();
+            saveConfig();
             return true;
         } catch (Throwable e) {
+            GlobalVars.globalSettings = oldSettings;
             Log.e("Apply GlobalSettings", e);
             return false;
         }
     }
 
-    public boolean applyApplicationSettingsJsonSU(String json) {
+    public boolean applyApplicationSettingsJson(String json) {
+        ApplicationSettings oldSettings = GlobalVars.applicationSettings;
         try {
             ApplicationSettings settings = gson.fromJson(json, ApplicationSettings.class);
             GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(settings);
-            saveConfigSU();
+            saveConfig();
             return true;
         } catch (Throwable e) {
+            GlobalVars.applicationSettings = oldSettings;
             Log.e("Apply ApplicationSettings", e);
             return false;
         }

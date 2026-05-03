@@ -34,6 +34,7 @@ public final class ConfigBinderHub {
                 boolean ok = ConfigManager.manager.applyGlobalSettingsJsonSU(json);
                 if (!ok) {
                     LAST_ERROR.set("更新全局配置失败");
+                    Log.e("Config binder: global settings update failed");
                     return false;
                 }
                 LAST_ERROR.set("");
@@ -45,9 +46,10 @@ public final class ConfigBinderHub {
         @Override
         public boolean setApplicationSettingsJson(String json) {
             synchronized (LOCK) {
-                boolean ok = ConfigManager.manager.applyApplicationSettingsJsonSU(json);
+                boolean ok = ConfigManager.manager.applyApplicationSettingsJson(json);
                 if (!ok) {
                     LAST_ERROR.set("更新应用配置失败");
+                    Log.e("Config binder: application settings update failed");
                     return false;
                 }
                 LAST_ERROR.set("");
