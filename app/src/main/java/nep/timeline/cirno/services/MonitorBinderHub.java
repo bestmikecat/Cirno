@@ -3,6 +3,7 @@ package nep.timeline.cirno.services;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +23,7 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
+    private static volatile long lastPublishedAtMs = 0L;
 
     private MonitorBinderHub() {
     }
@@ -86,9 +88,15 @@ public final class MonitorBinderHub {
 
     @SuppressLint("MissingPermission")
     public static void publish() {
+        publish("unspecified");
+    }
+
+    @SuppressLint("MissingPermission")
+    public static void publish(String reason) {
         try {
+            long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-                Log.i("MonitorBinder publish skipped: AMS context not ready");
+                Log.i("MonitorBinder publish skipped: AMS context not ready, reason=" + reason);
                 return;
             }
             Intent intent = new Intent(GlobalVars.TAG + "-Binder");
@@ -97,9 +105,11 @@ public final class MonitorBinderHub {
             extras.putBinder("FrozenState", frozenStateBinder);
             intent.putExtras(extras);
             ActivityManagerService.getContext().sendStickyBroadcast(intent);
-            Log.i("MonitorBinder published: Application + FrozenState");
+            long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
+            lastPublishedAtMs = now;
+            Log.i("MonitorBinder published: Application + FrozenState, reason=" + reason + ", intervalMs=" + delta);
         } catch (Throwable ignored) {
-            Log.w("MonitorBinder publish failed", ignored);
+            Log.w("MonitorBinder publish failed, reason=" + reason, ignored);
         }
     }
 

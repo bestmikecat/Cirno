@@ -30,23 +30,34 @@ public class BinderService {
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     public static void register(Context context) {
-        Intent intent = context.registerReceiver(null, new IntentFilter(GlobalVars.TAG + "-Binder"));
-        if (intent == null) {
+        if (context == null) {
+            Log.w("Binder register skipped: context is null");
+            return;
+        }
+        Intent intent;
+        try {
+            intent = context.registerReceiver(null, new IntentFilter(GlobalVars.TAG + "-Binder"));
+        } catch (Throwable throwable) {
+            Log.w("Binder register failed: registerReceiver", throwable);
+            return;
+        }
+        Bundle extras = intent == null ? null : intent.getExtras();
+        if (extras == null) {
             Log.i("Binder register: no sticky broadcast yet");
             return;
         }
-        Bundle extras = intent.getExtras();
-        if (extras == null) {
-            Log.i("Binder register: sticky broadcast has no extras");
-            return;
-        }
         int count = 0;
+        int valid = 0;
         synchronized (binders) {
             for (String name : extras.keySet()) {
-                binders.put(name, extras.getBinder(name));
+                IBinder binder = extras.getBinder(name);
+                binders.put(name, binder);
                 count++;
+                if (binder != null) {
+                    valid++;
+                }
             }
         }
-        Log.i("Binder register: cached " + count + " binder(s)");
+        Log.i("Binder register: cached " + valid + "/" + count + " binder(s), total=" + binderCount());
     }
 }

@@ -198,11 +198,9 @@ public class PackageUtils {
         ApplicationInterface applicationInterface = ApplicationBinder.getInstance();
         FrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
         if (applicationInterface == null || frozenStateInterface == null) {
-            if (BinderService.binderCount() == 0) {
-                nep.timeline.cirno.binder.BinderService.register(context);
-                applicationInterface = ApplicationBinder.getInstance();
-                frozenStateInterface = FrozenStateBinder.getInstance();
-            }
+            nep.timeline.cirno.binder.BinderService.register(context);
+            applicationInterface = ApplicationBinder.getInstance();
+            frozenStateInterface = FrozenStateBinder.getInstance();
         }
         if (applicationInterface == null || frozenStateInterface == null) {
             Log.i("Monitor data skipped: binder missing (Application=" + (applicationInterface != null) + ", FrozenState=" + (frozenStateInterface != null) + ")");
