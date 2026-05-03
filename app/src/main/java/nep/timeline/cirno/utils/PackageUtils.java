@@ -10,11 +10,17 @@ import android.graphics.drawable.Drawable;
 
 import com.topjohnwu.superuser.Shell;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +28,11 @@ import java.util.regex.Pattern;
 import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
+import nep.timeline.cirno.entity.AppRecord;
+import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.services.AppService;
+import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class PackageUtils {
     public static boolean isSystemUIChecker(Context context, PackageInfo packageInfo) {
@@ -173,6 +183,174 @@ public class PackageUtils {
     }
 
     public static List<AppItem> getFrozenApplication(Context context) {
-        return new ArrayList<>();
+        List<AppItem> result = new ArrayList<>();
+        if (context == null) {
+            return result;
+        }
+
+        PackageManager pm = context.getPackageManager();
+        List<AppRecord> appRecords = AppService.getAllRecordsSnapshot();
+        Map<String, AppRecord> grouped = new LinkedHashMap<>();
+        for (AppRecord appRecord : appRecords) {
+            if (appRecord == null || appRecord.getPackageName() == null || appRecord.getPackageName().isEmpty()) {
+                continue;
+            }
+            String key = appRecord.getPackageName() + "#" + appRecord.getUserId();
+            grouped.put(key, appRecord);
+        }
+
+        for (AppRecord appRecord : grouped.values()) {
+            if (appRecord == null) {
+                continue;
+            }
+
+            List<ProcessRecord> processRecords = appRecord.getProcessRecords();
+            if (processRecords == null || processRecords.isEmpty()) {
+                continue;
+            }
+
+            int processCount = 0;
+            int frozenProcessCount = 0;
+            long rss = 0L;
+            for (ProcessRecord processRecord : processRecords) {
+                if (processRecord == null || processRecord.isDeathProcess()) {
+                    continue;
+                }
+                processCount++;
+                if (processRecord.isFrozen()) {
+                    frozenProcessCount++;
+                }
+                rss += readProcessRssKb(processRecord.getPid());
+            }
+
+            if (processCount <= 0) {
+                continue;
+            }
+
+            ApplicationInfo applicationInfo = appRecord.getApplicationInfo();
+            Drawable icon;
+            String appName;
+            try {
+                icon = applicationInfo.loadIcon(pm);
+            } catch (Throwable ignored) {
+                icon = new ColorDrawable(0x00000000);
+            }
+            try {
+                appName = String.valueOf(applicationInfo.loadLabel(pm));
+            } catch (Throwable ignored) {
+                appName = appRecord.getPackageName();
+            }
+
+            PackageInfo packageInfo;
+            try {
+                packageInfo = getPackageInfoAsUser(pm, appRecord.getPackageName(), appRecord.getUserId());
+            } catch (Throwable ignored) {
+                packageInfo = new PackageInfo();
+                packageInfo.packageName = appRecord.getPackageName();
+            }
+
+            AppItem item = new AppItem();
+            item.packageName = appRecord.getPackageName();
+            item.userId = appRecord.getUserId();
+            item.appName = appName;
+            item.appIcon = icon;
+            item.packageInfo = packageInfo;
+            item.applicationProcessCount = processCount;
+            item.frozenProcessCount = frozenProcessCount;
+            item.isFrozen = processCount > 0 && frozenProcessCount == processCount;
+            item.frozenType = item.isFrozen ? "V2" : null;
+            item.rss = rss;
+            item.notFrozenReason = item.isFrozen ? null : resolveNotFrozenReason(appRecord, processCount, frozenProcessCount);
+            result.add(item);
+        }
+
+        return result;
+    }
+
+    private static PackageInfo getPackageInfoAsUser(PackageManager pm, String packageName, int userId) throws Exception {
+        try {
+            Method method = pm.getClass().getMethod("getPackageInfoAsUser", String.class, int.class, int.class);
+            return (PackageInfo) method.invoke(pm, packageName, PackageManager.GET_META_DATA, userId);
+        } catch (Throwable ignored) {
+        }
+        return pm.getPackageInfo(packageName, PackageManager.GET_META_DATA);
+    }
+
+    private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
+        AppState appState = appRecord.getAppState();
+        if (appState != null && appState.isVisible()) {
+            return "VISIBLE";
+        }
+        if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
+            return "WHITELIST";
+        }
+        if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
+            return "AUDIO";
+        }
+        if (appState != null && AppConfigs.isLocationUseAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isLocation()) {
+            return "LOCATION";
+        }
+        if (appState != null && appState.isRecording()) {
+            return "RECORDING";
+        }
+        if (appState != null && appState.isVpn()) {
+            return "VPN";
+        }
+        if (frozenProcessCount > 0 && frozenProcessCount < processCount) {
+            return "WAITING_FROZEN";
+        }
+        return "UNKNOWN";
+    }
+
+    private static long readProcessRssKb(int pid) {
+        if (pid <= 0) {
+            return 0L;
+        }
+
+        Long direct = readRssFromStatusFile("/proc/" + pid + "/status");
+        if (direct != null) {
+            return direct;
+        }
+
+        List<String> out = runRootCommand("cat /proc/" + pid + "/status");
+        for (String line : out) {
+            if (line == null) {
+                continue;
+            }
+            String trimmed = line.trim();
+            if (!trimmed.startsWith("VmRSS:")) {
+                continue;
+            }
+            String[] parts = trimmed.split("\\s+");
+            if (parts.length >= 2) {
+                try {
+                    return Long.parseLong(parts[1]);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return 0L;
+    }
+
+    private static Long readRssFromStatusFile(String path) {
+        File file = new File(path);
+        if (!file.exists() || !file.canRead()) {
+            return null;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("VmRSS:")) {
+                    continue;
+                }
+                String[] parts = trimmed.split("\\s+");
+                if (parts.length >= 2) {
+                    return Long.parseLong(parts[1]);
+                }
+            }
+        } catch (IOException | NumberFormatException ignored) {
+        }
+        return null;
     }
 }

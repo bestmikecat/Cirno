@@ -60,5 +60,6 @@
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>
+    <item>监视器</item>
   </string-array>
 </resources>

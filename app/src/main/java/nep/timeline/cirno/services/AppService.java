@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import nep.timeline.cirno.entity.AppRecord;
@@ -68,5 +69,16 @@ public class AppService {
         }
 
         UID_RECORD_MAP.put(uid, appRecords);
+    }
+
+    public static List<AppRecord> getAllRecordsSnapshot() {
+        LinkedHashSet<AppRecord> records = new LinkedHashSet<>();
+        for (Map<String, AppRecord> appRecords : APP_RECORD_MAP.values()) {
+            if (appRecords == null || appRecords.isEmpty()) {
+                continue;
+            }
+            records.addAll(appRecords.values());
+        }
+        return List.copyOf(records);
     }
 }

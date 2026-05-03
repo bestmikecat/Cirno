@@ -60,5 +60,6 @@
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>
+    <item>Monitor</item>
   </string-array>
 </resources>
