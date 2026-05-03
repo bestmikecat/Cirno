@@ -113,10 +113,7 @@ public final class ConfigBinderHub {
     private static List<Integer> getInstalledUserIdsByPm() {
         LinkedHashSet<Integer> userIds = new LinkedHashSet<>();
         Pattern userPattern = Pattern.compile("UserInfo\\{(\\d+):");
-        List<String> lines = runCommand("pm list users");
-        if (lines.isEmpty()) {
-            lines = runCommand("cmd user list");
-        }
+        List<String> lines = runPmCommand(new String[]{"pm", "list", "users"});
         for (String line : lines) {
             Matcher matcher = userPattern.matcher(line);
             if (matcher.find()) {
@@ -131,10 +128,7 @@ public final class ConfigBinderHub {
 
     private static List<String> getInstalledPackagesForUserByPm(int userId) {
         LinkedHashSet<String> packages = new LinkedHashSet<>();
-        List<String> lines = runCommand("pm list packages --user " + userId);
-        if (lines.isEmpty()) {
-            lines = runCommand("cmd package list packages --user " + userId);
-        }
+        List<String> lines = runPmCommand(new String[]{"pm", "list", "packages", "--user", String.valueOf(userId)});
         for (String line : lines) {
             if (line != null && line.startsWith("package:")) {
                 String pkg = line.substring("package:".length()).trim();
@@ -146,11 +140,11 @@ public final class ConfigBinderHub {
         return new ArrayList<>(packages);
     }
 
-    private static List<String> runCommand(String command) {
+    private static List<String> runPmCommand(String[] command) {
         List<String> out = new ArrayList<>();
         Process process = null;
         try {
-            process = Runtime.getRuntime().exec(new String[]{"sh", "-c", command});
+            process = Runtime.getRuntime().exec(command);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -159,7 +153,7 @@ public final class ConfigBinderHub {
             }
             process.waitFor();
         } catch (Throwable e) {
-            Log.e("Config binder command failed: " + command, e);
+            Log.e("Config binder pm command failed", e);
         } finally {
             if (process != null) {
                 process.destroy();
