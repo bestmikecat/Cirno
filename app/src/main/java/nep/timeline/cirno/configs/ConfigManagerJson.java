@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,26 +28,18 @@ public class ConfigManagerJson {
         GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(null);
     }
 
-    private void writeConfigByMode(boolean su) {
+    private void writeConfig() {
         try {
             GlobalSettings globalSettings = GlobalVars.globalSettings;
             if (globalSettings != null) {
                 String globalConfigStr = gson.toJson(globalSettings);
-                if (su) {
-                    RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr, false);
-                } else {
-                    RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr);
-                }
+                RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, globalSettingsName), globalConfigStr);
             }
 
             ApplicationSettings applicationSettings = GlobalVars.applicationSettings;
             if (applicationSettings != null) {
                 String applicationConfigStr = gson.toJson(applicationSettings);
-                if (su) {
-                    RWUtils.writeStringToFileSU(new SuFile(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr, false);
-                } else {
-                    RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr);
-                }
+                RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr);
             }
         } catch (IOException e) {
             Log.e("Save Config", e);
@@ -89,47 +80,7 @@ public class ConfigManagerJson {
     }
 
     public void saveConfig() {
-        writeConfigByMode(false);
-    }
-
-    public boolean readConfigSU() {
-        boolean read = true;
-        try {
-            SuFile globalFile = new SuFile(GlobalVars.CONFIG_DIR, globalSettingsName);
-            if (!globalFile.exists()) {
-                GlobalVars.globalSettings = new GlobalSettings();
-                read = false;
-            } else {
-                String globalData = RWUtils.readConfig(globalFile);
-                GlobalVars.globalSettings = gson.fromJson(globalData, GlobalSettings.class);
-                if (GlobalVars.globalSettings == null) {
-                    GlobalVars.globalSettings = new GlobalSettings();
-                    read = false;
-                }
-            }
-            SuFile applicationFile = new SuFile(GlobalVars.CONFIG_DIR, applicationSettingsName);
-            if (!applicationFile.exists()) {
-                GlobalVars.applicationSettings = new ApplicationSettings();
-                read = false;
-            } else {
-                String applicationData = RWUtils.readConfig(applicationFile);
-                GlobalVars.applicationSettings = gson.fromJson(applicationData, ApplicationSettings.class);
-                if (GlobalVars.applicationSettings == null) {
-                    GlobalVars.applicationSettings = new ApplicationSettings();
-                    read = false;
-                }
-            }
-            ensureApplicationSettingsInitialized();
-        } catch (JsonSyntaxException | JsonIOException e) {
-            resetToDefaults();
-            return false;
-        }
-
-        return read;
-    }
-
-    public void saveConfigSU() {
-        writeConfigByMode(true);
+        writeConfig();
     }
 
     public String dumpGlobalSettingsJson() {
