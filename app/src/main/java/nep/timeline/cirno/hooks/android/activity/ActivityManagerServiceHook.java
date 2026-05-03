@@ -4,6 +4,7 @@ import de.robv.android.xposed.XC_MethodHook;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.ActivityManagerService;
+import nep.timeline.cirno.services.MonitorBinderHub;
 
 public class ActivityManagerServiceHook extends MethodHook {
     public ActivityManagerServiceHook(ClassLoader classLoader) {
@@ -31,6 +32,7 @@ public class ActivityManagerServiceHook extends MethodHook {
             @Override
             protected void beforeMethod(MethodHookParam param) {
                 ActivityManagerService.setInstance(param.thisObject);
+                MonitorBinderHub.publish();
             }
         };
     }

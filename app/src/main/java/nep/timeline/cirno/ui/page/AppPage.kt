@@ -378,7 +378,7 @@ fun AppPage(
             }
 
             AnimatedVisibility(
-                visible = isLoading.value.isEmpty() || !updatedApps.value,
+                visible = !updatedApps.value,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -402,6 +402,26 @@ fun AppPage(
                                 .align(alignment = Alignment.CenterVertically),
                         )
                     }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = updatedApps.value && isLoading.value.isEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(padding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.monitor_empty),
+                        color = colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

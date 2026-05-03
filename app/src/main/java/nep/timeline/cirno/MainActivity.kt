@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.app.App
+import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.ui.dialog.RootDialog
 import nep.timeline.cirno.utils.EnvUtils
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
+        BinderService.register(this)
         enableEdgeToEdge()
         setContent {
             val showRootDialog = rememberSaveable { mutableStateOf(false) }

@@ -57,6 +57,7 @@
   <string name="floating">悬浮</string>
   <string name="apple_floating">iOS风格悬浮</string>
   <string name="not_implemented_yet">未实现</string>
+  <string name="monitor_empty">暂无监视器数据</string>
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>

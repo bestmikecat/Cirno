@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Process;
+import android.os.RemoteException;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 
@@ -26,11 +27,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import nep.timeline.cirno.CommonConstants;
+import nep.timeline.cirno.binders.ApplicationInterface;
+import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.provide.ApplicationBinder;
+import nep.timeline.cirno.provide.FrozenStateBinder;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
@@ -189,45 +194,38 @@ public class PackageUtils {
         }
 
         PackageManager pm = context.getPackageManager();
-        List<AppRecord> appRecords = AppService.getAllRecordsSnapshot();
-        Map<String, AppRecord> grouped = new LinkedHashMap<>();
-        for (AppRecord appRecord : appRecords) {
-            if (appRecord == null || appRecord.getPackageName() == null || appRecord.getPackageName().isEmpty()) {
-                continue;
-            }
-            String key = appRecord.getPackageName() + "#" + appRecord.getUserId();
-            grouped.put(key, appRecord);
+        ApplicationInterface applicationInterface = ApplicationBinder.getInstance();
+        FrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
+        if (applicationInterface == null || frozenStateInterface == null) {
+            Log.i("Monitor data skipped: binder missing (Application=" + (applicationInterface != null) + ", FrozenState=" + (frozenStateInterface != null) + ")");
+            return result;
         }
 
-        for (AppRecord appRecord : grouped.values()) {
-            if (appRecord == null) {
+        LinkedHashSet<String> runningApps;
+        try {
+            List<String> running = applicationInterface.getRunningApplication();
+            if (running == null || running.isEmpty()) {
+                Log.i("Monitor data: running app list empty");
+                return result;
+            }
+            runningApps = new LinkedHashSet<>(running);
+            Log.i("Monitor data: running app entries=" + runningApps.size());
+        } catch (RemoteException e) {
+            Log.w("Monitor data failed: getRunningApplication", e);
+            return result;
+        }
+
+        for (String entry : runningApps) {
+            RunningApp runningApp = parseRunningApp(entry);
+            if (runningApp == null) {
                 continue;
             }
 
-            List<ProcessRecord> processRecords = appRecord.getProcessRecords();
-            if (processRecords == null || processRecords.isEmpty()) {
+            ApplicationInfo applicationInfo = getApplicationInfoAsUser(pm, runningApp.packageName, runningApp.userId);
+            if (applicationInfo == null) {
                 continue;
             }
 
-            int processCount = 0;
-            int frozenProcessCount = 0;
-            long rss = 0L;
-            for (ProcessRecord processRecord : processRecords) {
-                if (processRecord == null || processRecord.isDeathProcess()) {
-                    continue;
-                }
-                processCount++;
-                if (processRecord.isFrozen()) {
-                    frozenProcessCount++;
-                }
-                rss += readProcessRssKb(processRecord.getPid());
-            }
-
-            if (processCount <= 0) {
-                continue;
-            }
-
-            ApplicationInfo applicationInfo = appRecord.getApplicationInfo();
             Drawable icon;
             String appName;
             try {
@@ -238,33 +236,54 @@ public class PackageUtils {
             try {
                 appName = String.valueOf(applicationInfo.loadLabel(pm));
             } catch (Throwable ignored) {
-                appName = appRecord.getPackageName();
+                appName = runningApp.packageName;
             }
 
             PackageInfo packageInfo;
             try {
-                packageInfo = getPackageInfoAsUser(pm, appRecord.getPackageName(), appRecord.getUserId());
+                packageInfo = getPackageInfoAsUser(pm, runningApp.packageName, runningApp.userId);
             } catch (Throwable ignored) {
                 packageInfo = new PackageInfo();
-                packageInfo.packageName = appRecord.getPackageName();
+                packageInfo.packageName = runningApp.packageName;
             }
 
+            String frozenData;
+            try {
+                frozenData = frozenStateInterface.isFrozen(runningApp.packageName, runningApp.userId);
+            } catch (RemoteException e) {
+                continue;
+            }
+            FrozenSnapshot snapshot = parseFrozenSnapshot(frozenData);
+
             AppItem item = new AppItem();
-            item.packageName = appRecord.getPackageName();
-            item.userId = appRecord.getUserId();
+            item.packageName = runningApp.packageName;
+            item.userId = runningApp.userId;
             item.appName = appName;
             item.appIcon = icon;
             item.packageInfo = packageInfo;
-            item.applicationProcessCount = processCount;
-            item.frozenProcessCount = frozenProcessCount;
-            item.isFrozen = processCount > 0 && frozenProcessCount == processCount;
+            item.applicationProcessCount = snapshot.processCount;
+            item.frozenProcessCount = snapshot.frozenCount;
+            item.isFrozen = snapshot.isFrozen;
             item.frozenType = item.isFrozen ? "V2" : null;
-            item.rss = rss;
-            item.notFrozenReason = item.isFrozen ? null : resolveNotFrozenReason(appRecord, processCount, frozenProcessCount);
+            item.rss = snapshot.rss;
+            item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
             result.add(item);
         }
 
         return result;
+    }
+
+    private static ApplicationInfo getApplicationInfoAsUser(PackageManager pm, String packageName, int userId) {
+        try {
+            Method method = pm.getClass().getMethod("getApplicationInfoAsUser", String.class, int.class, int.class);
+            return (ApplicationInfo) method.invoke(pm, packageName, PackageManager.GET_META_DATA, userId);
+        } catch (Throwable ignored) {
+        }
+        try {
+            return pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     private static PackageInfo getPackageInfoAsUser(PackageManager pm, String packageName, int userId) throws Exception {
@@ -352,5 +371,90 @@ public class PackageUtils {
         } catch (IOException | NumberFormatException ignored) {
         }
         return null;
+    }
+
+    private static RunningApp parseRunningApp(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        String[] split = value.split(":");
+        if (split.length < 2) {
+            return null;
+        }
+        try {
+            return new RunningApp(split[0], Integer.parseInt(split[1]));
+        } catch (NumberFormatException ignored) {
+        }
+        return null;
+    }
+
+    private static FrozenSnapshot parseFrozenSnapshot(String value) {
+        FrozenSnapshot snapshot = new FrozenSnapshot();
+        if (value == null || value.isEmpty()) {
+            return snapshot;
+        }
+        snapshot.rss = parseIntBetween(value, "RSS[", "]", 0);
+        if (value.startsWith("V2(")) {
+            int slash = value.indexOf('/');
+            int close = value.indexOf(')');
+            if (slash > 3 && close > slash) {
+                snapshot.frozenCount = parseIntSafe(value.substring(3, slash), 0);
+                snapshot.processCount = parseIntSafe(value.substring(slash + 1, close), 0);
+            }
+            snapshot.isFrozen = snapshot.processCount > 0 && snapshot.frozenCount == snapshot.processCount;
+            return snapshot;
+        }
+
+        snapshot.isFrozen = false;
+        snapshot.reason = parseStringBetween(value, "NOT_FROZEN[", "]", "UNKNOWN");
+        snapshot.processCount = parseIntBetween(value, "PROCESS_COUNT[", "]", 0);
+        snapshot.frozenCount = parseIntBetween(value, "FROZEN_COUNT[", "]", 0);
+        return snapshot;
+    }
+
+    private static String parseStringBetween(String source, String start, String end, String fallback) {
+        int i = source.indexOf(start);
+        if (i < 0) {
+            return fallback;
+        }
+        int j = source.indexOf(end, i + start.length());
+        if (j < 0) {
+            return fallback;
+        }
+        return source.substring(i + start.length(), j);
+    }
+
+    private static int parseIntBetween(String source, String start, String end, int fallback) {
+        String v = parseStringBetween(source, start, end, null);
+        if (v == null) {
+            return fallback;
+        }
+        return parseIntSafe(v, fallback);
+    }
+
+    private static int parseIntSafe(String value, int fallback) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException ignored) {
+        }
+        return fallback;
+    }
+
+    private static final class RunningApp {
+        private final String packageName;
+        private final int userId;
+
+        private RunningApp(String packageName, int userId) {
+            this.packageName = packageName;
+            this.userId = userId;
+        }
+    }
+
+    private static final class FrozenSnapshot {
+        private boolean isFrozen;
+        private String reason = "UNKNOWN";
+        private int processCount;
+        private int frozenCount;
+        private long rss;
     }
 }

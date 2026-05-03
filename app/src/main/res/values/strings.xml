@@ -57,6 +57,7 @@
   <string name="floating">Floating</string>
   <string name="apple_floating">Apple-style floating</string>
   <string name="not_implemented_yet">NaN</string>
+  <string name="monitor_empty">No monitor data yet</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>
