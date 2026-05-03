@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveable
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.app.App
