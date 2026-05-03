@@ -2,7 +2,8 @@ package nep.timeline.cirno.services;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.IBinder;
+import android.os.UserHandle;
+import android.os.UserManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -109,7 +110,7 @@ public final class ConfigBinderHub {
             }
             int packageCount = 0;
             for (int userId : userIds) {
-                List<String> packages = getInstalledPackagesForUserByService(userId);
+                List<String> packages = getInstalledPackagesForUserByFramework(context, userId);
                 packageCount += packages.size();
                 for (String pkg : packages) {
                     if (pkg == null || pkg.isEmpty()) {
@@ -134,82 +135,31 @@ public final class ConfigBinderHub {
     private static List<Integer> getInstalledUserIdsByService() {
         LinkedHashSet<Integer> userIds = new LinkedHashSet<>();
         try {
-            IBinder binder = getServiceBinder("user");
-            if (binder == null) {
+            UserManager userManager = (UserManager) ActivityManagerService.getContext().getSystemService(Context.USER_SERVICE);
+            if (userManager == null) {
                 return new ArrayList<>();
             }
-            Class<?> stub = Class.forName("android.os.IUserManager$Stub");
-            Object ium = stub.getMethod("asInterface", IBinder.class).invoke(null, binder);
-            if (ium == null) {
-                return new ArrayList<>();
-            }
-
-            List<?> users = null;
-            Method method = null;
-            try {
-                method = ium.getClass().getMethod("getUsers", boolean.class, boolean.class, boolean.class);
-                users = (List<?>) method.invoke(ium, true, true, true);
-            } catch (Throwable ignored) {
-            }
-            if (users == null) {
-                try {
-                    method = ium.getClass().getMethod("getUsers", boolean.class, boolean.class);
-                    users = (List<?>) method.invoke(ium, true, true);
-                } catch (Throwable ignored) {
-                }
-            }
-            if (users == null) {
-                try {
-                    method = ium.getClass().getMethod("getUsers", boolean.class);
-                    users = (List<?>) method.invoke(ium, true);
-                } catch (Throwable ignored) {
-                }
-            }
-            if (users == null) {
-                try {
-                    method = ium.getClass().getMethod("getUsers");
-                    users = (List<?>) method.invoke(ium);
-                } catch (Throwable ignored) {
-                }
-            }
-
-            if (users != null) {
-                for (Object userObj : users) {
-                    int id = extractUserId(userObj);
-                    if (id >= 0) {
-                        userIds.add(id);
+            List<UserHandle> profiles = userManager.getUserProfiles();
+            if (profiles != null) {
+                for (UserHandle profile : profiles) {
+                    if (profile != null) {
+                        userIds.add(profile.hashCode());
                     }
                 }
-                Log.d("Config binder IUserManager getUsers success size=" + userIds.size());
             }
+            Log.d("Config binder UserManager getUserProfiles success size=" + userIds.size());
         } catch (Throwable e) {
-            Log.e("Config binder IUserManager users query failed", e);
+            Log.e("Config binder UserManager users query failed", e);
         }
         return new ArrayList<>(userIds);
     }
 
-    private static List<String> getInstalledPackagesForUserByService(int userId) {
+    private static List<String> getInstalledPackagesForUserByFramework(Context context, int userId) {
         LinkedHashSet<String> packages = new LinkedHashSet<>();
         try {
-            IBinder binder = getServiceBinder("package");
-            if (binder == null) {
-                return new ArrayList<>();
-            }
-            Class<?> stub = Class.forName("android.content.pm.IPackageManager$Stub");
-            Object ipm = stub.getMethod("asInterface", IBinder.class).invoke(null, binder);
-            if (ipm == null) {
-                return new ArrayList<>();
-            }
-
             Object resultObj;
-            try {
-                Method getInstalled = ipm.getClass().getMethod("getInstalledPackages", long.class, int.class);
-                resultObj = getInstalled.invoke(ipm, 0L, userId);
-            } catch (Throwable ignored) {
-                Method getInstalled = ipm.getClass().getMethod("getInstalledPackages", int.class, int.class);
-                resultObj = getInstalled.invoke(ipm, 0, userId);
-            }
-
+            Method getInstalledAsUser = context.getPackageManager().getClass().getMethod("getInstalledPackagesAsUser", int.class, int.class);
+            resultObj = getInstalledAsUser.invoke(context.getPackageManager(), 0, userId);
             List<?> list = unwrapListResult(resultObj);
             if (list != null) {
                 for (Object item : list) {
@@ -218,10 +168,10 @@ public final class ConfigBinderHub {
                         packages.add(pkg);
                     }
                 }
-                Log.d("Config binder IPackageManager getInstalledPackages success user=" + userId + " size=" + packages.size());
+                Log.d("Config binder getInstalledPackagesAsUser success user=" + userId + " size=" + packages.size());
             }
         } catch (Throwable e) {
-            Log.e("Config binder IPackageManager packages query failed", e);
+            Log.e("Config binder getInstalledPackagesAsUser failed", e);
         }
         return new ArrayList<>(packages);
     }
@@ -242,18 +192,6 @@ public final class ConfigBinderHub {
         } catch (Throwable ignored) {
         }
         return null;
-    }
-
-    private static IBinder getServiceBinder(String name) {
-        try {
-            Class<?> serviceManager = Class.forName("android.os.ServiceManager");
-            Method getService = serviceManager.getMethod("getService", String.class);
-            Object binder = getService.invoke(null, name);
-            return binder instanceof IBinder ? (IBinder) binder : null;
-        } catch (Throwable e) {
-            Log.e("Config binder getService failed: " + name, e);
-            return null;
-        }
     }
 
     private static String extractPackageName(Object pkgObj) {
@@ -278,23 +216,4 @@ public final class ConfigBinderHub {
         return null;
     }
 
-    private static int extractUserId(Object userObj) {
-        if (userObj == null) {
-            return -1;
-        }
-        try {
-            Field idField = userObj.getClass().getField("id");
-            return idField.getInt(userObj);
-        } catch (Throwable ignored) {
-        }
-        try {
-            Method getUserHandle = userObj.getClass().getMethod("getUserHandle");
-            Object id = getUserHandle.invoke(userObj);
-            if (id instanceof Integer) {
-                return (Integer) id;
-            }
-        } catch (Throwable ignored) {
-        }
-        return -1;
-    }
 }
