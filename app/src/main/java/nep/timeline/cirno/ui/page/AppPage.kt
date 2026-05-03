@@ -420,7 +420,7 @@ fun AppPage(
                 ) {
                     Text(
                         text = stringResource(R.string.monitor_empty),
-                        color = colorScheme.onSurfaceVariant
+                        color = colorScheme.onSurfaceVariantSummary
                     )
                 }
             }
