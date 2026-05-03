@@ -276,6 +276,13 @@ public class PackageUtils {
             result.add(item);
         }
 
+        result.sort(
+            Comparator
+                .comparing((AppItem item) -> !item.isFrozen)
+                .thenComparing(item -> isSystemUIChecker(context, item.packageInfo))
+                .thenComparing(item -> item.appName == null ? "" : item.appName.toLowerCase(Locale.ROOT))
+        );
+
         return result;
     }
 

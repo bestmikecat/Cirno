@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -203,7 +204,7 @@ fun AppPage(
             appListViewModel.getFilterApps()
         while (isActive.value) {
             if (type.value == 2)
-                appListViewModel.getFilterApps()
+                appListViewModel.getFilterApps(showLoading = false)
             delay(1500)
         }
     }
@@ -335,42 +336,38 @@ fun AppPage(
                                 )
                             }
 
-                            val appCount = filteredApps.value.value.size
-                            items(
-                                count = appCount,
-                                key = { "app_$it" }) { i ->
-                                AnimatedVisibility(
-                                    visible = filteredApps.value.value.isNotEmpty() && updatedApps.value,
-                                    enter = fadeIn(),
-                                    exit = fadeOut()
-                                ) {
-                                    if (appCount == 1) {
-                                        Card(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                            if (type.value == 2 && updatedApps.value)
-                                                FrozenAppItemCompose(filteredApps.value.value[i])
-                                            else
-                                                AppItemCompose(filteredApps.value.value[i])
-                                        }
-                                    } else {
-                                        val isFirst = i == 0
-                                        val isLast = i == appCount - 1
-                                        val shape = when {
-                                            isFirst -> AppListTopShape
-                                            isLast -> AppListBottomShape
-                                            else -> RectangleShape
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 12.dp)
-                                                .clip(shape)
-                                                .background(colorScheme.surfaceContainer),
-                                        ) {
-                                            if (type.value == 2 && updatedApps.value)
-                                                FrozenAppItemCompose(filteredApps.value.value[i])
-                                            else
-                                                AppItemCompose(filteredApps.value.value[i])
-                                        }
+                            val appItems = filteredApps.value.value
+                            val appCount = appItems.size
+                            itemsIndexed(
+                                items = appItems,
+                                key = { _, item -> item.packageName + "#" + item.userId }
+                            ) { i, item ->
+                                if (appCount == 1) {
+                                    Card(modifier = Modifier.padding(horizontal = 12.dp)) {
+                                        if (type.value == 2 && updatedApps.value)
+                                            FrozenAppItemCompose(item)
+                                        else
+                                            AppItemCompose(item)
+                                    }
+                                } else {
+                                    val isFirst = i == 0
+                                    val isLast = i == appCount - 1
+                                    val shape = when {
+                                        isFirst -> AppListTopShape
+                                        isLast -> AppListBottomShape
+                                        else -> RectangleShape
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp)
+                                            .clip(shape)
+                                            .background(colorScheme.surfaceContainer),
+                                    ) {
+                                        if (type.value == 2 && updatedApps.value)
+                                            FrozenAppItemCompose(item)
+                                        else
+                                            AppItemCompose(item)
                                     }
                                 }
                             }

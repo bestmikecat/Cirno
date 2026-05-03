@@ -50,13 +50,15 @@ class AppListViewModel : ViewModel() {
     fun updateByQuery(appName: String = _search.value, type: Int) {
         _search.value = appName
         if (_type.value != type) {
-            getFilterApps(type)
+            getFilterApps(type = type, showLoading = true)
             _type.value = type
         }
     }
 
-    fun getFilterApps(type: Int = _type.value) {
-        _updatedApps.value = false
+    fun getFilterApps(type: Int = _type.value, showLoading: Boolean = true) {
+        if (showLoading) {
+            _updatedApps.value = false
+        }
         viewModelScope.launch {
             WindowUtils.handler.post {
                 _filterApps.value = when (type) {
