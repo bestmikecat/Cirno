@@ -22,6 +22,12 @@ public class BinderService {
         }
     }
 
+    public static int binderCount() {
+        synchronized (binders) {
+            return binders.size();
+        }
+    }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     public static void register(Context context) {
         Intent intent = context.registerReceiver(null, new IntentFilter(GlobalVars.TAG + "-Binder"));

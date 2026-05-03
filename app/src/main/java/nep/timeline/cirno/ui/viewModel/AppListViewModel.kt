@@ -6,29 +6,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import nep.timeline.cirno.GlobalVars
-import nep.timeline.cirno.configs.ConfigManager
-import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.entity.AppItem
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.utils.PackageUtils
 import nep.timeline.cirno.ui.utils.WindowUtils
 
 class AppListViewModel : ViewModel() {
-    private fun getSafeGlobalSettings(): GlobalSettings {
-        if (GlobalVars.globalSettings == null) {
-            ConfigManager.manager.readConfigSU()
-        }
-        if (GlobalVars.globalSettings == null) {
-            GlobalVars.globalSettings = GlobalSettings()
-        }
-        return GlobalVars.globalSettings
-    }
-
     private val _filterApps = MutableStateFlow<List<AppItem>>(emptyList())
     private val _cacheFilterApps = MutableStateFlow<List<AppItem>>(emptyList())
     private val _search = MutableStateFlow("")
-    private val _type = MutableStateFlow(getSafeGlobalSettings().mainType)
+    private val _type = MutableStateFlow(0)
     private val _updatedApps = MutableStateFlow(true)
     val search: StateFlow<String> = _search
     var cacheFilterApps: StateFlow<List<AppItem>> = _cacheFilterApps
@@ -61,8 +48,6 @@ class AppListViewModel : ViewModel() {
     fun updateByQuery(appName: String = _search.value, type: Int) {
         _search.value = appName
         if (_type.value != type) {
-            getSafeGlobalSettings().mainType = type
-            ConfigManager.manager.saveConfigSU()
             getFilterApps(type)
             _type.value = type
         }

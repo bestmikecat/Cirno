@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import nep.timeline.cirno.CommonConstants;
+import nep.timeline.cirno.binder.BinderService;
 import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
@@ -196,6 +197,13 @@ public class PackageUtils {
         PackageManager pm = context.getPackageManager();
         ApplicationInterface applicationInterface = ApplicationBinder.getInstance();
         FrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
+        if (applicationInterface == null || frozenStateInterface == null) {
+            if (BinderService.binderCount() == 0) {
+                nep.timeline.cirno.binder.BinderService.register(context);
+                applicationInterface = ApplicationBinder.getInstance();
+                frozenStateInterface = FrozenStateBinder.getInstance();
+            }
+        }
         if (applicationInterface == null || frozenStateInterface == null) {
             Log.i("Monitor data skipped: binder missing (Application=" + (applicationInterface != null) + ", FrozenState=" + (frozenStateInterface != null) + ")");
             return result;

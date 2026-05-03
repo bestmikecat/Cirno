@@ -54,8 +54,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
+import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
+import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -202,6 +204,13 @@ fun AppPage(
             if (type.value == 2)
                 appListViewModel.getFilterApps()
             delay(1500)
+        }
+    }
+
+    LaunchedEffect(type.value) {
+        if (type.value == 2) {
+            BinderService.register(AppContext.context)
+            appListViewModel.getFilterApps(2)
         }
     }
 
@@ -406,7 +415,7 @@ fun AppPage(
             }
 
             AnimatedVisibility(
-                visible = updatedApps.value && isLoading.value.isEmpty(),
+                visible = type.value == 2 && updatedApps.value && isLoading.value.isEmpty(),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
