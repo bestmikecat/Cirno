@@ -3,7 +3,6 @@ package nep.timeline.cirno.services;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.IBinder;
-import android.os.ServiceManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -135,7 +134,7 @@ public final class ConfigBinderHub {
     private static List<Integer> getInstalledUserIdsByService() {
         LinkedHashSet<Integer> userIds = new LinkedHashSet<>();
         try {
-            IBinder binder = ServiceManager.getService("user");
+            IBinder binder = getServiceBinder("user");
             if (binder == null) {
                 return new ArrayList<>();
             }
@@ -192,7 +191,7 @@ public final class ConfigBinderHub {
     private static List<String> getInstalledPackagesForUserByService(int userId) {
         LinkedHashSet<String> packages = new LinkedHashSet<>();
         try {
-            IBinder binder = ServiceManager.getService("package");
+            IBinder binder = getServiceBinder("package");
             if (binder == null) {
                 return new ArrayList<>();
             }
@@ -243,6 +242,18 @@ public final class ConfigBinderHub {
         } catch (Throwable ignored) {
         }
         return null;
+    }
+
+    private static IBinder getServiceBinder(String name) {
+        try {
+            Class<?> serviceManager = Class.forName("android.os.ServiceManager");
+            Method getService = serviceManager.getMethod("getService", String.class);
+            Object binder = getService.invoke(null, name);
+            return binder instanceof IBinder ? (IBinder) binder : null;
+        } catch (Throwable e) {
+            Log.e("Config binder getService failed: " + name, e);
+            return null;
+        }
     }
 
     private static String extractPackageName(Object pkgObj) {
