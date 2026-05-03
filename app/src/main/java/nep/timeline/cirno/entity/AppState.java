@@ -5,9 +5,6 @@ import android.os.IBinder;
 import java.util.HashSet;
 import java.util.Set;
 
-import lombok.Getter;
-
-@Getter
 public class AppState {
     private final AppRecord parent;
     private final Set<IBinder> activities = new HashSet<>();
@@ -113,5 +110,25 @@ public class AppState {
             return false;
         recording = false;
         return true;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public boolean isLocation() {
+        return location;
+    }
+
+    public boolean isAudio() {
+        return audio;
+    }
+
+    public boolean isRecording() {
+        return recording;
+    }
+
+    public boolean isVpn() {
+        return vpn;
     }
 }

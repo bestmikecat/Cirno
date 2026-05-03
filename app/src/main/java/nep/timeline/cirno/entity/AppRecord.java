@@ -5,14 +5,12 @@ import android.content.pm.ApplicationInfo;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import lombok.Data;
 import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.utils.InputMethodData;
 import nep.timeline.cirno.utils.PKGUtils;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
-@Data
 public class AppRecord {
     private final String packageName;
     private final int userId;
@@ -32,6 +30,38 @@ public class AppRecord {
 
     public boolean isSystem() {
         return packageName == null || equals(InputMethodData.currentInputMethodApp) || PKGUtils.isSystemApp(applicationInfo) || AppConfigs.isWhiteApp(packageName, userId) || CommonConstants.isWhitelistApps(packageName);
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public int getUid() {
+        return uid;
+    }
+
+    public ApplicationInfo getApplicationInfo() {
+        return applicationInfo;
+    }
+
+    public List<ProcessRecord> getProcessRecords() {
+        return processRecords;
+    }
+
+    public AppState getAppState() {
+        return appState;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 
     public String getPackageNameWithUser() {

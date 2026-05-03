@@ -273,19 +273,6 @@ public class PackageUtils {
         return result;
     }
 
-    private static ApplicationInfo getApplicationInfoAsUser(PackageManager pm, String packageName, int userId) {
-        try {
-            Method method = pm.getClass().getMethod("getApplicationInfoAsUser", String.class, int.class, int.class);
-            return (ApplicationInfo) method.invoke(pm, packageName, PackageManager.GET_META_DATA, userId);
-        } catch (Throwable ignored) {
-        }
-        try {
-            return pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
-        } catch (Throwable ignored) {
-        }
-        return null;
-    }
-
     private static PackageInfo getPackageInfoAsUser(PackageManager pm, String packageName, int userId) throws Exception {
         try {
             Method method = pm.getClass().getMethod("getPackageInfoAsUser", String.class, int.class, int.class);

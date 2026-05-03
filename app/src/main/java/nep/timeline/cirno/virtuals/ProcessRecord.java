@@ -3,13 +3,9 @@ package nep.timeline.cirno.virtuals;
 import android.content.pm.ApplicationInfo;
 
 import de.robv.android.xposed.XposedHelpers;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.services.AppService;
 
-@Getter
 public class ProcessRecord {
     private final Object instance;
     private final int userId;
@@ -18,9 +14,7 @@ public class ProcessRecord {
     private final int uid;
     private final String packageName;
     private final String processName;
-    @Getter(AccessLevel.NONE)
     private AppRecord appRecord;
-    @Setter
     private boolean frozen;
 
     public ProcessRecord(Object instance) {
@@ -46,5 +40,29 @@ public class ProcessRecord {
         if (appRecord == null)
             appRecord = AppService.get(packageName, userId);
         return appRecord;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public int getRunningUid() {
+        return runningUid;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public String getProcessName() {
+        return processName;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
     }
 }
