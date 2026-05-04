@@ -42,6 +42,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
+    val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
+    val builtinWhitelistLocked = stringResource(R.string.builtin_whitelist_locked)
+    val builtinWhitelistBlacklistBlocked = stringResource(R.string.builtin_whitelist_blacklist_blocked)
 
     Scaffold(
         topBar = {
@@ -76,12 +79,12 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
                         SwitchPreference(
                             title = stringResource(R.string.white_app),
-                            summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_summary) else null,
+                            summary = if (isBuiltinWhitelistApp) builtinWhitelistSummary else null,
                             checked = isBuiltinWhitelistApp || white.value,
                             enabled = !isBuiltinWhitelistApp,
                             onCheckedChange = {
                                 if (isBuiltinWhitelistApp) {
-                                    WindowUtils.showToast(stringResource(R.string.builtin_whitelist_locked))
+                                    WindowUtils.showToast(builtinWhitelistLocked)
                                     return@SwitchPreference
                                 }
                                 if (black.value && it) {
@@ -162,7 +165,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             enabled = !isBuiltinWhitelistApp,
                             onCheckedChange = {
                                 if (isBuiltinWhitelistApp && it) {
-                                    WindowUtils.showToast(stringResource(R.string.builtin_whitelist_blacklist_blocked))
+                                    WindowUtils.showToast(builtinWhitelistBlacklistBlocked)
                                     return@SwitchPreference
                                 }
                                 val prevBlack = black.value
