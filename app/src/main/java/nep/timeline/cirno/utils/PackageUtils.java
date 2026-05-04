@@ -105,10 +105,11 @@ public class PackageUtils {
                 item.packageInfo = new PackageInfo();
                 item.packageInfo.packageName = pkg;
             }
-            item.white = AppConfigs.isWhiteApp(pkg, item.userId);
-            item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
-            item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
-            item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
+                item.white = AppConfigs.isWhiteApp(pkg, item.userId);
+                item.black = AppConfigs.isBlackApp(pkg, item.userId);
+                item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
+                item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
+                item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
             item.socket = item.networkCheck;
             item.netReceive = item.networkCheck;
             list.add(item);
@@ -116,15 +117,21 @@ public class PackageUtils {
 
         list.sort(
             Comparator
-                .comparing((AppItem item) -> !isConfigured(item))
+                .comparingInt(PackageUtils::getAppListPriority)
                 .thenComparing(item -> item.appName == null ? "" : item.appName.toLowerCase(Locale.ROOT))
         );
 
         return list;
     }
 
-    private static boolean isConfigured(AppItem item) {
-        return item.white || item.backgroundPlay || item.locationCheck != 0 || item.networkCheck;
+    private static int getAppListPriority(AppItem item) {
+        if (item.black) {
+            return 1;
+        }
+        if (item.white || item.backgroundPlay || item.locationCheck != 0 || item.networkCheck) {
+            return 0;
+        }
+        return 2;
     }
 
     private static List<Integer> getInstalledUserIdsByPm() {
@@ -318,6 +325,9 @@ public class PackageUtils {
         }
         if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
             return "WHITELIST";
+        }
+        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
+            return "BLACKLIST";
         }
         if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
             return "AUDIO";

@@ -325,7 +325,7 @@ private fun StatusCard(
                         )
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = stringResource(R.string.not_implemented_yet),
+                            text = if (!active || GlobalVars.applicationSettings == null || fool) "N/A" else GlobalVars.applicationSettings.blackApps.size.toString(),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colorScheme.onSurface,

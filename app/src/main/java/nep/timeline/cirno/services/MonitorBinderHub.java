@@ -121,6 +121,9 @@ public final class MonitorBinderHub {
         if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
             return "WHITELIST";
         }
+        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
+            return "BLACKLIST";
+        }
         if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
             return "AUDIO";
         }

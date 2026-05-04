@@ -29,7 +29,7 @@ public class AppRecord {
     }
 
     public boolean isSystem() {
-        return packageName == null || equals(InputMethodData.currentInputMethodApp) || PKGUtils.isSystemApp(applicationInfo) || AppConfigs.isWhiteApp(packageName, userId) || CommonConstants.isWhitelistApps(packageName);
+        return packageName == null || equals(InputMethodData.currentInputMethodApp) || PKGUtils.isSystemApp(applicationInfo) || CommonConstants.isWhitelistApps(packageName);
     }
 
     public String getPackageName() {

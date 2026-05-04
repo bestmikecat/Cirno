@@ -26,7 +26,7 @@ import top.yukonga.miuix.kmp.basic.Text
 fun AppItemCompose(
     app: AppItem,
 ) {
-    val configured = app.white || app.backgroundPlay || app.locationCheck != 0 || app.networkCheck
+    val configured = app.black || app.white || app.backgroundPlay || app.locationCheck != 0 || app.networkCheck
     var subtitle: String? = null
     var subtitleColor = Color(60, 179, 113)
     if (configured) {
@@ -54,13 +54,18 @@ fun AppItemCompose(
             if (configured) {
                 StatusTag(
                     label = when {
+                        app.black -> stringResource(R.string.black_app)
                         app.white -> stringResource(R.string.white_app)
                         app.backgroundPlay -> stringResource(R.string.background_play)
                         app.locationCheck != 0 -> stringResource(R.string.location_check)
                         app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
                         else -> stringResource(R.string.other_config)
                     },
-                    backgroundColor = if (app.white) (if (isSystemInDarkTheme()) Color.White else Color.Black) else Color(60, 179, 113),
+                    backgroundColor = when {
+                        app.black -> Color(0xFFD13636)
+                        app.white -> if (isSystemInDarkTheme()) Color.White else Color.Black
+                        else -> Color(60, 179, 113)
+                    },
                     contentColor = if (app.white && isSystemInDarkTheme()) Color.Black else Color.White
                 )
             }

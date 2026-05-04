@@ -13,8 +13,21 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class FreezerService {
     public static void freezer(AppRecord appRecord) {
-        if (appRecord.isFrozen() || appRecord.isSystem() ||
+        boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
+        if (appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
                 appRecord.getAppState().isVisible()) {
+            return;
+        }
+
+        if (blacklisted) {
+            for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
+                if (processRecord.isDeathProcess() || processRecord.isFrozen()) {
+                    continue;
+                }
+                FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid());
+                processRecord.setFrozen(true);
+            }
+            appRecord.setFrozen(true);
             return;
         }
 
@@ -99,7 +112,11 @@ public class FreezerService {
     }
 
     public static void temporaryUnfreezeIfNeed(AppRecord appRecord, String reason, long interval) {
-        if (appRecord == null || appRecord.isSystem())
+        if (appRecord == null)
+            return;
+
+        boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
+        if (!blacklisted && appRecord.isSystem())
             return;
 
         if (appRecord.isFrozen())

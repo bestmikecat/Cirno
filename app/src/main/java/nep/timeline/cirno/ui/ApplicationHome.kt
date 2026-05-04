@@ -66,15 +66,59 @@ fun ApplicationHome(activity: ApplicationActivity) {
             ) {
                 item {
                     Card(modifier = Modifier.padding(12.dp)) {
+                        val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
                         val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
                         val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
 
                         SwitchPreference(
+                            title = stringResource(R.string.black_app),
+                            checked = black.value,
+                            onCheckedChange = {
+                                val prevBlack = black.value
+                                val prevWhite = white.value
+                                val prevBackground = backgroundPlay.value
+                                val prevLocation = locationUse.value
+                                val prevNetwork = networkMessage.value
+
+                                black.value = it
+                                AppConfigs.setBlackApp(packageName, userId, it)
+                                if (it) {
+                                    white.value = false
+                                    backgroundPlay.value = false
+                                    locationUse.value = false
+                                    networkMessage.value = false
+                                    AppConfigs.setWhiteApp(packageName, userId, false)
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                }
+
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    black.value = prevBlack
+                                    white.value = prevWhite
+                                    backgroundPlay.value = prevBackground
+                                    locationUse.value = prevLocation
+                                    networkMessage.value = prevNetwork
+                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                                    AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
+                                }
+                            }
+                        )
+
+                        SwitchPreference(
                             title = stringResource(R.string.white_app),
                             checked = white.value,
                             onCheckedChange = {
+                                if (black.value && it) {
+                                    WindowUtils.showToast("黑名单已开启，无法启用白名单")
+                                    return@SwitchPreference
+                                }
                                 val previous = white.value
                                 white.value = it
                                 AppConfigs.setWhiteApp(packageName, userId, it)
@@ -90,6 +134,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.background_play),
                             checked = backgroundPlay.value,
                             onCheckedChange = {
+                                if (black.value && it) {
+                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    return@SwitchPreference
+                                }
                                 val previous = backgroundPlay.value
                                 backgroundPlay.value = it
                                 AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
@@ -105,6 +153,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.location_check),
                             checked = locationUse.value,
                             onCheckedChange = {
+                                if (black.value && it) {
+                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    return@SwitchPreference
+                                }
                                 val previous = locationUse.value
                                 locationUse.value = it
                                 AppConfigs.setLocationUseAllowed(packageName, userId, it)
@@ -120,6 +172,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             title = stringResource(R.string.netreceive_unfreeze),
                             checked = networkMessage.value,
                             onCheckedChange = {
+                                if (black.value && it) {
+                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    return@SwitchPreference
+                                }
                                 val previous = networkMessage.value
                                 networkMessage.value = it
                                 AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
@@ -131,13 +187,6 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             }
                         )
 
-                        SwitchPreference(
-                            title = stringResource(R.string.black_app),
-                            checked = false,
-                            onCheckedChange = {
-                                WindowUtils.showToast("还未实现")
-                            }
-                        )
                     }
                 }
             }

@@ -15,6 +15,8 @@ public class AppConfigs {
 
     private static Set<String> getCapabilityApps(Capability capability) {
         switch (capability) {
+            case BLACK_LIST:
+                return getSafeSettings().blackApps;
             case WHITE_LIST:
                 return getSafeSettings().whiteApps;
             case ALLOW_BACKGROUND_AUDIO:
@@ -39,13 +41,30 @@ public class AppConfigs {
         if (pkg == null || pkg.isEmpty()) {
             return;
         }
+        if (enabled && capability != Capability.BLACK_LIST && isBlackApp(pkg, userId)) {
+            return;
+        }
         Set<String> apps = getCapabilityApps(capability);
         String key = PolicyKey.of(pkg, userId);
         if (enabled) {
             apps.add(key);
+            if (capability == Capability.BLACK_LIST) {
+                getCapabilityApps(Capability.WHITE_LIST).remove(key);
+                getCapabilityApps(Capability.ALLOW_BACKGROUND_AUDIO).remove(key);
+                getCapabilityApps(Capability.ALLOW_LOCATION).remove(key);
+                getCapabilityApps(Capability.ALLOW_NETWORK_MESSAGE).remove(key);
+            }
         } else {
             apps.remove(key);
         }
+    }
+
+    public static boolean isBlackApp(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.BLACK_LIST);
+    }
+
+    public static boolean isBlackApp(String pkg) {
+        return isBlackApp(pkg, 0);
     }
 
     public static boolean isWhiteApp(String pkg, int userId) {
@@ -82,6 +101,14 @@ public class AppConfigs {
 
     public static void setWhiteApp(String pkg, int userId, boolean enabled) {
         setCapability(pkg, userId, Capability.WHITE_LIST, enabled);
+    }
+
+    public static void setBlackApp(String pkg, int userId, boolean enabled) {
+        setCapability(pkg, userId, Capability.BLACK_LIST, enabled);
+    }
+
+    public static void setBlackApp(String pkg, boolean enabled) {
+        setBlackApp(pkg, 0, enabled);
     }
 
     public static void setWhiteApp(String pkg, boolean enabled) {
