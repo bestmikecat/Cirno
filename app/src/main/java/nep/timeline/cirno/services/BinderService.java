@@ -57,7 +57,7 @@ public class BinderService {
                     if (dir.exists()) {
                         File[] files = dir.listFiles();
                         if (files == null) {
-                            Log.e("找不到ReKernel单元");
+                            Log.w("找不到ReKernel单元");
                             return;
                         }
                         File unitFile = files[0];
@@ -67,7 +67,7 @@ public class BinderService {
 
                 try (NetlinkClient netlinkClient = new NetlinkClient(classLoader, netlinkUnit)) {
                     if (!netlinkClient.getMDescriptor().valid()) {
-                        Log.e("无法连接至ReKernel服务器");
+                        Log.w("无法连接至ReKernel服务器");
                         return;
                     }
 
@@ -135,9 +135,9 @@ public class BinderService {
                     }
                 }
             } catch (ErrnoException | IOException e) {
-                Log.e("无法连接至ReKernel服务器");
+                Log.w("无法连接至ReKernel服务器");
             } catch (Throwable throwable) {
-                Log.e("ReKernel", throwable);
+                Log.w("ReKernel", throwable);
             }
         });
     }

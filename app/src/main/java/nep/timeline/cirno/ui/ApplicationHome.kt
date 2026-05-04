@@ -2,6 +2,7 @@
 
 package nep.timeline.cirno.ui
 
+import java.io.File
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
+    val hasReKernel = remember { File("/proc/rekernel").exists() }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
 
@@ -101,6 +103,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             backgroundPlay.value = false
                             locationUse.value = false
                             networkMessage.value = false
+                        } else if (!hasReKernel && networkMessage.value) {
+                            networkMessage.value = false
+                            AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                            ConfigBinderRepository.saveApplicationSettingsFromMemory()
                         }
 
                         SwitchPreference(
@@ -164,12 +170,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 }
                             )
 
-                            SwitchPreference(
-                                title = stringResource(R.string.netreceive_unfreeze),
-                                checked = networkMessage.value,
-                                onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                        SwitchPreference(
+                            title = stringResource(R.string.netreceive_unfreeze),
+                            summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
+                            checked = networkMessage.value,
+                            enabled = hasReKernel,
+                            onCheckedChange = {
+                                if (black.value && it) {
+                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
                                         return@SwitchPreference
                                     }
                                     val previous = networkMessage.value

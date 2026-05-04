@@ -80,6 +80,7 @@
   <string name="restore_failed_json">备份文件无效：JSON 内容格式错误</string>
   <string name="restore_failed_io">恢复失败：读取备份文件时出错</string>
   <string name="restore_failed_unknown">恢复失败：未知错误</string>
+  <string name="rekernel_required_summary">ReKernel 未安装，网络解冻功能不可用</string>
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>

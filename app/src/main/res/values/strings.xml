@@ -80,6 +80,7 @@
   <string name="restore_failed_json">Invalid backup file: JSON content is malformed</string>
   <string name="restore_failed_io">Restore failed while reading backup file</string>
   <string name="restore_failed_unknown">Restore failed due to an unknown error</string>
+  <string name="rekernel_required_summary">ReKernel not installed, network unfreeze unavailable</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>
