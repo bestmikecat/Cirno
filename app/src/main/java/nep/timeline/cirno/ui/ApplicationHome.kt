@@ -73,45 +73,6 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
 
                         SwitchPreference(
-                            title = stringResource(R.string.black_app),
-                            checked = black.value,
-                            onCheckedChange = {
-                                val prevBlack = black.value
-                                val prevWhite = white.value
-                                val prevBackground = backgroundPlay.value
-                                val prevLocation = locationUse.value
-                                val prevNetwork = networkMessage.value
-
-                                black.value = it
-                                AppConfigs.setBlackApp(packageName, userId, it)
-                                if (it) {
-                                    white.value = false
-                                    backgroundPlay.value = false
-                                    locationUse.value = false
-                                    networkMessage.value = false
-                                    AppConfigs.setWhiteApp(packageName, userId, false)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, false)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                                }
-
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    black.value = prevBlack
-                                    white.value = prevWhite
-                                    backgroundPlay.value = prevBackground
-                                    locationUse.value = prevLocation
-                                    networkMessage.value = prevNetwork
-                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                    AppConfigs.setWhiteApp(packageName, userId, prevWhite)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
-                                }
-                            }
-                        )
-
-                        SwitchPreference(
                             title = stringResource(R.string.white_app),
                             checked = white.value,
                             onCheckedChange = {
@@ -183,6 +144,45 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     networkMessage.value = previous
                                     AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
                                     WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
+                                }
+                            }
+                        )
+
+                        SwitchPreference(
+                            title = stringResource(R.string.black_app),
+                            checked = black.value,
+                            onCheckedChange = {
+                                val prevBlack = black.value
+                                val prevWhite = white.value
+                                val prevBackground = backgroundPlay.value
+                                val prevLocation = locationUse.value
+                                val prevNetwork = networkMessage.value
+
+                                black.value = it
+                                AppConfigs.setBlackApp(packageName, userId, it)
+                                if (it) {
+                                    white.value = false
+                                    backgroundPlay.value = false
+                                    locationUse.value = false
+                                    networkMessage.value = false
+                                    AppConfigs.setWhiteApp(packageName, userId, false)
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                }
+
+                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    black.value = prevBlack
+                                    white.value = prevWhite
+                                    backgroundPlay.value = prevBackground
+                                    locationUse.value = prevLocation
+                                    networkMessage.value = prevNetwork
+                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                                    AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
                                 }
                             }
                         )
