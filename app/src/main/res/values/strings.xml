@@ -61,6 +61,21 @@
   <string name="apple_floating">Apple-style floating</string>
   <string name="not_implemented_yet">NaN</string>
   <string name="monitor_empty">No monitor data yet</string>
+  <string name="backup_config">Backup config</string>
+  <string name="backup_config_desc">Export GlobalSettings.json and ApplicationSettings.json as a zip file</string>
+  <string name="restore_config">Restore config</string>
+  <string name="restore_config_desc">Import a zip file that contains exactly the two config JSON files</string>
+  <string name="backup_success">Backup completed</string>
+  <string name="backup_failed">Backup failed</string>
+  <string name="restore_success">Restore completed</string>
+  <string name="restore_success_reload_failed">Restore succeeded, but reloading in-memory config failed. Please reopen the app.</string>
+  <string name="restore_failed_apply">Restore failed while applying config</string>
+  <string name="restore_failed_open">Cannot open the selected file</string>
+  <string name="restore_failed_structure">Invalid backup file: zip must contain exactly two files and no extras</string>
+  <string name="restore_failed_required_files">Invalid backup file: required config files are missing</string>
+  <string name="restore_failed_json">Invalid backup file: JSON content is malformed</string>
+  <string name="restore_failed_io">Restore failed while reading backup file</string>
+  <string name="restore_failed_unknown">Restore failed due to an unknown error</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>

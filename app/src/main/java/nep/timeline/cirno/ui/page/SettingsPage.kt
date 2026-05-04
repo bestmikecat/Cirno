@@ -2,6 +2,9 @@
 
 package nep.timeline.cirno.ui.page
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -12,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +28,7 @@ import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalUpdateAppState
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
@@ -41,8 +46,12 @@ import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SettingsPage(
@@ -89,11 +98,68 @@ private fun SettingsContent(
     backdrop: LayerBackdrop?,
     scrollEndHaptic: Boolean,
 ) {
+    val context = LocalContext.current
     val isWideScreen = LocalIsWideScreen.current
     val updateAppState = LocalUpdateAppState.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+    val backupFileName = remember {
+        val time = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())
+        "cirno-config-backup-$time.zip"
+    }
+
+    val backupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
+        val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+        if (globalJson == null || applicationJson == null) {
+            WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(context.getString(R.string.backup_failed)))
+            return@rememberLauncherForActivityResult
+        }
+        try {
+            ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
+            WindowUtils.showToast(context.getString(R.string.backup_success))
+        } catch (_: Throwable) {
+            WindowUtils.showToast(context.getString(R.string.backup_failed))
+        }
+    }
+
+    val restoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        try {
+            val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
+            val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
+            if (!applied) {
+                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(context.getString(R.string.restore_failed_apply)))
+                return@rememberLauncherForActivityResult
+            }
+            if (!ConfigBinderRepository.loadIntoMemory()) {
+                WindowUtils.showToast(context.getString(R.string.restore_success_reload_failed))
+                return@rememberLauncherForActivityResult
+            }
+            WindowUtils.showToast(context.getString(R.string.restore_success))
+        } catch (e: ConfigBackupZipUtils.RestoreException) {
+            val messageRes = when (e.error) {
+                ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> R.string.restore_failed_open
+                ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> R.string.restore_failed_structure
+                ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> R.string.restore_failed_required_files
+                ConfigBackupZipUtils.RestoreError.INVALID_JSON -> R.string.restore_failed_json
+                ConfigBackupZipUtils.RestoreError.IO_ERROR -> R.string.restore_failed_io
+            }
+            WindowUtils.showToast(context.getString(messageRes))
+        } catch (_: Throwable) {
+            WindowUtils.showToast(context.getString(R.string.restore_failed_unknown))
+        }
+    }
 
     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
         LazyColumn(
@@ -236,6 +302,22 @@ private fun SettingsContent(
                                     }
                                     WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("日志级别更新失败"))
                                 }
+                            }
+                        )
+
+                        ArrowPreference(
+                            title = stringResource(R.string.backup_config),
+                            summary = stringResource(R.string.backup_config_desc),
+                            onClick = {
+                                backupLauncher.launch(backupFileName)
+                            }
+                        )
+
+                        ArrowPreference(
+                            title = stringResource(R.string.restore_config),
+                            summary = stringResource(R.string.restore_config_desc),
+                            onClick = {
+                                restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
                             }
                         )
                     }

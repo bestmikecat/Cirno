@@ -78,4 +78,33 @@ object ConfigBinderRepository {
             emptySet()
         }
     }
+
+    fun getGlobalSettingsJsonOrNull(): String? {
+        val config = ConfigBinder.getInstance() ?: return null
+        return try {
+            config.getGlobalSettingsJson()
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    fun getApplicationSettingsJsonOrNull(): String? {
+        val config = ConfigBinder.getInstance() ?: return null
+        return try {
+            config.getApplicationSettingsJson()
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    fun applySettingsJson(globalJson: String, applicationJson: String): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            val globalOk = config.setGlobalSettingsJson(globalJson)
+            val applicationOk = config.setApplicationSettingsJson(applicationJson)
+            globalOk && applicationOk
+        } catch (_: Throwable) {
+            false
+        }
+    }
 }

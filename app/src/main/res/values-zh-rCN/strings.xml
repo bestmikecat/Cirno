@@ -61,6 +61,21 @@
   <string name="apple_floating">iOS风格悬浮</string>
   <string name="not_implemented_yet">未实现</string>
   <string name="monitor_empty">暂无监视器数据</string>
+  <string name="backup_config">备份配置</string>
+  <string name="backup_config_desc">将 GlobalSettings.json 与 ApplicationSettings.json 导出为 zip 文件</string>
+  <string name="restore_config">恢复配置</string>
+  <string name="restore_config_desc">导入一个且仅包含这两个配置 JSON 的 zip 文件</string>
+  <string name="backup_success">备份完成</string>
+  <string name="backup_failed">备份失败</string>
+  <string name="restore_success">恢复完成</string>
+  <string name="restore_success_reload_failed">恢复成功，但内存配置刷新失败，请重新打开应用。</string>
+  <string name="restore_failed_apply">恢复失败：应用配置时出错</string>
+  <string name="restore_failed_open">无法打开所选文件</string>
+  <string name="restore_failed_structure">备份文件无效：zip 必须仅包含两个文件且不能有额外内容</string>
+  <string name="restore_failed_required_files">备份文件无效：缺少必要配置文件</string>
+  <string name="restore_failed_json">备份文件无效：JSON 内容格式错误</string>
+  <string name="restore_failed_io">恢复失败：读取备份文件时出错</string>
+  <string name="restore_failed_unknown">恢复失败：未知错误</string>
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>
