@@ -1,11 +1,18 @@
 name: Android CI
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "legacy" ]
+    branches: ["legacy"]
+    paths:
+      - "app/**"
+      - ".github/workflows/android.yml"
   pull_request:
-    branches: [ "legacy" ]
-    
+    branches: ["legacy"]
+    paths:
+      - "app/**"
+      - ".github/workflows/android.yml"
+  
 permissions:
   contents: read
   actions: read 
