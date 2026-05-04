@@ -14,8 +14,13 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 public class FreezerService {
     public static void freezer(AppRecord appRecord) {
         boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
+        boolean whitelisted = AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId());
         if (appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
                 appRecord.getAppState().isVisible()) {
+            return;
+        }
+
+        if (!blacklisted && whitelisted) {
             return;
         }
 
