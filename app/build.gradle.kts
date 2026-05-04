@@ -13,12 +13,13 @@ plugins {
 configure<ApplicationExtension> {
     namespace = "nep.timeline.cirno"
     compileSdk = 37
+    val buildTime = SimpleDateFormat("MMddHHmm", Locale.getDefault()).format(Date())
 
     defaultConfig {
         minSdk = 31
         targetSdk = 36
         versionCode = 8
-        versionName = "8.0"
+        versionName = "${versionCode}-${buildTime}"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,7 +29,6 @@ configure<ApplicationExtension> {
     buildTypes {
         release {
             isMinifyEnabled = true
-            val buildTime = SimpleDateFormat("MMddHHmm", Locale.getDefault()).format(Date())
             buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
             buildConfigField("String", "FREEZER_TYPE", "\"$freezerType\"")
             proguardFiles(
@@ -37,7 +37,6 @@ configure<ApplicationExtension> {
             )
         }
         debug {
-            val buildTime = SimpleDateFormat("MMddHHmm", Locale.getDefault()).format(Date())
             buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
             buildConfigField("String", "FREEZER_TYPE", "\"$freezerType\"")
         }

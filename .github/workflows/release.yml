@@ -41,7 +41,7 @@ jobs:
       - name: rename APK
         id: rename
         run: |
-          VERSION=$(grep -oP 'versionName\s*=\s*"\K[^"]+' app/build.gradle.kts || echo "unknown")
+          VERSION=$(jq -r '.elements[0].versionName // "unknown"' app/build/outputs/apk/release/output-metadata.json)
           NEW_NAME="Cirno-${VERSION}-release.apk"
           cp "${{ steps.sign_app.outputs.signedReleaseFile }}" "$NEW_NAME"
           echo "new_file=$NEW_NAME" >> $GITHUB_OUTPUT
