@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -43,8 +44,26 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
-    val builtinWhitelistLocked = stringResource(R.string.builtin_whitelist_locked)
-    val builtinWhitelistBlacklistBlocked = stringResource(R.string.builtin_whitelist_blacklist_blocked)
+
+    LaunchedEffect(packageName, userId, isBuiltinWhitelistApp) {
+        if (!isBuiltinWhitelistApp) {
+            return@LaunchedEffect
+        }
+        val hadExtraConfig = AppConfigs.isBlackApp(packageName, userId)
+                || AppConfigs.isBackgroundPlayAllowed(packageName, userId)
+                || AppConfigs.isLocationUseAllowed(packageName, userId)
+                || AppConfigs.isNetworkMessageAllowed(packageName, userId)
+        if (!hadExtraConfig) {
+            return@LaunchedEffect
+        }
+        AppConfigs.setBlackApp(packageName, userId, false)
+        AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+        AppConfigs.setLocationUseAllowed(packageName, userId, false)
+        AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+        if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+            WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("应用配置更新失败"))
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -77,16 +96,20 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
 
+                        if (isBuiltinWhitelistApp) {
+                            black.value = false
+                            backgroundPlay.value = false
+                            locationUse.value = false
+                            networkMessage.value = false
+                        }
+
                         SwitchPreference(
                             title = stringResource(R.string.white_app),
                             summary = if (isBuiltinWhitelistApp) builtinWhitelistSummary else null,
                             checked = isBuiltinWhitelistApp || white.value,
                             enabled = !isBuiltinWhitelistApp,
                             onCheckedChange = {
-                                if (isBuiltinWhitelistApp) {
-                                    WindowUtils.showToast(builtinWhitelistLocked)
-                                    return@SwitchPreference
-                                }
+                                if (isBuiltinWhitelistApp) return@SwitchPreference
                                 if (black.value && it) {
                                     WindowUtils.showToast("黑名单已开启，无法启用白名单")
                                     return@SwitchPreference
@@ -102,106 +125,103 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             }
                         )
 
-                        SwitchPreference(
-                            title = stringResource(R.string.background_play),
-                            checked = backgroundPlay.value,
-                            onCheckedChange = {
-                                if (black.value && it) {
-                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
-                                    return@SwitchPreference
+                        if (!isBuiltinWhitelistApp) {
+                            SwitchPreference(
+                                title = stringResource(R.string.background_play),
+                                checked = backgroundPlay.value,
+                                onCheckedChange = {
+                                    if (black.value && it) {
+                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                        return@SwitchPreference
+                                    }
+                                    val previous = backgroundPlay.value
+                                    backgroundPlay.value = it
+                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        backgroundPlay.value = previous
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("后台播放配置更新失败"))
+                                    }
                                 }
-                                val previous = backgroundPlay.value
-                                backgroundPlay.value = it
-                                AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    backgroundPlay.value = previous
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("后台播放配置更新失败"))
-                                }
-                            }
-                        )
+                            )
 
-                        SwitchPreference(
-                            title = stringResource(R.string.location_check),
-                            checked = locationUse.value,
-                            onCheckedChange = {
-                                if (black.value && it) {
-                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
-                                    return@SwitchPreference
+                            SwitchPreference(
+                                title = stringResource(R.string.location_check),
+                                checked = locationUse.value,
+                                onCheckedChange = {
+                                    if (black.value && it) {
+                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                        return@SwitchPreference
+                                    }
+                                    val previous = locationUse.value
+                                    locationUse.value = it
+                                    AppConfigs.setLocationUseAllowed(packageName, userId, it)
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        locationUse.value = previous
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("定位配置更新失败"))
+                                    }
                                 }
-                                val previous = locationUse.value
-                                locationUse.value = it
-                                AppConfigs.setLocationUseAllowed(packageName, userId, it)
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    locationUse.value = previous
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, previous)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("定位配置更新失败"))
-                                }
-                            }
-                        )
+                            )
 
-                        SwitchPreference(
-                            title = stringResource(R.string.netreceive_unfreeze),
-                            checked = networkMessage.value,
-                            onCheckedChange = {
-                                if (black.value && it) {
-                                    WindowUtils.showToast("黑名单已开启，无法启用豁免")
-                                    return@SwitchPreference
+                            SwitchPreference(
+                                title = stringResource(R.string.netreceive_unfreeze),
+                                checked = networkMessage.value,
+                                onCheckedChange = {
+                                    if (black.value && it) {
+                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                        return@SwitchPreference
+                                    }
+                                    val previous = networkMessage.value
+                                    networkMessage.value = it
+                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        networkMessage.value = previous
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
+                                    }
                                 }
-                                val previous = networkMessage.value
-                                networkMessage.value = it
-                                AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    networkMessage.value = previous
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
-                                }
-                            }
-                        )
+                            )
 
-                        SwitchPreference(
-                            title = stringResource(R.string.black_app),
-                            checked = black.value,
-                            enabled = !isBuiltinWhitelistApp,
-                            onCheckedChange = {
-                                if (isBuiltinWhitelistApp && it) {
-                                    WindowUtils.showToast(builtinWhitelistBlacklistBlocked)
-                                    return@SwitchPreference
-                                }
-                                val prevBlack = black.value
-                                val prevWhite = white.value
-                                val prevBackground = backgroundPlay.value
-                                val prevLocation = locationUse.value
-                                val prevNetwork = networkMessage.value
+                            SwitchPreference(
+                                title = stringResource(R.string.black_app),
+                                checked = black.value,
+                                onCheckedChange = {
+                                    val prevBlack = black.value
+                                    val prevWhite = white.value
+                                    val prevBackground = backgroundPlay.value
+                                    val prevLocation = locationUse.value
+                                    val prevNetwork = networkMessage.value
 
-                                black.value = it
-                                AppConfigs.setBlackApp(packageName, userId, it)
-                                if (it) {
-                                    white.value = false
-                                    backgroundPlay.value = false
-                                    locationUse.value = false
-                                    networkMessage.value = false
-                                    AppConfigs.setWhiteApp(packageName, userId, false)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, false)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                                }
+                                    black.value = it
+                                    AppConfigs.setBlackApp(packageName, userId, it)
+                                    if (it) {
+                                        white.value = false
+                                        backgroundPlay.value = false
+                                        locationUse.value = false
+                                        networkMessage.value = false
+                                        AppConfigs.setWhiteApp(packageName, userId, false)
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                    }
 
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    black.value = prevBlack
-                                    white.value = prevWhite
-                                    backgroundPlay.value = prevBackground
-                                    locationUse.value = prevLocation
-                                    networkMessage.value = prevNetwork
-                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                    AppConfigs.setWhiteApp(packageName, userId, prevWhite)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        black.value = prevBlack
+                                        white.value = prevWhite
+                                        backgroundPlay.value = prevBackground
+                                        locationUse.value = prevLocation
+                                        networkMessage.value = prevNetwork
+                                        AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                                        AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
 
                     }
                 }

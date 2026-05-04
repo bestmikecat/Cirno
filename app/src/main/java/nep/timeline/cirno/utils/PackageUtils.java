@@ -125,13 +125,16 @@ public class PackageUtils {
     }
 
     private static int getAppListPriority(AppItem item) {
-        if (item.black) {
-            return 1;
-        }
-        if (item.white || item.backgroundPlay || item.locationCheck != 0 || item.networkCheck) {
+        if (item.white) {
             return 0;
         }
-        return 2;
+        if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck) {
+            return 1;
+        }
+        if (item.black) {
+            return 2;
+        }
+        return 3;
     }
 
     private static List<Integer> getInstalledUserIdsByPm() {
