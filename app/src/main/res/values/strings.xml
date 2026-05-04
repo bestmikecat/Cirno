@@ -18,6 +18,10 @@
   <string name="app_list">App list</string>
   <string name="main">Main</string>
   <string name="settings">Settings</string>
+  <string name="settings_ui_group">UI Settings</string>
+  <string name="settings_freeze_group">Freeze Settings</string>
+  <string name="settings_log_group">Log Settings</string>
+  <string name="settings_backup_group">Backup and Restore</string>
   <string name="interval_freeze_delay">Interval freeze delay</string>
   <string name="log_print">Log Print</string>
   <string name="log_file">File</string>

@@ -120,6 +120,37 @@ private fun SettingsContent(
         val time = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())
         "cirno-config-backup-$time.zip"
     }
+    val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
+    val navItems = listOf(
+        stringResource(R.string.normal),
+        stringResource(R.string.floating),
+        stringResource(R.string.apple_floating),
+    )
+    val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
+    val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
+    val outputItems = listOf(
+        stringResource(R.string.log_xposed),
+        stringResource(R.string.log_file),
+    )
+    val outputIndex = remember {
+        mutableIntStateOf(
+            if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
+        )
+    }
+    val levelItems = listOf(
+        stringResource(R.string.log_close),
+        stringResource(R.string.log_info),
+        stringResource(R.string.log_debug),
+    )
+    val levelIndex = remember {
+        mutableIntStateOf(
+            when (GlobalVars.globalSettings.logLevel) {
+                GlobalSettings.LOG_LEVEL_NONE -> 0
+                GlobalSettings.LOG_LEVEL_DEBUG -> 2
+                else -> 1
+            }
+        )
+    }
 
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
@@ -181,11 +212,8 @@ private fun SettingsContent(
         ) {
             if (active) {
                 item {
-                    SmallTitle(text = stringResource(R.string.settings))
+                    SmallTitle(text = stringResource(R.string.settings_freeze_group))
                     Card(modifier = Modifier.padding(12.dp)) {
-                        val freezeDelay = remember {
-                            mutableFloatStateOf(globalSettings.freezeDelay.toFloat())
-                        }
                         Text(
                             text = stringResource(R.string.interval_freeze_delay) + " | " + freezeDelay.floatValue.toInt() + " s",
                             modifier = Modifier.padding(17.dp),
@@ -206,15 +234,12 @@ private fun SettingsContent(
                             steps = 0,
                             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
                         )
+                    }
+                }
 
-                        val navItems = listOf(
-                            stringResource(R.string.normal),
-                            stringResource(R.string.floating),
-                            stringResource(R.string.apple_floating),
-                        )
-                        val navIndex = remember {
-                            mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2))
-                        }
+                item {
+                    SmallTitle(text = stringResource(R.string.settings_ui_group))
+                    Card(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.navigation_style),
                             items = navItems,
@@ -234,7 +259,6 @@ private fun SettingsContent(
                         )
 
                         if (isRenderEffectSupported()) {
-                            val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
                             SwitchPreference(
                                 title = stringResource(R.string.blur_ui),
                                 summary = stringResource(R.string.blur_ui_desc),
@@ -253,16 +277,12 @@ private fun SettingsContent(
                                 }
                             )
                         }
+                    }
+                }
 
-                        val outputItems = listOf(
-                            stringResource(R.string.log_xposed),
-                            stringResource(R.string.log_file),
-                        )
-                        val outputIndex = remember {
-                            mutableIntStateOf(
-                                if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-                            )
-                        }
+                item {
+                    SmallTitle(text = stringResource(R.string.settings_log_group))
+                    Card(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.log_print),
                             items = outputItems,
@@ -278,21 +298,6 @@ private fun SettingsContent(
                                 }
                             }
                         )
-
-                        val levelItems = listOf(
-                            stringResource(R.string.log_close),
-                            stringResource(R.string.log_info),
-                            stringResource(R.string.log_debug),
-                        )
-                        val levelIndex = remember {
-                            mutableIntStateOf(
-                                when (GlobalVars.globalSettings.logLevel) {
-                                    GlobalSettings.LOG_LEVEL_NONE -> 0
-                                    GlobalSettings.LOG_LEVEL_DEBUG -> 2
-                                    else -> 1
-                                }
-                            )
-                        }
                         OverlayDropdownPreference(
                             title = stringResource(R.string.log_level),
                             items = levelItems,
@@ -316,7 +321,12 @@ private fun SettingsContent(
                                 }
                             }
                         )
+                    }
+                }
 
+                item {
+                    SmallTitle(text = stringResource(R.string.settings_backup_group))
+                    Card(modifier = Modifier.padding(12.dp)) {
                         ArrowPreference(
                             title = stringResource(R.string.backup_config),
                             summary = stringResource(R.string.backup_config_desc),
