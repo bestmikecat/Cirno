@@ -104,6 +104,17 @@ private fun SettingsContent(
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+    val backupSuccessText = stringResource(R.string.backup_success)
+    val backupFailedText = stringResource(R.string.backup_failed)
+    val restoreSuccessText = stringResource(R.string.restore_success)
+    val restoreSuccessReloadFailedText = stringResource(R.string.restore_success_reload_failed)
+    val restoreFailedApplyText = stringResource(R.string.restore_failed_apply)
+    val restoreFailedOpenText = stringResource(R.string.restore_failed_open)
+    val restoreFailedStructureText = stringResource(R.string.restore_failed_structure)
+    val restoreFailedRequiredFilesText = stringResource(R.string.restore_failed_required_files)
+    val restoreFailedJsonText = stringResource(R.string.restore_failed_json)
+    val restoreFailedIoText = stringResource(R.string.restore_failed_io)
+    val restoreFailedUnknownText = stringResource(R.string.restore_failed_unknown)
     val backupFileName = remember {
         val time = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())
         "cirno-config-backup-$time.zip"
@@ -118,14 +129,14 @@ private fun SettingsContent(
         val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
         val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
         if (globalJson == null || applicationJson == null) {
-            WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(context.getString(R.string.backup_failed)))
+            WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(backupFailedText))
             return@rememberLauncherForActivityResult
         }
         try {
             ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
-            WindowUtils.showToast(context.getString(R.string.backup_success))
+            WindowUtils.showToast(backupSuccessText)
         } catch (_: Throwable) {
-            WindowUtils.showToast(context.getString(R.string.backup_failed))
+            WindowUtils.showToast(backupFailedText)
         }
     }
 
@@ -139,25 +150,25 @@ private fun SettingsContent(
             val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
             val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
             if (!applied) {
-                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(context.getString(R.string.restore_failed_apply)))
+                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText))
                 return@rememberLauncherForActivityResult
             }
             if (!ConfigBinderRepository.loadIntoMemory()) {
-                WindowUtils.showToast(context.getString(R.string.restore_success_reload_failed))
+                WindowUtils.showToast(restoreSuccessReloadFailedText)
                 return@rememberLauncherForActivityResult
             }
-            WindowUtils.showToast(context.getString(R.string.restore_success))
+            WindowUtils.showToast(restoreSuccessText)
         } catch (e: ConfigBackupZipUtils.RestoreException) {
-            val messageRes = when (e.error) {
-                ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> R.string.restore_failed_open
-                ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> R.string.restore_failed_structure
-                ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> R.string.restore_failed_required_files
-                ConfigBackupZipUtils.RestoreError.INVALID_JSON -> R.string.restore_failed_json
-                ConfigBackupZipUtils.RestoreError.IO_ERROR -> R.string.restore_failed_io
+            val message = when (e.error) {
+                ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
+                ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> restoreFailedStructureText
+                ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
+                ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
+                ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
             }
-            WindowUtils.showToast(context.getString(messageRes))
+            WindowUtils.showToast(message)
         } catch (_: Throwable) {
-            WindowUtils.showToast(context.getString(R.string.restore_failed_unknown))
+            WindowUtils.showToast(restoreFailedUnknownText)
         }
     }
 
