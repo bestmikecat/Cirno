@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import nep.timeline.cirno.ApplicationActivity
+import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
@@ -40,6 +41,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
+    val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
 
     Scaffold(
         topBar = {
@@ -74,8 +76,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
                         SwitchPreference(
                             title = stringResource(R.string.white_app),
-                            checked = white.value,
+                            summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_summary) else null,
+                            checked = isBuiltinWhitelistApp || white.value,
+                            enabled = !isBuiltinWhitelistApp,
                             onCheckedChange = {
+                                if (isBuiltinWhitelistApp) {
+                                    WindowUtils.showToast(stringResource(R.string.builtin_whitelist_locked))
+                                    return@SwitchPreference
+                                }
                                 if (black.value && it) {
                                     WindowUtils.showToast("黑名单已开启，无法启用白名单")
                                     return@SwitchPreference
@@ -151,7 +159,12 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         SwitchPreference(
                             title = stringResource(R.string.black_app),
                             checked = black.value,
+                            enabled = !isBuiltinWhitelistApp,
                             onCheckedChange = {
+                                if (isBuiltinWhitelistApp && it) {
+                                    WindowUtils.showToast(stringResource(R.string.builtin_whitelist_blacklist_blocked))
+                                    return@SwitchPreference
+                                }
                                 val prevBlack = black.value
                                 val prevWhite = white.value
                                 val prevBackground = backgroundPlay.value

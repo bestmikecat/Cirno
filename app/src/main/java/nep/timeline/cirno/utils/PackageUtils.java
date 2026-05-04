@@ -76,7 +76,7 @@ public class PackageUtils {
             } catch (NumberFormatException ignored) {
                 continue;
             }
-            if (pkg.isEmpty() || CommonConstants.isWhitelistApps(pkg)) {
+            if (pkg.isEmpty()) {
                 continue;
             }
             ApplicationInfo info = getApplicationInfoAsUser(pm, pkg, userId);

@@ -1,5 +1,6 @@
 package nep.timeline.cirno.configs.checkers;
 
+import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.policy.Capability;
 import nep.timeline.cirno.configs.policy.PolicyKey;
@@ -68,7 +69,7 @@ public class AppConfigs {
     }
 
     public static boolean isWhiteApp(String pkg, int userId) {
-        return hasCapability(pkg, userId, Capability.WHITE_LIST);
+        return CommonConstants.isWhitelistApps(pkg) || hasCapability(pkg, userId, Capability.WHITE_LIST);
     }
 
     public static boolean isWhiteApp(String pkg) {
@@ -100,6 +101,9 @@ public class AppConfigs {
     }
 
     public static void setWhiteApp(String pkg, int userId, boolean enabled) {
+        if (CommonConstants.isWhitelistApps(pkg)) {
+            return;
+        }
         setCapability(pkg, userId, Capability.WHITE_LIST, enabled);
     }
 
