@@ -27,6 +27,7 @@ import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalUpdateAppState
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
+import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
@@ -129,14 +130,14 @@ private fun SettingsContent(
         val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
         val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
         if (globalJson == null || applicationJson == null) {
-            WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(backupFailedText))
+            AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(backupFailedText))
             return@rememberLauncherForActivityResult
         }
         try {
             ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
-            WindowUtils.showToast(backupSuccessText)
+            AppContext.showToast(backupSuccessText)
         } catch (_: Throwable) {
-            WindowUtils.showToast(backupFailedText)
+            AppContext.showToast(backupFailedText)
         }
     }
 
@@ -150,14 +151,14 @@ private fun SettingsContent(
             val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
             val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
             if (!applied) {
-                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText))
+                AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText))
                 return@rememberLauncherForActivityResult
             }
             if (!ConfigBinderRepository.loadIntoMemory()) {
-                WindowUtils.showToast(restoreSuccessReloadFailedText)
+                AppContext.showToast(restoreSuccessReloadFailedText)
                 return@rememberLauncherForActivityResult
             }
-            WindowUtils.showToast(restoreSuccessText)
+            AppContext.showToast(restoreSuccessText)
         } catch (e: ConfigBackupZipUtils.RestoreException) {
             val message = when (e.error) {
                 ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
@@ -166,9 +167,9 @@ private fun SettingsContent(
                 ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
                 ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
             }
-            WindowUtils.showToast(message)
+            AppContext.showToast(message)
         } catch (_: Throwable) {
-            WindowUtils.showToast(restoreFailedUnknownText)
+            AppContext.showToast(restoreFailedUnknownText)
         }
     }
 
