@@ -55,7 +55,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
-import nep.timeline.cirno.binder.BinderService
+
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
@@ -211,7 +211,6 @@ fun AppPage(
 
     LaunchedEffect(type.value) {
         if (type.value == 2) {
-            BinderService.register(AppContext.context)
             appListViewModel.getFilterApps(2)
         }
     }
