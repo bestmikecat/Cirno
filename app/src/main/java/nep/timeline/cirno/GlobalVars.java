@@ -11,6 +11,6 @@ public class GlobalVars {
     public static boolean isModuleActive = false;
     public static int XposedVersion = 0;
     public static ClassLoader classLoader;
-    public static GlobalSettings globalSettings = null;
-    public static ApplicationSettings applicationSettings = null;
+    public static volatile GlobalSettings globalSettings = null;
+    public static volatile ApplicationSettings applicationSettings = null;
 }
