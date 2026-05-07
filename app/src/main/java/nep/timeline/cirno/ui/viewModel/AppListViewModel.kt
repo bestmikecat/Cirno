@@ -2,14 +2,15 @@ package nep.timeline.cirno.ui.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nep.timeline.cirno.entity.AppItem
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.utils.PackageUtils
-import nep.timeline.cirno.ui.utils.WindowUtils
 
 class AppListViewModel : ViewModel() {
     private val _filterApps = MutableStateFlow<List<AppItem>>(emptyList())
@@ -60,31 +61,33 @@ class AppListViewModel : ViewModel() {
             _updatedApps.value = false
         }
         viewModelScope.launch {
-            WindowUtils.handler.post {
-                _filterApps.value = when (type) {
+            val apps = withContext(Dispatchers.IO) {
+                when (type) {
                     0 -> PackageUtils.filter(3)
                     1 -> PackageUtils.filter(3)
                     else -> PackageUtils.getFrozenApplication(AppContext.context)
                 }
-                if (type == 2) {
-                    _hasLoadedMonitorOnce.value = true
-                }
-                _updatedApps.value = true
             }
+            _filterApps.value = apps
+            if (type == 2) {
+                _hasLoadedMonitorOnce.value = true
+            }
+            _updatedApps.value = true
         }
     }
 
     fun update() {
         viewModelScope.launch {
             _updatedApps.value = false
-            WindowUtils.handler.post {
-                _filterApps.value = when (_type.value) {
+            val apps = withContext(Dispatchers.IO) {
+                when (_type.value) {
                     0 -> PackageUtils.filter(3)
                     1 -> PackageUtils.filter(3)
                     else -> PackageUtils.getFrozenApplication(AppContext.context)
                 }
-                _updatedApps.value = true
             }
+            _filterApps.value = apps
+            _updatedApps.value = true
         }
     }
 
