@@ -17,8 +17,8 @@ public class AppRecord {
     private final int uid;
     private final ApplicationInfo applicationInfo;
     private final List<ProcessRecord> processRecords = new CopyOnWriteArrayList<>();
-    private AppState appState;
-    private boolean frozen;
+    private volatile AppState appState;
+    private volatile boolean frozen;
 
     public AppRecord(ApplicationInfo applicationInfo) {
         this.packageName = applicationInfo.packageName;
