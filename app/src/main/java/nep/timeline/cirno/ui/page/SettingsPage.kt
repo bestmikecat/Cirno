@@ -221,10 +221,12 @@ private fun SettingsContent(
                         Slider(
                             value = freezeDelay.floatValue,
                             onValueChange = {
-                                val previous = globalSettings.freezeDelay
                                 freezeDelay.floatValue = it
                                 globalSettings.freezeDelay = it.toInt().coerceAtLeast(1)
+                            },
+                            onValueChangeFinished = {
                                 if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    val previous = globalSettings.freezeDelay
                                     globalSettings.freezeDelay = previous
                                     freezeDelay.floatValue = previous.toFloat()
                                     WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("冻结延迟更新失败"))
