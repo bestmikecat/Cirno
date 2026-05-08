@@ -15,7 +15,7 @@ public class FreezerService {
     public static void freezer(AppRecord appRecord) {
         boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
         boolean whitelisted = AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId());
-        if (appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
+        if (appRecord.isWaitingNotification() || appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
                 appRecord.getAppState().isVisible()) {
             return;
         }
@@ -128,6 +128,27 @@ public class FreezerService {
             Log.i(appRecord.getPackageNameWithUser() + " " + reason);
 
         thaw(appRecord);
-        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
+        Thread waitingNotification = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long startTime = System.currentTimeMillis();
+                while(!Thread.currentThread().isInterrupted()) {
+                    if (System.currentTimeMillis() - startTime > interval) {
+                        appRecord.setWaitingNotification(false);
+                        Log.d(appRecord.getPackageName() + " 等待消息通知超时");
+                    }
+                    try {
+                        if(!appRecord.isWaitingNotification()) {
+                            break;
+                        }
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
+            }
+        });
+        waitingNotification.start();
     }
 }

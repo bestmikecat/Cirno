@@ -121,6 +121,7 @@ private fun SettingsContent(
         "cirno-config-backup-$time.zip"
     }
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
+    val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val navItems = listOf(
         stringResource(R.string.normal),
         stringResource(R.string.floating),
@@ -221,17 +222,35 @@ private fun SettingsContent(
                         Slider(
                             value = freezeDelay.floatValue,
                             onValueChange = {
-                                val previous = globalSettings.freezeDelay
                                 freezeDelay.floatValue = it
-                                globalSettings.freezeDelay = it.toInt().coerceAtLeast(1)
+                            },
+                            onValueChangeFinished = {
+                                globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceIn(1,30)
                                 if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    globalSettings.freezeDelay = previous
-                                    freezeDelay.floatValue = previous.toFloat()
                                     WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("冻结延迟更新失败"))
                                 }
                             },
                             valueRange = 1f..30f,
-                            steps = 0,
+                            steps = 28,
+                            modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.wake_freeze_delay) + " | " + wakeFreezeDelay.floatValue.toInt() + " s",
+                            modifier = Modifier.padding(17.dp),
+                        )
+                        Slider(
+                            value = wakeFreezeDelay.floatValue,
+                            onValueChange = {
+                                wakeFreezeDelay.floatValue = it
+                            },
+                            onValueChangeFinished = {
+                                globalSettings.wakeFreezeDelay = wakeFreezeDelay.floatValue.toInt().coerceIn(1,120)
+                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("唤醒冻结延迟更新失败"))
+                                }
+                            },
+                            valueRange = 1f..120f,
+                            steps = 118,
                             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
                         )
                     }
