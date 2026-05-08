@@ -23,23 +23,21 @@ public class AppService {
 
         Map<String, AppRecord> appRecords = APP_RECORD_MAP.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
 
-        if (appRecords.containsKey(packageName))
-            return appRecords.get(packageName);
-
-        ApplicationInfo applicationInfo = ActivityManagerService.getApplicationInfo(packageName, userId);
-        if (applicationInfo == null)
-            return null;
-
-        AppRecord appRecord = new AppRecord(applicationInfo);
-        appRecords.put(packageName, appRecord);
-        return appRecord;
+        return appRecords.computeIfAbsent(packageName, pkg -> {
+            ApplicationInfo applicationInfo = ActivityManagerService.getApplicationInfo(pkg, userId);
+            if (applicationInfo == null)
+                return null;
+            return new AppRecord(applicationInfo);
+        });
     }
 
     public static List<AppRecord> getByUid(int uid) {
         try {
-            if (!UID_RECORD_MAP.containsKey(uid))
-                putAppToCacheByUid(uid);
             List<AppRecord> records = UID_RECORD_MAP.get(uid);
+            if (records != null)
+                return records;
+            putAppToCacheByUid(uid);
+            records = UID_RECORD_MAP.get(uid);
             if (records == null)
                 return Collections.emptyList();
             return records;

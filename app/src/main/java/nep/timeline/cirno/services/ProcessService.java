@@ -32,21 +32,29 @@ public class ProcessService {
     }
 
     public static void removeProcessRecord(String name, int uid) {
+        ProcessRecord processRecord;
+        AppRecord appRecord;
+        boolean shouldThaw;
+        int thawUid;
+        int thawPid;
         synchronized (lock) {
-            if (PROCESS_NAME_MAP.containsKey(name)) {
-                ProcessRecord processRecord = PROCESS_NAME_MAP.computeIfAbsent(name, k -> new ConcurrentHashMap<>()).remove(uid);
-                if (processRecord == null)
-                    return;
-                if (processRecord.isFrozen())
-                    FrozenRW.thaw(processRecord.getRunningUid(), processRecord.getPid());
-                AppRecord appRecord = processRecord.getAppRecord();
-                if (appRecord == null)
-                    return;
-                appRecord.getProcessRecords().remove(processRecord);
-                if (appRecord.getProcessRecords().isEmpty())
-                    appRecord.reset();
-            }
+            if (!PROCESS_NAME_MAP.containsKey(name))
+                return;
+            processRecord = PROCESS_NAME_MAP.computeIfAbsent(name, k -> new ConcurrentHashMap<>()).remove(uid);
+            if (processRecord == null)
+                return;
+            shouldThaw = processRecord.isFrozen();
+            thawUid = processRecord.getRunningUid();
+            thawPid = processRecord.getPid();
+            appRecord = processRecord.getAppRecord();
+            if (appRecord == null)
+                return;
+            appRecord.getProcessRecords().remove(processRecord);
+            if (appRecord.getProcessRecords().isEmpty())
+                appRecord.reset();
         }
+        if (shouldThaw)
+            FrozenRW.thaw(thawUid, thawPid);
     }
 
     public static ProcessRecord getProcessRecord(Object record) {
