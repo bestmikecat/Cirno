@@ -21,31 +21,36 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
     private static volatile long lastPublishedAtMs = 0L;
+    private static volatile List<String> cachedRunningApps = new ArrayList<>();
 
     private MonitorBinderHub() {
+    }
+
+    public static void refreshRunningApps() {
+        List<String> result = new ArrayList<>();
+        for (AppRecord appRecord : AppService.getAllRecordsSnapshot()) {
+            if (appRecord == null) {
+                continue;
+            }
+            int processCount = 0;
+            for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
+                if (processRecord == null || processRecord.isDeathProcess()) {
+                    continue;
+                }
+                processCount++;
+            }
+            if (processCount <= 0) {
+                continue;
+            }
+            result.add(appRecord.getPackageName() + ":" + appRecord.getUserId() + ":" + appRecord.getUid());
+        }
+        cachedRunningApps = result;
     }
 
     private static final ApplicationInterface.Stub applicationBinder = new ApplicationInterface.Stub() {
         @Override
         public List<String> getRunningApplication() {
-            List<String> result = new ArrayList<>();
-            for (AppRecord appRecord : AppService.getAllRecordsSnapshot()) {
-                if (appRecord == null) {
-                    continue;
-                }
-                int processCount = 0;
-                for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
-                    if (processRecord == null || processRecord.isDeathProcess()) {
-                        continue;
-                    }
-                    processCount++;
-                }
-                if (processCount <= 0) {
-                    continue;
-                }
-                result.add(appRecord.getPackageName() + ":" + appRecord.getUserId() + ":" + appRecord.getUid());
-            }
-            return result;
+            return cachedRunningApps;
         }
     };
 
