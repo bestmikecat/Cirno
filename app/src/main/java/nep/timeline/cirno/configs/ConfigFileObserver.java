@@ -6,6 +6,7 @@ import android.os.Handler;
 import java.io.File;
 
 import nep.timeline.cirno.GlobalVars;
+import nep.timeline.cirno.services.ConfigBinderHub;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.log.Log;
 
@@ -15,7 +16,7 @@ public class ConfigFileObserver extends FileObserver {
     public ConfigFileObserver() {
         super(GlobalVars.CONFIG_DIR, FileObserver.DELETE | FileObserver.DELETE_SELF | FileObserver.MODIFY | FileObserver.MOVE_SELF);
         reInit();
-        ConfigManager.readConfig();
+        ConfigBinderHub.readConfigSynchronized();
     }
 
     @Override
@@ -28,7 +29,7 @@ public class ConfigFileObserver extends FileObserver {
             case FileObserver.DELETE:
             case FileObserver.DELETE_SELF: {
                 handler.postDelayed(() -> {
-                    ConfigManager.readConfig();
+                    ConfigBinderHub.readConfigSynchronized();
                     reInit();
                 }, 2000);
                 Log.d("配置目录被删除");
@@ -37,7 +38,7 @@ public class ConfigFileObserver extends FileObserver {
             case FileObserver.MODIFY:
             case FileObserver.MOVE_SELF: {
                 if (!TARGET_FILE.equals(path)) break;
-                handler.postDelayed(ConfigManager::readConfig, 2000);
+                handler.postDelayed(ConfigBinderHub::readConfigSynchronized, 2000);
                 Log.d("配置热更新：配置目录被修改");
             }
         }

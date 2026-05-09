@@ -132,6 +132,12 @@ public final class ConfigBinderHub {
         SIGNALS.put("error", "1");
     }
 
+    public static void readConfigSynchronized() {
+        synchronized (LOCK) {
+            ConfigManager.manager.readConfig();
+        }
+    }
+
     private static List<Integer> getInstalledUserIdsByService() {
         LinkedHashSet<Integer> userIds = new LinkedHashSet<>();
         try {
