@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +43,14 @@ import nep.timeline.cirno.ui.utils.ConfigBinderRepository;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class PackageUtils {
+    private static final ConcurrentHashMap<String, Drawable> iconCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, String> labelCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, PackageInfo> pkgInfoCache = new ConcurrentHashMap<>();
+
+    private static String cacheKey(String packageName, int userId) {
+        return packageName + ":" + userId;
+    }
+
     public static boolean isSystemUIChecker(Context context, PackageInfo packageInfo) {
         if (packageInfo == null || packageInfo.applicationInfo == null) {
             return false;
@@ -250,26 +259,33 @@ public class PackageUtils {
                 continue;
             }
 
-            Drawable icon;
-            String appName;
-            try {
-                icon = applicationInfo.loadIcon(pm);
-            } catch (Throwable ignored) {
-                icon = new ColorDrawable(0x00000000);
-            }
-            try {
-                appName = formatDisplayName(String.valueOf(applicationInfo.loadLabel(pm)), runningApp.userId);
-            } catch (Throwable ignored) {
-                appName = formatDisplayName(runningApp.packageName, runningApp.userId);
-            }
+            Drawable icon = iconCache.computeIfAbsent(cacheKey(runningApp.packageName, runningApp.userId), key -> {
+                try {
+                    ApplicationInfo info = getApplicationInfoAsUser(pm, runningApp.packageName, runningApp.userId);
+                    return info != null ? info.loadIcon(pm) : new ColorDrawable(0x00000000);
+                } catch (Throwable ignored) {
+                    return new ColorDrawable(0x00000000);
+                }
+            });
+            String appName = labelCache.computeIfAbsent(cacheKey(runningApp.packageName, runningApp.userId), key -> {
+                try {
+                    ApplicationInfo info = getApplicationInfoAsUser(pm, runningApp.packageName, runningApp.userId);
+                    return info != null ? formatDisplayName(String.valueOf(info.loadLabel(pm)), runningApp.userId)
+                            : formatDisplayName(runningApp.packageName, runningApp.userId);
+                } catch (Throwable ignored) {
+                    return formatDisplayName(runningApp.packageName, runningApp.userId);
+                }
+            });
 
-            PackageInfo packageInfo;
-            try {
-                packageInfo = getPackageInfoAsUser(pm, runningApp.packageName, runningApp.userId);
-            } catch (Throwable ignored) {
-                packageInfo = new PackageInfo();
-                packageInfo.packageName = runningApp.packageName;
-            }
+            PackageInfo packageInfo = pkgInfoCache.computeIfAbsent(cacheKey(runningApp.packageName, runningApp.userId), key -> {
+                try {
+                    return getPackageInfoAsUser(pm, runningApp.packageName, runningApp.userId);
+                } catch (Throwable ignored) {
+                    PackageInfo pi = new PackageInfo();
+                    pi.packageName = runningApp.packageName;
+                    return pi;
+                }
+            });
 
             String frozenData;
             try {
