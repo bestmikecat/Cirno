@@ -12,7 +12,7 @@ import nep.timeline.cirno.utils.FrozenRW;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class FreezerService {
-    public static void freezer(AppRecord appRecord) {
+    public static synchronized void freezer(AppRecord appRecord) {
         boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
         boolean whitelisted = AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId());
         if (appRecord.isWaitingNotification() || appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
@@ -82,7 +82,7 @@ public class FreezerService {
         appRecord.setFrozen(true);
     }
 
-    public static void thaw(AppRecord appRecord) {
+    public static synchronized void thaw(AppRecord appRecord) {
         FreezerHandler.removeAppMessage(appRecord);
 
         if (!appRecord.isFrozen())

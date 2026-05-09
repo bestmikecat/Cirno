@@ -223,10 +223,13 @@ private fun SettingsContent(
                             value = freezeDelay.floatValue,
                             onValueChange = {
                                 freezeDelay.floatValue = it
+                                globalSettings.freezeDelay = it.toInt().coerceAtLeast(1)
                             },
                             onValueChangeFinished = {
-                                globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceIn(1,30)
                                 if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    val previous = globalSettings.freezeDelay
+                                    globalSettings.freezeDelay = previous
+                                    freezeDelay.floatValue = previous.toFloat()
                                     WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("冻结延迟更新失败"))
                                 }
                             },

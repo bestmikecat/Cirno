@@ -46,7 +46,7 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - Only hooks the `android` system process; all other packages are skipped.
 - When loading itself, sets `GlobalVars.isModuleActive = true` for module-active detection.
 - Hooks are registered in one flow via `master/AndroidHooks.java`.
-- Hook framework details:
+- Hook framework:
   - Extend `framework/MethodHook` and override `getTargetClass()`, `getTargetMethod()`, `getTargetParam()`, and `getTargetHook()`.
   - Use `framework/AbstractMethodHook` as the XC_MethodHook callback base.
   - Use `getMinVersion()` to gate hooks by SDK version.
@@ -55,6 +55,38 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
   - **ui side** does not fetch data directly.
   - **ui side** requests reads/updates through Binder exposed by **hook side**.
 - Config files are JSON under `/data/system/Cirno/`, managed on **hook side** via regular `File` APIs in `ConfigManagerJson` (Gson).
+
+### Binder Discovery Mechanism
+
+- Hook side publishes binders via sticky broadcast `"Cirno-Binder"` through `MonitorBinderHub.publish()`.
+- UI side receives via `binder.BinderService.register(context)`, caches IBinders, wraps them via `provide.ConfigBinder/ApplicationBinder/FrozenStateBinder`.
+
+### Binder Interfaces
+
+- `ApplicationInterface`: `getRunningApplication()` returns running apps as `"packageName:userId:uid"`.
+- `FrozenStateInterface`: `isFrozen(packageName, userId)` returns diagnostic string (e.g. `V2(N/M),RSS[rss]`).
+- `ConfigInterface` (8 methods): settings JSON get/set, error/signal, managed app keys.
+
+### cgroup v2 Path Layout
+
+- `FrozenRW` supports two cgroup v2 layouts detected at class-load time:
+  - **Default**: `/sys/fs/cgroup/uid_{uid}/pid_{pid}/cgroup.freeze`
+  - **Isolated** (when `/sys/fs/cgroup/uid_1000/cgroup.freeze` does not exist): system apps under `system/`, normal apps under `apps/`.
+
+### Vendor-Specific Binder Hooks
+
+- **Xiaomi** (`MilletBinderTransHook`) and **OPPO/OnePlus** (`HansKernelUnfreezeHook`) intercept synchronous binder transactions and trigger temporary unfreeze.
+- Both self-unhook when ReKernel netlink is active (`BinderService.received == true`), as ReKernel takes over binder monitoring at the kernel level.
+
+### ReKernel Netlink Integration
+
+- ReKernel communicates via netlink socket (protocol unit 22-26, configurable via `GlobalSettings.netlinkUnit`).
+- `services.BinderService` (netlink client) listens for kernel-level binder/network events and triggers temporary unfreeze.
+- `utils.SystemChecker` detects device vendor by probing for vendor-specific classes (Xiaomi/OPPO/Samsung/Huawei/Vivo/Nubia).
+
+### Hardcoded Whitelist
+
+- `CommonConstants.whiteApps` contains ~75 package names that must never be frozen (module self, system core, root tools, vendor system apps, push services).
 
 ## Critical Constraints
 
@@ -107,9 +139,11 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 
 ## Git Commit Style
 
-- Format: `<scope>: <summary>`
-- Scopes: `hook`, `ui`, `config`, `binder`, `build`, `docs`, `fix`, `chores`, `ci`
-- Special-case scopes: `revert`, `merge`
+- Format: `<action>(<scope>): <summary>`
+- Actions: `feat`, `fix`, `refact`, `build`, `docs`, `chores`, `ci`, `ui`
+- Scopes: specific to the changed area (e.g. `hook`, `config`, `binder`, `network`, `freezer`, `appRecord`, `freezerHandler`, `configManager`). Use space separation for multiple scopes.
+- Compound words use camelCase (e.g. `appRecord`, `freezerHandler`, `configManager`)
+- Keep subject line ≤ 72 characters, sentence case, no trailing period
 
 ## AGENTS Maintenance Policy
 
