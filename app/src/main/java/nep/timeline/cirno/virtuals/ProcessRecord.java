@@ -2,6 +2,11 @@ package nep.timeline.cirno.virtuals;
 
 import android.content.pm.ApplicationInfo;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
 import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.services.AppService;
@@ -16,6 +21,7 @@ public class ProcessRecord {
     private final String processName;
     private AppRecord appRecord;
     private boolean frozen;
+    private volatile long cachedRssKb = 0L;
 
     public ProcessRecord(Object instance) {
         this.instance = instance;
@@ -64,5 +70,40 @@ public class ProcessRecord {
 
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
+    }
+
+    public long getCachedRssKb() {
+        return cachedRssKb;
+    }
+
+    public void updateCachedRss() {
+        if (isDeathProcess()) {
+            cachedRssKb = 0L;
+            return;
+        }
+        Long rss = readRssFromStatusFile("/proc/" + getPid() + "/status");
+        cachedRssKb = rss == null ? 0L : rss;
+    }
+
+    private static Long readRssFromStatusFile(String path) {
+        File file = new File(path);
+        if (!file.exists() || !file.canRead()) {
+            return null;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimmed = line.trim();
+                if (!trimmed.startsWith("VmRSS:")) {
+                    continue;
+                }
+                String[] parts = trimmed.split("\\s+");
+                if (parts.length >= 2) {
+                    return Long.parseLong(parts[1]);
+                }
+            }
+        } catch (IOException | NumberFormatException ignored) {
+        }
+        return null;
     }
 }

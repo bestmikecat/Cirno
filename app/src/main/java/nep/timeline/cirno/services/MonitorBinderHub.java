@@ -5,10 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +70,7 @@ public final class MonitorBinderHub {
                 if (processRecord.isFrozen()) {
                     frozenCount++;
                 }
-                rss += readProcessRssKb(processRecord.getPid());
+                rss += processRecord.getCachedRssKb();
             }
             if (processCount <= 0) {
                 return "NOT_FROZEN[UNKNOWN]";
@@ -140,35 +136,5 @@ public final class MonitorBinderHub {
             return "WAITING_FROZEN";
         }
         return REASON_UNKNOWN;
-    }
-
-    private static long readProcessRssKb(int pid) {
-        if (pid <= 0) {
-            return 0L;
-        }
-        Long direct = readRssFromStatusFile("/proc/" + pid + "/status");
-        return direct == null ? 0L : direct;
-    }
-
-    private static Long readRssFromStatusFile(String path) {
-        File file = new File(path);
-        if (!file.exists() || !file.canRead()) {
-            return null;
-        }
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String trimmed = line.trim();
-                if (!trimmed.startsWith("VmRSS:")) {
-                    continue;
-                }
-                String[] parts = trimmed.split("\\s+");
-                if (parts.length >= 2) {
-                    return Long.parseLong(parts[1]);
-                }
-            }
-        } catch (IOException | NumberFormatException ignored) {
-        }
-        return null;
     }
 }

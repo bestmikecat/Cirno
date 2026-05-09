@@ -33,6 +33,7 @@ import nep.timeline.cirno.hooks.android.vpn.VpnStateHook;
 import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
+import nep.timeline.cirno.services.RssUpdateService;
 
 public class AndroidHooks {
     private static ConfigFileObserver sFileObserver;
@@ -87,5 +88,8 @@ public class AndroidHooks {
         new PendingIntentHook(classLoader);
         // ReKernel
         BinderService.start(classLoader);
+
+        // RSS periodic update
+        RssUpdateService.start();
     }
 }
