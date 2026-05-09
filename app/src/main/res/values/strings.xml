@@ -23,6 +23,7 @@
   <string name="settings_log_group">Log Settings</string>
   <string name="settings_backup_group">Backup and Restore</string>
   <string name="interval_freeze_delay">Interval freeze delay</string>
+  <string name="wake_freeze_delay">Wake freeze delay</string>
   <string name="log_print">Log Print</string>
   <string name="log_file">File</string>
   <string name="log_xposed">Xposed</string>
