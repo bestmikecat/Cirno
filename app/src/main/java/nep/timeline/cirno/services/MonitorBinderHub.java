@@ -70,6 +70,9 @@ public final class MonitorBinderHub {
                 if (processRecord.isFrozen()) {
                     frozenCount++;
                 }
+                if (processRecord.isFrozen() && !processRecord.isDeathProcess()) {
+                    processRecord.updateCachedRss();
+                }
                 rss += processRecord.getCachedRssKb();
             }
             if (processCount <= 0) {
