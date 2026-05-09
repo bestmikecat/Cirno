@@ -248,14 +248,25 @@ public class PackageUtils {
             return result;
         }
 
+        List<String> frozenStates;
+        try {
+            frozenStates = frozenStateInterface.getFrozenStates(new ArrayList<>(runningApps));
+        } catch (RemoteException e) {
+            Log.w("Monitor data failed: getFrozenStates", e);
+            frozenStates = null;
+        }
+
+        int index = 0;
         for (String entry : runningApps) {
             RunningApp runningApp = parseRunningApp(entry);
             if (runningApp == null) {
+                index++;
                 continue;
             }
 
             ApplicationInfo applicationInfo = getApplicationInfoAsUser(pm, runningApp.packageName, runningApp.userId);
             if (applicationInfo == null) {
+                index++;
                 continue;
             }
 
@@ -289,8 +300,13 @@ public class PackageUtils {
 
             String frozenData;
             try {
-                frozenData = frozenStateInterface.isFrozen(runningApp.packageName, runningApp.userId);
+                if (frozenStates != null && index < frozenStates.size()) {
+                    frozenData = frozenStates.get(index);
+                } else {
+                    frozenData = frozenStateInterface.isFrozen(runningApp.packageName, runningApp.userId);
+                }
             } catch (RemoteException e) {
+                index++;
                 continue;
             }
             FrozenSnapshot snapshot = parseFrozenSnapshot(frozenData);
@@ -308,6 +324,7 @@ public class PackageUtils {
             item.rss = snapshot.rss;
             item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
             result.add(item);
+            index++;
         }
 
         result.sort(

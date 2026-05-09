@@ -3,6 +3,8 @@ package nep.timeline.cirno.provide;
 import android.os.IBinder;
 import android.os.IInterface;
 
+import java.util.List;
+
 import nep.timeline.cirno.binder.BinderService;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.log.Log;
@@ -21,6 +23,11 @@ public class FrozenStateBinder extends FrozenStateInterface.Stub {
 
     @Override
     public String isFrozen(String packageName, int userId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<String> getFrozenStates(List<String> apps) {
         throw new UnsupportedOperationException();
     }
 }

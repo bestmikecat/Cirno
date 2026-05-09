@@ -8,6 +8,11 @@ public interface FrozenStateInterface extends android.os.IInterface {
         }
 
         @Override
+        public java.util.List<String> getFrozenStates(java.util.List<String> apps) throws android.os.RemoteException {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -44,13 +49,22 @@ public interface FrozenStateInterface extends android.os.IInterface {
                 reply.writeString(descriptor);
                 return true;
             }
-            if (code == TRANSACTION_isFrozen) {
-                String packageName = data.readString();
-                int userId = data.readInt();
-                String result = this.isFrozen(packageName, userId);
-                reply.writeNoException();
-                reply.writeString(result);
-                return true;
+            switch (code) {
+                case TRANSACTION_isFrozen: {
+                    String packageName = data.readString();
+                    int userId = data.readInt();
+                    String result = this.isFrozen(packageName, userId);
+                    reply.writeNoException();
+                    reply.writeString(result);
+                    return true;
+                }
+                case TRANSACTION_getFrozenStates: {
+                    java.util.List<String> apps = data.createStringArrayList();
+                    java.util.List<String> result = this.getFrozenStates(apps);
+                    reply.writeNoException();
+                    reply.writeStringList(result);
+                    return true;
+                }
             }
             return super.onTransact(code, data, reply, flags);
         }
@@ -83,12 +97,31 @@ public interface FrozenStateInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public java.util.List<String> getFrozenStates(java.util.List<String> apps) throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    data.writeStringList(apps);
+                    mRemote.transact(Stub.TRANSACTION_getFrozenStates, data, reply, 0);
+                    reply.readException();
+                    return reply.createStringArrayList();
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_isFrozen = android.os.IBinder.FIRST_CALL_TRANSACTION;
+        static final int TRANSACTION_getFrozenStates = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.FrozenStateInterface";
 
     String isFrozen(String packageName, int userId) throws android.os.RemoteException;
+
+    java.util.List<String> getFrozenStates(java.util.List<String> apps) throws android.os.RemoteException;
 }

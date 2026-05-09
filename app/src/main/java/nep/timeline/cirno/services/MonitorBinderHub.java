@@ -8,6 +8,8 @@ import android.os.SystemClock;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.os.Parcel;
+
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.ConfigInterface;
@@ -88,6 +90,35 @@ public final class MonitorBinderHub {
             }
             String reason = resolveNotFrozenReason(appRecord, processCount, frozenCount);
             return "NOT_FROZEN[" + reason + "],PROCESS_COUNT[" + processCount + "],FROZEN_COUNT[" + frozenCount + "],RSS[" + rss + "]";
+        }
+
+        @Override
+        public List<String> getFrozenStates(List<String> apps) {
+            List<String> result = new ArrayList<>();
+            if (apps == null) {
+                return result;
+            }
+            for (String entry : apps) {
+                if (entry == null || entry.isEmpty()) {
+                    result.add("");
+                    continue;
+                }
+                String[] parts = entry.split(":");
+                if (parts.length < 2) {
+                    result.add("");
+                    continue;
+                }
+                String packageName = parts[0];
+                int userId;
+                try {
+                    userId = Integer.parseInt(parts[1]);
+                } catch (NumberFormatException e) {
+                    result.add("");
+                    continue;
+                }
+                result.add(isFrozen(packageName, userId));
+            }
+            return result;
         }
     };
 
