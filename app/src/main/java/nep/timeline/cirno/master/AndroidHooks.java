@@ -23,6 +23,7 @@ import nep.timeline.cirno.hooks.android.input.InputMethodManagerService;
 import nep.timeline.cirno.hooks.android.intent.PendingIntentHook;
 import nep.timeline.cirno.hooks.android.location.ListenerRegisterHook;
 import nep.timeline.cirno.hooks.android.location.ListenerUnregisterHook;
+import nep.timeline.cirno.hooks.android.notification.NotificationHook;
 import nep.timeline.cirno.hooks.android.process.ProcessAddHook;
 import nep.timeline.cirno.hooks.android.process.ProcessRemoveHook;
 import nep.timeline.cirno.hooks.android.recorder.RecorderEventHook;
@@ -85,6 +86,8 @@ public class AndroidHooks {
         new VpnStateHook(classLoader);
         // Intent
         new PendingIntentHook(classLoader);
+        // Notification
+        new NotificationHook(classLoader);
         // ReKernel
         BinderService.start(classLoader);
     }

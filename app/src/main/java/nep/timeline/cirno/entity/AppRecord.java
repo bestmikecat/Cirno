@@ -19,6 +19,7 @@ public class AppRecord {
     private final List<ProcessRecord> processRecords = new CopyOnWriteArrayList<>();
     private volatile AppState appState;
     private volatile boolean frozen;
+    private boolean waitingNotification = false;
 
     public AppRecord(ApplicationInfo applicationInfo) {
         this.packageName = applicationInfo.packageName;
@@ -63,6 +64,10 @@ public class AppRecord {
     public void setFrozen(boolean frozen) {
         this.frozen = frozen;
     }
+
+    public boolean isWaitingNotification() { return waitingNotification; }
+
+    public void setWaitingNotification(boolean waitingNotification) { this.waitingNotification = waitingNotification; }
 
     public String getPackageNameWithUser() {
         if (userId == 0)
