@@ -76,8 +76,7 @@ public class BroadcastIntentHook {
 
             Log.i("监听广播意图");
         } catch (Throwable throwable) {
-            XposedBridge.log(GlobalVars.TAG + " -> 无法监听广播意图, 异常:");
-            XposedBridge.log(throwable);
+            Log.e("无法监听广播意图, 异常:", throwable);
             Log.e("监听广播意图失败", throwable);
         }
     }

@@ -8,6 +8,8 @@ import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.ProcessService;
+import nep.timeline.cirno.utils.ReflectUtils;
+import nep.timeline.cirno.utils.SystemChecker;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class BroadcastSkipHook extends MethodHook {
@@ -27,8 +29,13 @@ public class BroadcastSkipHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        // 🔧 只Hook参数3版本：BroadcastRecord, BroadcastFilter, boolean
-        return new Object[]{"com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class};
+        if (SystemChecker.isVivo(classLoader))
+            return ReflectUtils.findParameterTypesOrDefault(
+                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class, "com.android.server.am.IVivoBroadcastQueueModern");
+        return ReflectUtils.findParameterTypesOrDefault(
+                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter");
     }
 
     @Override
@@ -37,9 +44,7 @@ public class BroadcastSkipHook extends MethodHook {
             @Override
             protected void afterMethod(MethodHookParam param) {
                 try {
-                    // ✅ 安全地获取返回值
-                    Object result = param.getResult();
-                    if (result != null) {
+                    if (param.getResult() != null) {
                         return;
                     }
 
