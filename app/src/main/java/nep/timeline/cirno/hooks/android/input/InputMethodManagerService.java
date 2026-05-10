@@ -3,11 +3,9 @@ package nep.timeline.cirno.hooks.android.input;
 import android.os.Build;
 import android.view.inputmethod.InputMethodInfo;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
@@ -18,6 +16,7 @@ import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.services.FreezerService;
 import nep.timeline.cirno.threads.FreezerHandler;
 import nep.timeline.cirno.utils.InputMethodData;
+import nep.timeline.cirno.utils.ReflectUtils;
 
 public class InputMethodManagerService extends MethodHook {
     @SuppressWarnings("unchecked")
@@ -80,8 +79,13 @@ public class InputMethodManagerService extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        // ✅ 返回空数组，让 Xposed 自动适配所有参数组合
-        return new Object[0];
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            return ReflectUtils.findParameterTypesOrDefault(
+                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                getTargetMethod(), String.class, int.class, int.class, int.class);
+        return ReflectUtils.findParameterTypesOrDefault(
+            XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+            getTargetMethod(), String.class, int.class);
     }
 
     @Override
@@ -113,7 +117,9 @@ public class InputMethodManagerService extends MethodHook {
                         return;
                     }
 
-                    int userId = ActivityManagerService.getCurrentOrTargetUserId();
+                    int userId = (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && param.args.length > 3)
+                            ? (int) param.args[3]
+                            : ActivityManagerService.getCurrentOrTargetUserId();
                     Object settings = resolveInputMethodSettings(param.thisObject, userId);
 
                     synchronized (InputMethodData.class) {
@@ -153,35 +159,7 @@ public class InputMethodManagerService extends MethodHook {
     }
 
     @Override
-    public void startHook() {
-        try {
-            Class<?> targetClass = XposedHelpers.findClass(getTargetClass(), classLoader);
-
-            // ✅ 遍历所有 setInputMethodLocked 方法，不管参数是什么
-            boolean hooked = false;
-            for (Method method : targetClass.getDeclaredMethods()) {
-                if (method.getName().equals(getTargetMethod())) {
-                    try {
-                        XposedBridge.hookMethod(method, getTargetHook());
-                        Log.i(method.getName() + " [参数: " + method.getParameterCount() + "] -> 成功Hook完毕!");
-                        hooked = true;
-                    } catch (Exception e) {
-                        Log.w("Hook " + method.getName() + " [参数: " + method.getParameterCount() + "] 失败");
-                    }
-                }
-            }
-
-            if (!hooked) {
-                Log.w("未能 Hook 任何 setInputMethodLocked 方法");
-            }
-        } catch (Throwable e) {
-            Log.e(getTargetMethod() + " Hook 失败", e);
-        }
-    }
-
-    @Override
     public boolean isIgnoreError() {
-        // ✅ 忽略错误，允许部分失败
         return true;
     }
 }
