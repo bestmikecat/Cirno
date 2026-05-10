@@ -1,6 +1,7 @@
 package nep.timeline.cirno.utils;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 import nep.timeline.cirno.log.Log;
 
@@ -16,10 +17,8 @@ public class ReflectUtils {
 
                         for (int i = 0; i < parameter.length; i++) {
                             Object obj = parameter[i];
-                            Class<?> expectedType = parameterTypes[i];
 
-                            if ((obj instanceof String && !expectedType.getName().equals(obj))
-                                    || (!(obj instanceof String) && !expectedType.isInstance(obj))) {
+                            if (!Objects.equals(obj, obj instanceof String ? parameterTypes[i].getName() : parameterTypes[i])) {
                                 isCompatible = false;
                                 break;
                             }
