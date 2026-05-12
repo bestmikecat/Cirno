@@ -8,7 +8,7 @@
   <string name="white_app">Whitelist</string>
   <string name="builtin_whitelist_summary">Cirno built-in whitelist</string>
   <string name="builtin_whitelist_locked">Built-in whitelist cannot be modified</string>
-  <string name="builtin_whitelist_blacklist_blocked">Built-in whitelist apps cannot enable blacklist</string>
+  <string name="builtin_whitelist_blacklist_blocked">Built-in whitelist app, enabling blacklist will force freeze</string>
   <string name="black_app">Blacklist</string>
   <string name="direct_app">Force freeze</string>
   <string name="background_play">Background play</string>
