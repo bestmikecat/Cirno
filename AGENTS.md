@@ -144,6 +144,7 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - Scopes: specific to the changed area (e.g. `hook`, `config`, `binder`, `network`, `freezer`, `appRecord`, `freezerHandler`, `configManager`). Use space separation for multiple scopes.
 - Compound words use camelCase (e.g. `appRecord`, `freezerHandler`, `configManager`)
 - Keep subject line ≤ 72 characters, sentence case, no trailing period
+- All commits must be GPG signed (`git commit -S`) if a signing key is available
 
 ## AGENTS Maintenance Policy
 
