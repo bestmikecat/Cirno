@@ -36,6 +36,12 @@ public class Log {
     }
 
     public static void d(String msg, Throwable throwable) {
+        if (throwable instanceof java.lang.reflect.InvocationTargetException) {
+            Throwable target = ((java.lang.reflect.InvocationTargetException) throwable).getTargetException();
+            if (target != null) {
+                throwable = target;
+            }
+        }
         String detail = throwable.getClass().getSimpleName();
         String message = throwable.getMessage();
         if (message != null && !message.isEmpty()) {
@@ -53,6 +59,12 @@ public class Log {
     }
 
     public static void w(String msg, Throwable throwable) {
+        if (throwable instanceof java.lang.reflect.InvocationTargetException) {
+            Throwable target = ((java.lang.reflect.InvocationTargetException) throwable).getTargetException();
+            if (target != null) {
+                throwable = target;
+            }
+        }
         String detail = throwable.getClass().getSimpleName();
         String message = throwable.getMessage();
         if (message != null && !message.isEmpty()) {
@@ -66,6 +78,12 @@ public class Log {
     }
 
     public static void e(String msg, Throwable throwable) {
+        if (throwable instanceof java.lang.reflect.InvocationTargetException) {
+            Throwable target = ((java.lang.reflect.InvocationTargetException) throwable).getTargetException();
+            if (target != null) {
+                throwable = target;
+            }
+        }
         String detail = throwable.getClass().getSimpleName();
         String message = throwable.getMessage();
         if (message != null && !message.isEmpty()) {
