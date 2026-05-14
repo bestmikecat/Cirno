@@ -36,7 +36,12 @@ public class Log {
     }
 
     public static void d(String msg, Throwable throwable) {
-        d(msg + " 失败: " + throwable.getMessage());
+        String detail = throwable.getClass().getSimpleName();
+        String message = throwable.getMessage();
+        if (message != null && !message.isEmpty()) {
+            detail += ": " + message;
+        }
+        d(msg + " 失败: " + detail);
     }
 
     public static void i(String msg) {
@@ -48,7 +53,12 @@ public class Log {
     }
 
     public static void w(String msg, Throwable throwable) {
-        w(msg + " 失败: " + throwable.getMessage());
+        String detail = throwable.getClass().getSimpleName();
+        String message = throwable.getMessage();
+        if (message != null && !message.isEmpty()) {
+            detail += ": " + message;
+        }
+        w(msg + " 失败: " + detail);
     }
 
     public static void e(String msg) {
@@ -56,7 +66,12 @@ public class Log {
     }
 
     public static void e(String msg, Throwable throwable) {
-        e(msg + " 失败: " + throwable.getMessage());
+        String detail = throwable.getClass().getSimpleName();
+        String message = throwable.getMessage();
+        if (message != null && !message.isEmpty()) {
+            detail += ": " + message;
+        }
+        e(msg + " 失败: " + detail);
     }
 
     private static String getLogLevel() {

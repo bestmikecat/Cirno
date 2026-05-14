@@ -164,6 +164,10 @@ public final class ConfigBinderHub {
         LinkedHashSet<String> packages = new LinkedHashSet<>();
         try {
             Object resultObj;
+            if (context.getPackageManager() == null) {
+                Log.e("Config binder getInstalledPackagesAsUser failed: PackageManager is null, userId=" + userId);
+                return new ArrayList<>();
+            }
             Method getInstalledAsUser = context.getPackageManager().getClass().getMethod("getInstalledPackagesAsUser", int.class, int.class);
             resultObj = getInstalledAsUser.invoke(context.getPackageManager(), 0, userId);
             List<?> list = unwrapListResult(resultObj);
@@ -177,7 +181,7 @@ public final class ConfigBinderHub {
                 Log.d("Config binder getInstalledPackagesAsUser success user=" + userId + " size=" + packages.size());
             }
         } catch (Throwable e) {
-            Log.e("Config binder getInstalledPackagesAsUser failed", e);
+            Log.e("Config binder getInstalledPackagesAsUser failed, userId=" + userId, e);
         }
         return new ArrayList<>(packages);
     }
