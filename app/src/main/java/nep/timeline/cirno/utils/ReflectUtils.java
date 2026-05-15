@@ -8,12 +8,11 @@ import nep.timeline.cirno.log.Log;
 public class ReflectUtils {
     public static Object[] findParameterTypesOrDefault(Class<?> clazz, String methodName, Object... parameter) {
         try {
-            boolean foundAny = false;
+            StringBuilder candidates = new StringBuilder();
             for (Method method : clazz.getDeclaredMethods()) {
                 if (method.getName().equals(methodName)) {
-                    foundAny = true;
                     Class<?>[] parameterTypes = method.getParameterTypes();
-                    Log.i("[ReflectUtils-DEBUG] " + methodName + " 候选: " + java.util.Arrays.toString(parameterTypes));
+                    candidates.append("  ").append(java.util.Arrays.toString(parameterTypes)).append("\n");
 
                     if (parameter.length <= parameterTypes.length) {
                         boolean isCompatible = true;
@@ -28,13 +27,14 @@ public class ReflectUtils {
                         }
 
                         if (isCompatible) {
-                            Log.i("[ReflectUtils-DEBUG] " + methodName + " 匹配成功, 参数数量: " + parameterTypes.length);
                             return parameterTypes;
                         }
                     }
                 }
             }
-            if (!foundAny) {
+            if (candidates.length() > 0) {
+                Log.w("[ReflectUtils-DEBUG] " + methodName + " 无匹配, 候选:\n" + candidates);
+            } else {
                 Log.w("[ReflectUtils-DEBUG] " + methodName + " 未找到任何同名方法");
             }
         } catch (Exception e) {
