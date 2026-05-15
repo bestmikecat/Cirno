@@ -35,7 +35,7 @@ public class AudioStateHook extends MethodHook {
     public Object[] getTargetParam() {
         return ReflectUtils.findParameterTypesOrDefault(
                 XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), int.class);
+                getTargetMethod(), int.class, int[].class);
     }
 
     @Override
@@ -81,10 +81,5 @@ public class AudioStateHook extends MethodHook {
                 }
             }
         };
-    }
-
-    @Override
-    public boolean isIgnoreError() {
-        return true;
     }
 }

@@ -15,7 +15,7 @@ public class ReflectUtils {
                     Class<?>[] parameterTypes = method.getParameterTypes();
                     Log.i("[ReflectUtils-DEBUG] " + methodName + " 候选: " + java.util.Arrays.toString(parameterTypes));
 
-                    if (parameter.length == parameterTypes.length) {
+                    if (parameter.length <= parameterTypes.length) {
                         boolean isCompatible = true;
 
                         for (int i = 0; i < parameter.length; i++) {
