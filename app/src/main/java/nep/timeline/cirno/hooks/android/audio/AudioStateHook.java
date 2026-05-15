@@ -1,6 +1,7 @@
 package nep.timeline.cirno.hooks.android.audio;
 
 import android.media.AudioPlaybackConfiguration;
+import android.os.Build;
 
 import java.util.List;
 
@@ -33,9 +34,13 @@ public class AudioStateHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
+        if (Build.VERSION.SDK_INT >= 36)
+            return ReflectUtils.findParameterTypesOrDefault(
+                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), int.class, int[].class);
         return ReflectUtils.findParameterTypesOrDefault(
                 XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), int.class, int[].class);
+                getTargetMethod(), int.class);
     }
 
     @Override

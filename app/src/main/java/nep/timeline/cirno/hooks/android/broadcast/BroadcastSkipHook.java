@@ -33,9 +33,13 @@ public class BroadcastSkipHook extends MethodHook {
             return ReflectUtils.findParameterTypesOrDefault(
                     XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
                     getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class, "com.android.server.am.IVivoBroadcastQueueModern");
+        if (Build.VERSION.SDK_INT >= 36)
+            return ReflectUtils.findParameterTypesOrDefault(
+                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class);
         return ReflectUtils.findParameterTypesOrDefault(
                 XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class);
+                getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter");
     }
 
     @Override
