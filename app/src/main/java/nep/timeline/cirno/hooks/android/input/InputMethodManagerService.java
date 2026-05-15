@@ -140,7 +140,7 @@ public class InputMethodManagerService extends MethodHook {
 
                         InputMethodData.currentInputMethodInfo = inputMethodInfo;
                         AppRecord appRecord = AppService.get(pkgName, userId);
-                        if (appRecord != InputMethodData.currentInputMethodApp) {
+                        if (appRecord != null && appRecord != InputMethodData.currentInputMethodApp) {
                             AppRecord oldApp = InputMethodData.currentInputMethodApp;
                             InputMethodData.currentInputMethodApp = appRecord;
                             if (appRecord != null) {
@@ -156,10 +156,5 @@ public class InputMethodManagerService extends MethodHook {
                 }
             }
         };
-    }
-
-    @Override
-    public boolean isIgnoreError() {
-        return true;
     }
 }
