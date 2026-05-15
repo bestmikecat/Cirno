@@ -78,9 +78,10 @@ fun FrozenAppItemCompose(
                     val broadcasting = "\uD83D\uDCE2"
                     val coldStart = "\uD83E\uDDCA"
                     val push = "\uD83D\uDCF0"
+                    val whitelist = "\uD83E\uDEE1"
                     val waiting = "\u23F3"
                     val reason = when (app.notFrozenReason) {
-                        "WHITELIST" -> "白名单"
+                        "WHITELIST" -> "白名单 $whitelist"
                         "BLACKLIST" -> "黑名单 ⛔"
                         "NOTIFICATION" -> "常驻通知中 $notification"
                         "AUDIO" -> "播放音频中 $audio"
