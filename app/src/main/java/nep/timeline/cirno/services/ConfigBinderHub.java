@@ -2,6 +2,7 @@ package nep.timeline.cirno.services;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Binder;
 import android.os.UserHandle;
 import android.os.UserManager;
 
@@ -97,34 +98,39 @@ public final class ConfigBinderHub {
 
         @Override
         public List<String> getManagedAppKeys() {
-            LinkedHashSet<String> result = new LinkedHashSet<>();
-            Context context = ActivityManagerService.getContext();
-            if (context == null) {
-                Log.w("Config binder managed apps skipped: context unavailable");
-                return new ArrayList<>();
-            }
-            List<Integer> userIds = getInstalledUserIdsByService();
-            if (userIds.isEmpty()) {
-                userIds.add(0);
-                Log.d("Config binder users fallback=user0");
-            }
-            int packageCount = 0;
-            for (int userId : userIds) {
-                List<String> packages = getInstalledPackagesForUserByFramework(context, userId);
-                packageCount += packages.size();
-                for (String pkg : packages) {
-                    if (pkg == null || pkg.isEmpty()) {
-                        continue;
-                    }
-                    result.add(pkg + "#" + userId);
+            long token = Binder.clearCallingIdentity();
+            try {
+                LinkedHashSet<String> result = new LinkedHashSet<>();
+                Context context = ActivityManagerService.getContext();
+                if (context == null) {
+                    Log.w("Config binder managed apps skipped: context unavailable");
+                    return new ArrayList<>();
                 }
+                List<Integer> userIds = getInstalledUserIdsByService();
+                if (userIds.isEmpty()) {
+                    userIds.add(0);
+                    Log.d("Config binder users fallback=user0");
+                }
+                int packageCount = 0;
+                for (int userId : userIds) {
+                    List<String> packages = getInstalledPackagesForUserByFramework(context, userId);
+                    packageCount += packages.size();
+                    for (String pkg : packages) {
+                        if (pkg == null || pkg.isEmpty()) {
+                            continue;
+                        }
+                        result.add(pkg + "#" + userId);
+                    }
+                }
+                long now = System.currentTimeMillis();
+                if (now - lastManagedAppsLogAtMs > 30000L) {
+                    lastManagedAppsLogAtMs = now;
+                    Log.i("Config binder managed apps: users=" + userIds.size() + ", packages=" + packageCount + ", keys=" + result.size());
+                }
+                return new ArrayList<>(result);
+            } finally {
+                Binder.restoreCallingIdentity(token);
             }
-            long now = System.currentTimeMillis();
-            if (now - lastManagedAppsLogAtMs > 30000L) {
-                lastManagedAppsLogAtMs = now;
-                Log.i("Config binder managed apps: users=" + userIds.size() + ", packages=" + packageCount + ", keys=" + result.size());
-            }
-            return new ArrayList<>(result);
         }
     };
 
