@@ -18,6 +18,8 @@ import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.utils.InputMethodData;
+import nep.timeline.cirno.utils.PKGUtils;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
@@ -157,6 +159,15 @@ public final class MonitorBinderHub {
         if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
             return "BLACKLIST";
         }
+        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
+            return "INPUT";
+        }
+        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
+            return "SYSTEM";
+        }
+        if (appRecord.isWaitingNotification()) {
+            return "WAITING_PUSH_RESPONSE";
+        }
         if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
             return "AUDIO";
         }
@@ -169,7 +180,7 @@ public final class MonitorBinderHub {
         if (appState != null && appState.isVpn()) {
             return "VPN";
         }
-        if (frozenProcessCount > 0 && frozenProcessCount < processCount) {
+        if (frozenProcessCount < processCount) {
             return "WAITING_FROZEN";
         }
         return REASON_UNKNOWN;

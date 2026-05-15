@@ -365,6 +365,15 @@ public class PackageUtils {
         if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
             return "BLACKLIST";
         }
+        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
+            return "INPUT";
+        }
+        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
+            return "SYSTEM";
+        }
+        if (appRecord.isWaitingNotification()) {
+            return "WAITING_PUSH_RESPONSE";
+        }
         if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
             return "AUDIO";
         }
@@ -377,7 +386,7 @@ public class PackageUtils {
         if (appState != null && appState.isVpn()) {
             return "VPN";
         }
-        if (frozenProcessCount > 0 && frozenProcessCount < processCount) {
+        if (frozenProcessCount < processCount) {
             return "WAITING_FROZEN";
         }
         return "UNKNOWN";

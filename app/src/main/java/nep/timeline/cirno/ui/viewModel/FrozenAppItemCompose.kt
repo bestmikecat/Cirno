@@ -81,6 +81,7 @@ fun FrozenAppItemCompose(
                     val waiting = "\u23F3"
                     val reason = when (app.notFrozenReason) {
                         "WHITELIST" -> "白名单"
+                        "BLACKLIST" -> "黑名单 ⛔"
                         "NOTIFICATION" -> "常驻通知中 $notification"
                         "AUDIO" -> "播放音频中 $audio"
                         "MEDIA" -> "播放媒体中 $media"
