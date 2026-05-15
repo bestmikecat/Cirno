@@ -58,4 +58,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public java.util.List<String> getManagedAppKeys() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getModuleVersion() {
+        throw new UnsupportedOperationException();
+    }
 }

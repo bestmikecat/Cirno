@@ -151,7 +151,8 @@ private fun InfoContent(
                     StatusCard(
                         active = active,
                         working = active && !hasError,
-                        version = BuildConfig.VERSION_NAME,
+                        version = ConfigBinderRepository.getModuleVersion()
+                            ?: stringResource(R.string.not_running),
                         onClickStatus = {
 
                         },

@@ -107,4 +107,14 @@ object ConfigBinderRepository {
             false
         }
     }
+
+    fun getModuleVersion(): String? {
+        val config = ConfigBinder.getInstance() ?: return null
+        return try {
+            val version = config.moduleVersion
+            if (version.isNullOrBlank()) null else version
+        } catch (_: Throwable) {
+            null
+        }
+    }
 }

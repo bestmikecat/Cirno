@@ -57,6 +57,7 @@
   <string name="unknown">未知</string>
   <string name="manager_version">管理器版本</string>
   <string name="error">错误</string>
+  <string name="not_running">未运行</string>
   <string name="internal_error">Cirno 遇到内部错误，请检查日志！</string>
   <string name="navigation_style">导航样式</string>
   <string name="blur_ui">模糊</string>

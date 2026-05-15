@@ -57,6 +57,7 @@
   <string name="unknown">Unknown</string>
   <string name="manager_version">Manager Version</string>
   <string name="error">Error</string>
+  <string name="not_running">Not running</string>
   <string name="internal_error">Cirno encountered an internal error. Please check the logs!</string>
   <string name="navigation_style">Navigation style</string>
   <string name="blur_ui">Blur</string>

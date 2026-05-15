@@ -65,7 +65,7 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 
 - `ApplicationInterface`: `getRunningApplication()` returns running apps as `"packageName:userId:uid"`.
 - `FrozenStateInterface`: `isFrozen(packageName, userId)` returns diagnostic string (e.g. `V2(N/M),RSS[rss]`).
-- `ConfigInterface` (8 methods): settings JSON get/set, error/signal, managed app keys.
+- `ConfigInterface` (9 methods): settings JSON get/set, error/signal, managed app keys, module version.
 
 ### cgroup v2 Path Layout
 

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.configs.ConfigManager;
 import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.log.Log;
@@ -131,6 +132,11 @@ public final class ConfigBinderHub {
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
+        }
+
+        @Override
+        public String getModuleVersion() {
+            return BuildConfig.VERSION_NAME;
         }
     };
 
