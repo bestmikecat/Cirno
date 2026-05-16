@@ -157,7 +157,7 @@ public final class MonitorBinderHub {
             if (processCount <= 0) {
                 return "NOT_FROZEN[UNKNOWN]";
             }
-            if (frozenCount == processCount) {
+            if (frozenCount > 0) {
                 return "V2(" + frozenCount + "/" + processCount + "),RSS[" + rss + "]";
             }
             String reason = resolveNotFrozenReason(appRecord, processCount, frozenCount);

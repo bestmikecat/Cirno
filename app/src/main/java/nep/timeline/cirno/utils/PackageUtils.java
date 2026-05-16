@@ -474,7 +474,7 @@ public class PackageUtils {
                 snapshot.frozenCount = parseIntSafe(value.substring(3, slash), 0);
                 snapshot.processCount = parseIntSafe(value.substring(slash + 1, close), 0);
             }
-            snapshot.isFrozen = snapshot.processCount > 0 && snapshot.frozenCount == snapshot.processCount;
+            snapshot.isFrozen = snapshot.frozenCount > 0;
             return snapshot;
         }
 
