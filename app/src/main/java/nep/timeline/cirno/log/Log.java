@@ -127,6 +127,12 @@ public class Log {
                 return;
             }
 
+            if ("警告".equals(level)) {
+                fileLog(formatted);
+                xposedLog(formatted);
+                return;
+            }
+
             if (!shouldLog(level)) {
                 return;
             }
