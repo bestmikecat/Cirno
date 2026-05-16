@@ -33,9 +33,9 @@ public class ReflectUtils {
                 }
             }
             if (candidates.length() > 0) {
-                Log.w("[ReflectUtils-DEBUG] " + methodName + " 无匹配, 候选:\n" + candidates);
+                Log.d("[ReflectUtils-DEBUG] " + methodName + " 无匹配, 候选:\n" + candidates);
             } else {
-                Log.w("[ReflectUtils-DEBUG] " + methodName + " 未找到任何同名方法");
+                Log.d("[ReflectUtils-DEBUG] " + methodName + " 未找到任何同名方法");
             }
         } catch (Exception e) {
             Log.e("Find parameter", e);
