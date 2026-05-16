@@ -35,6 +35,11 @@ public class ANRErrorStateHook extends MethodHook {
     }
 
     @Override
+    public boolean isIgnoreError() {
+        return true;
+    }
+
+    @Override
     public XC_MethodHook getTargetHook() {
         return new AbstractMethodHook() {
             @Override
