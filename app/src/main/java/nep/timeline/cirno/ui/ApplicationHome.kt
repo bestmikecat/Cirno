@@ -57,6 +57,8 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val processList = remember { mutableStateListOf<String>() }
     val processExclusions = remember { mutableStateListOf<String>() }
     val processListLoaded = remember { mutableStateOf(false) }
+    val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
+    val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
 
     LaunchedEffect(packageName, userId) {
         val appBinder = ApplicationBinder.getInstance()
@@ -103,8 +105,6 @@ fun ApplicationHome(activity: ApplicationActivity) {
             ) {
                 item {
                     Card(modifier = Modifier.padding(12.dp)) {
-                        val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
-                        val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
                         val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
@@ -241,7 +241,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                     }
                 }
 
-                if (processListLoaded.value) {
+                if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && !black.value) {
                     item {
                         SmallTitle(text = stringResource(R.string.process_freeze_control))
                         Card(modifier = Modifier.padding(12.dp)) {
