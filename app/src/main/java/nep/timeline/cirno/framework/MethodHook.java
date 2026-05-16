@@ -2,6 +2,8 @@ package nep.timeline.cirno.framework;
 
 import android.os.Build;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -54,11 +56,47 @@ public abstract class MethodHook {
 
             ArrayList<Object> param = new ArrayList<>(Arrays.asList(targetParam));
             param.add(targetHook);
-            if (targetMethod == null)
-                unhook = XposedHelpers.findAndHookConstructor(targetClass, classLoader, param.toArray());
-            else
-                unhook = XposedHelpers.findAndHookMethod(targetClass, classLoader, targetMethod, param.toArray());
-            Log.i(getTargetMethod() + " -> 成功Hook完毕!");
+            try {
+                if (targetMethod == null)
+                    unhook = XposedHelpers.findAndHookConstructor(targetClass, classLoader, param.toArray());
+                else
+                    unhook = XposedHelpers.findAndHookMethod(targetClass, classLoader, targetMethod, param.toArray());
+                Log.i(getTargetMethod() + " -> 成功Hook完毕!");
+            } catch (Throwable t) {
+                logAvailableSignatures(targetClass, targetMethod, targetMethod == null);
+                throw t;
+            }
+        }
+    }
+
+    private void logAvailableSignatures(String className, String methodName, boolean isConstructor) {
+        try {
+            Class<?> clazz = XposedHelpers.findClassIfExists(className, classLoader);
+            if (clazz == null) {
+                Log.d("[MethodHook-DEBUG] " + className + " 类未找到");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            if (isConstructor) {
+                for (Constructor<?> ctor : clazz.getDeclaredConstructors()) {
+                    sb.append("  ").append(Arrays.toString(ctor.getParameterTypes())).append("\n");
+                }
+            } else {
+                for (Method method : clazz.getDeclaredMethods()) {
+                    if (method.getName().equals(methodName)) {
+                        sb.append("  ").append(Arrays.toString(method.getParameterTypes())).append("\n");
+                    }
+                }
+            }
+
+            String label = isConstructor ? "构造函数" : methodName;
+            if (sb.length() > 0) {
+                Log.d("[MethodHook-DEBUG] " + label + " 可用签名:\n" + sb);
+            } else {
+                Log.d("[MethodHook-DEBUG] " + label + " 未找到任何同名签名");
+            }
+        } catch (Throwable ignored) {
         }
     }
 
