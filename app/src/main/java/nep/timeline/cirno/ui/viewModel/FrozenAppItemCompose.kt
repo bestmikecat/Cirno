@@ -57,10 +57,6 @@ fun FrozenAppItemCompose(
                 if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN"))
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(message).show()
                 else if (!app.isFrozen) {
-                    if (app.processConfig && app.frozenProcessCount > 0) {
-                        val partialMessage = "部分进程已冻结 (${app.frozenProcessCount}/${app.applicationProcessCount}) \u2699\uFE0F"
-                        PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(partialMessage).show()
-                    } else {
                     val notification = "\uD83D\uDCE2"
                     val audio = "\uD83C\uDFB5"
                     val media = "\uD83C\uDF9E"
@@ -114,7 +110,6 @@ fun FrozenAppItemCompose(
                         else -> "未知"
                     }
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(reason).show()
-                    }
                 }
             }
         ),
