@@ -29,6 +29,9 @@ public class FreezerService {
                 if (processRecord.isDeathProcess() || processRecord.isFrozen()) {
                     continue;
                 }
+                if (AppConfigs.isProcessExcludedFromFreeze(appRecord.getPackageName(), appRecord.getUserId(), processRecord.getProcessName())) {
+                    continue;
+                }
                 FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid());
                 processRecord.setFrozen(true);
             }
@@ -64,6 +67,10 @@ public class FreezerService {
         for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
             if (processRecord.isDeathProcess() || processRecord.isFrozen())
                 continue;
+
+            if (AppConfigs.isProcessExcludedFromFreeze(appRecord.getPackageName(), appRecord.getUserId(), processRecord.getProcessName())) {
+                continue;
+            }
 
             FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid());
             processRecord.setFrozen(true);

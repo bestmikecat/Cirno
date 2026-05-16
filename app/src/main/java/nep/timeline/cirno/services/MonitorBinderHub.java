@@ -2,13 +2,21 @@ package nep.timeline.cirno.services;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
+import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.os.SystemClock;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import android.os.Parcel;
+
+import com.google.gson.Gson;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
@@ -55,6 +63,70 @@ public final class MonitorBinderHub {
         @Override
         public List<String> getRunningApplication() {
             return cachedRunningApps;
+        }
+
+        @Override
+        public String getProcessesForApp(String packageName, int userId) {
+            if (packageName == null || packageName.isEmpty()) {
+                return "[]";
+            }
+            LinkedHashSet<String> processNames = new LinkedHashSet<>();
+            try {
+                android.content.Context context = ActivityManagerService.getContext();
+                if (context != null) {
+                    PackageManager pm = context.getPackageManager();
+                    if (pm != null) {
+                        int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_SERVICES
+                                | PackageManager.GET_RECEIVERS | PackageManager.GET_PROVIDERS;
+                        PackageInfo pkgInfo = pm.getPackageInfo(packageName, flags);
+                        if (pkgInfo.activities != null) {
+                            for (ActivityInfo info : pkgInfo.activities) {
+                                String name = info.processName;
+                                if (name != null && !name.isEmpty()) {
+                                    processNames.add(name);
+                                }
+                            }
+                        }
+                        if (pkgInfo.services != null) {
+                            for (ServiceInfo info : pkgInfo.services) {
+                                String name = info.processName;
+                                if (name != null && !name.isEmpty()) {
+                                    processNames.add(name);
+                                }
+                            }
+                        }
+                        if (pkgInfo.receivers != null) {
+                            for (ActivityInfo info : pkgInfo.receivers) {
+                                String name = info.processName;
+                                if (name != null && !name.isEmpty()) {
+                                    processNames.add(name);
+                                }
+                            }
+                        }
+                        if (pkgInfo.providers != null) {
+                            for (ProviderInfo info : pkgInfo.providers) {
+                                String name = info.processName;
+                                if (name != null && !name.isEmpty()) {
+                                    processNames.add(name);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+            if (processNames.isEmpty()) {
+                processNames.add(packageName);
+            }
+            AppRecord appRecord = AppService.get(packageName, userId);
+            if (appRecord != null) {
+                for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
+                    if (processRecord != null && !processRecord.isDeathProcess()) {
+                        processNames.add(processRecord.getProcessName());
+                    }
+                }
+            }
+            return new Gson().toJson(new ArrayList<>(processNames));
         }
     };
 

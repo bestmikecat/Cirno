@@ -23,4 +23,9 @@ public class ApplicationBinder extends ApplicationInterface.Stub {
     public java.util.List<String> getRunningApplication() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getProcessesForApp(String packageName, int userId) {
+        throw new UnsupportedOperationException();
+    }
 }

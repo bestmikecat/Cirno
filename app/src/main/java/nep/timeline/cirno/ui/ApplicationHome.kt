@@ -5,10 +5,13 @@ package nep.timeline.cirno.ui
 import java.io.File
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -16,10 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import nep.timeline.cirno.ApplicationActivity
 import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.checkers.AppConfigs
+import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -31,6 +37,8 @@ import nep.timeline.cirno.ui.utils.shouldShowSplitPane
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
@@ -45,6 +53,30 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val hasReKernel = remember { File("/proc/rekernel").exists() }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
+
+    val processList = remember { mutableStateListOf<String>() }
+    val processExclusions = remember { mutableStateListOf<String>() }
+    val processListLoaded = remember { mutableStateOf(false) }
+
+    LaunchedEffect(packageName, userId) {
+        val appBinder = ApplicationBinder.getInstance()
+        if (appBinder != null) {
+            try {
+                val json = appBinder.getProcessesForApp(packageName, userId)
+                if (json != null) {
+                    val type = object : TypeToken<List<String>>() {}.type
+                    val names: List<String> = Gson().fromJson(json, type) ?: emptyList()
+                    processList.clear()
+                    processList.addAll(names)
+                }
+            } catch (_: Throwable) {
+            }
+        }
+        val excluded = AppConfigs.getExcludedProcesses(packageName, userId)
+        processExclusions.clear()
+        processExclusions.addAll(excluded)
+        processListLoaded.value = true
+    }
 
     Scaffold(
         topBar = {
@@ -206,6 +238,60 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             }
                         )
 
+                    }
+                }
+
+                if (processListLoaded.value) {
+                    item {
+                        SmallTitle(text = stringResource(R.string.process_freeze_control))
+                        Card(modifier = Modifier.padding(12.dp)) {
+                            if (processList.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.no_process_hint),
+                                        color = Color.Gray
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = stringResource(R.string.process_freeze_control_summary),
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                                    color = Color.Gray
+                                )
+                                processList.forEach { processName ->
+                                    val isExcluded = remember { mutableStateOf(processExclusions.contains(processName)) }
+                                    SwitchPreference(
+                                        title = processName,
+                                        checked = !isExcluded.value,
+                                        onCheckedChange = { frozen ->
+                                            val previous = isExcluded.value
+                                            isExcluded.value = !frozen
+                                            AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, !frozen)
+                                            if (frozen) {
+                                                processExclusions.remove(processName)
+                                            } else {
+                                                processExclusions.add(processName)
+                                            }
+                                            if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                                isExcluded.value = previous
+                                                AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, previous)
+                                                if (previous) {
+                                                    processExclusions.add(processName)
+                                                } else {
+                                                    processExclusions.remove(processName)
+                                                }
+                                                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("进程冻结配置更新失败"))
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

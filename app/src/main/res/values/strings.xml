@@ -83,6 +83,9 @@
   <string name="restore_failed_io">Restore failed while reading backup file</string>
   <string name="restore_failed_unknown">Restore failed due to an unknown error</string>
   <string name="rekernel_required_summary">ReKernel not installed, network unfreeze unavailable</string>
+  <string name="process_freeze_control">Process freeze control</string>
+  <string name="process_freeze_control_summary">When ON the process will be frozen, when OFF the process will not be frozen</string>
+  <string name="no_process_hint">Processes will appear after app starts</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>

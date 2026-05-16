@@ -6,6 +6,7 @@ import nep.timeline.cirno.configs.policy.Capability;
 import nep.timeline.cirno.configs.policy.PolicyKey;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class AppConfigs {
@@ -141,5 +142,38 @@ public class AppConfigs {
 
     public static void setNetworkMessageAllowed(String pkg, boolean allowed) {
         setNetworkMessageAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isProcessExcludedFromFreeze(String pkg, int userId, String processName) {
+        if (pkg == null || processName == null) {
+            return false;
+        }
+        return getSafeSettings().frozenProcessExclusions.contains(PolicyKey.of(pkg, userId) + "#" + processName);
+    }
+
+    public static void setProcessExcludedFromFreeze(String pkg, int userId, String processName, boolean excluded) {
+        if (pkg == null || processName == null) {
+            return;
+        }
+        String key = PolicyKey.of(pkg, userId) + "#" + processName;
+        if (excluded) {
+            getSafeSettings().frozenProcessExclusions.add(key);
+        } else {
+            getSafeSettings().frozenProcessExclusions.remove(key);
+        }
+    }
+
+    public static Set<String> getExcludedProcesses(String pkg, int userId) {
+        Set<String> result = new HashSet<>();
+        if (pkg == null) {
+            return result;
+        }
+        String prefix = PolicyKey.of(pkg, userId) + "#";
+        for (String key : getSafeSettings().frozenProcessExclusions) {
+            if (key.startsWith(prefix)) {
+                result.add(key.substring(prefix.length()));
+            }
+        }
+        return result;
     }
 }
