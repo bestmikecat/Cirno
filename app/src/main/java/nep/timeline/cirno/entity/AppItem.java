@@ -36,6 +36,7 @@ public class AppItem {
     public long rss;
     public int applicationProcessCount;
     public int frozenProcessCount;
+    public boolean processConfig;
 
     public enum Category {
         Game,

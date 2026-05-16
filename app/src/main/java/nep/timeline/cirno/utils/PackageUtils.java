@@ -119,6 +119,7 @@ public class PackageUtils {
                 item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
                 item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
                 item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
+            item.processConfig = !AppConfigs.getExcludedProcesses(pkg, item.userId).isEmpty();
             item.socket = item.networkCheck;
             item.netReceive = item.networkCheck;
             list.add(item);
