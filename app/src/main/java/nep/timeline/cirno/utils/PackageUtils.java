@@ -324,6 +324,7 @@ public class PackageUtils {
             item.frozenType = item.isFrozen ? "V2" : null;
             item.rss = snapshot.rss;
             item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
+            item.processConfig = !AppConfigs.getExcludedProcesses(runningApp.packageName, runningApp.userId).isEmpty();
             result.add(item);
             index++;
         }
