@@ -208,9 +208,9 @@ private fun InfoContent(
                                 val result = UpdateChecker.checkForUpdate()
                                 isCheckingUpdate = false
                                 if (result == null) {
-                                    WindowUtils.showToast(stringResource(R.string.update_already_latest))
+                                    WindowUtils.showToast(context.getString(R.string.update_already_latest))
                                 } else if (UpdateChecker.isSkipped(context, result.versionName)) {
-                                    WindowUtils.showToast(stringResource(R.string.update_already_latest))
+                                    WindowUtils.showToast(context.getString(R.string.update_already_latest))
                                 } else {
                                     updateResult = result
                                     showUpdateDialog = true
