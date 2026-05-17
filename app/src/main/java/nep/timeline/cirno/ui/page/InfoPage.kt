@@ -200,6 +200,7 @@ private fun InfoContent(
                         }
                     )
                     InfoCard(active)
+                    val alreadyLatestText = stringResource(R.string.update_already_latest)
                     UpdateCard(
                         isChecking = isCheckingUpdate,
                         onClick = {
@@ -208,9 +209,9 @@ private fun InfoContent(
                                 val result = UpdateChecker.checkForUpdate()
                                 isCheckingUpdate = false
                                 if (result == null) {
-                                    WindowUtils.showToast(context.getString(R.string.update_already_latest))
+                                    WindowUtils.showToast(alreadyLatestText)
                                 } else if (UpdateChecker.isSkipped(context, result.versionName)) {
-                                    WindowUtils.showToast(context.getString(R.string.update_already_latest))
+                                    WindowUtils.showToast(alreadyLatestText)
                                 } else {
                                     updateResult = result
                                     showUpdateDialog = true
