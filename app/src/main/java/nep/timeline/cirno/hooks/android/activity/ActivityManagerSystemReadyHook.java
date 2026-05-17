@@ -1,9 +1,11 @@
 package nep.timeline.cirno.hooks.android.activity;
 
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.MonitorBinderHub;
+import nep.timeline.cirno.utils.ReflectUtils;
 
 public class ActivityManagerSystemReadyHook extends MethodHook {
     public ActivityManagerSystemReadyHook(ClassLoader classLoader) {
@@ -22,7 +24,9 @@ public class ActivityManagerSystemReadyHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[]{Runnable.class, Object.class};
+        return ReflectUtils.findParameterTypesOrDefault(
+                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                getTargetMethod(), Runnable.class, Object.class);
     }
 
     @Override
