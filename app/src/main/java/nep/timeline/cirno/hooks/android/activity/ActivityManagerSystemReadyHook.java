@@ -26,7 +26,7 @@ public class ActivityManagerSystemReadyHook extends MethodHook {
     public Object[] getTargetParam() {
         return ReflectUtils.findParameterTypesOrDefault(
                 XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), Runnable.class, Object.class);
+                getTargetMethod(), Runnable.class);
     }
 
     @Override
