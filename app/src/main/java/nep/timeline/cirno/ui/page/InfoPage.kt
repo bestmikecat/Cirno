@@ -25,10 +25,17 @@ import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.PauseCircleOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -44,7 +51,10 @@ import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.UpdateChecker
+import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -63,11 +73,13 @@ import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -121,8 +133,30 @@ private fun InfoContent(
     callback: (Int) -> Unit
 ) {
     val isWideScreen = LocalIsWideScreen.current
+    val context = LocalContext.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
+    val scope = rememberCoroutineScope()
+
+    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val result = UpdateChecker.checkForUpdate()
+        if (result != null && !UpdateChecker.isSkipped(context, result.versionCode)) {
+            updateResult = result
+            showUpdateDialog = true
+        }
+    }
+
+    if (showUpdateDialog && updateResult != null) {
+        UpdateDialog(
+            show = showUpdateDialog,
+            updateResult = updateResult!!,
+            onDismissRequest = { showUpdateDialog = false }
+        )
+    }
 
     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
         LazyColumn(
@@ -166,6 +200,24 @@ private fun InfoContent(
                         }
                     )
                     InfoCard(active)
+                    UpdateCard(
+                        isChecking = isCheckingUpdate,
+                        onClick = {
+                            isCheckingUpdate = true
+                            scope.launch {
+                                val result = UpdateChecker.checkForUpdate()
+                                isCheckingUpdate = false
+                                if (result == null) {
+                                    WindowUtils.showToast(stringResource(R.string.update_already_latest))
+                                } else if (UpdateChecker.isSkipped(context, result.versionCode)) {
+                                    WindowUtils.showToast(stringResource(R.string.update_already_latest))
+                                } else {
+                                    updateResult = result
+                                    showUpdateDialog = true
+                                }
+                            }
+                        }
+                    )
                     LearnMoreCard()
                 }
             }
@@ -388,6 +440,29 @@ private fun LearnMoreCard(modifier: Modifier = Modifier, colors: CardColors = Ca
             onClick = {
                 navigator.push(Route.About)
             }
+        )
+    }
+}
+
+@Composable
+private fun UpdateCard(
+    isChecking: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.defaultColors()
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        colors = colors,
+        onClick = onClick,
+        showIndication = !isChecking,
+        pressFeedbackType = PressFeedbackType.Tilt
+    ) {
+        ArrowPreference(
+            title = if (isChecking) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
+            summary = stringResource(R.string.update_check_summary),
+            onClick = onClick
         )
     }
 }

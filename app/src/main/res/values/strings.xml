@@ -86,6 +86,17 @@
   <string name="process_freeze_control">Process freeze control</string>
   <string name="process_freeze_control_summary">When ON the process will be frozen, when OFF the process will not be frozen</string>
   <string name="no_process_hint">Processes will appear after app starts</string>
+  <string name="check_update">Check for updates</string>
+  <string name="update_check_summary">Check if a new version is available</string>
+  <string name="update_available">Update available</string>
+  <string name="update_new_version">New version: %s</string>
+  <string name="update_now">Update now</string>
+  <string name="update_later">Later</string>
+  <string name="update_checking">Checking…</string>
+  <string name="update_check_failed">Failed to check for updates</string>
+  <string name="update_already_latest">Already up to date</string>
+  <string name="update_changelog">Changelog</string>
+  <string name="update_dont_remind">Don't remind me again</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>
