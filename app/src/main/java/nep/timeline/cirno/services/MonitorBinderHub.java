@@ -33,9 +33,14 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
     private static volatile long lastPublishedAtMs = 0L;
+    private static volatile boolean bootCompleted = false;
     private static volatile List<String> cachedRunningApps = new ArrayList<>();
 
     private MonitorBinderHub() {
+    }
+
+    public static void setBootCompleted() {
+        bootCompleted = true;
     }
 
     public static void refreshRunningApps() {
@@ -202,6 +207,9 @@ public final class MonitorBinderHub {
     @SuppressLint("MissingPermission")
     public static void publish(String reason) {
         try {
+            if (!bootCompleted) {
+                return;
+            }
             long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
                 return;

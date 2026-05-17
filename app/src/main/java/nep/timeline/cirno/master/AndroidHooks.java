@@ -5,6 +5,7 @@ import android.os.FileObserver;
 
 import nep.timeline.cirno.configs.ConfigFileObserver;
 import nep.timeline.cirno.hooks.android.activity.ActivityManagerServiceHook;
+import nep.timeline.cirno.hooks.android.activity.ActivityManagerSystemReadyHook;
 import nep.timeline.cirno.hooks.android.activity.ActivityStatsHook;
 import nep.timeline.cirno.hooks.android.alarms.AlarmManagerService;
 import nep.timeline.cirno.hooks.android.anr.ANRErrorStateHook;
@@ -72,6 +73,7 @@ public class AndroidHooks {
         new WakeLockHook(classLoader);
         // Activity
         new ActivityManagerServiceHook(classLoader);
+        new ActivityManagerSystemReadyHook(classLoader);
         new ActivityStatsHook(classLoader);
         // Process
         new ProcessAddHook(classLoader);

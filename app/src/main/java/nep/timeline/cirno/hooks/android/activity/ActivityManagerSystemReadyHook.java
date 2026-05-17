@@ -3,11 +3,10 @@ package nep.timeline.cirno.hooks.android.activity;
 import de.robv.android.xposed.XC_MethodHook;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
-import nep.timeline.cirno.services.ActivityManagerService;
 import nep.timeline.cirno.services.MonitorBinderHub;
 
-public class ActivityManagerServiceHook extends MethodHook {
-    public ActivityManagerServiceHook(ClassLoader classLoader) {
+public class ActivityManagerSystemReadyHook extends MethodHook {
+    public ActivityManagerSystemReadyHook(ClassLoader classLoader) {
         super(classLoader);
     }
 
@@ -18,25 +17,21 @@ public class ActivityManagerServiceHook extends MethodHook {
 
     @Override
     public String getTargetMethod() {
-        return "setSystemProcess";
+        return "systemReady";
     }
 
     @Override
     public Object[] getTargetParam() {
-        return new Object[0];
+        return new Object[]{Runnable.class, Object.class};
     }
 
     @Override
     public XC_MethodHook getTargetHook() {
         return new AbstractMethodHook() {
             @Override
-            protected void beforeMethod(MethodHookParam param) {
-                ActivityManagerService.setInstance(param.thisObject);
-            }
-
-            @Override
             protected void afterMethod(MethodHookParam param) {
-                MonitorBinderHub.publish("ActivityManagerService.setSystemProcess");
+                MonitorBinderHub.setBootCompleted();
+                MonitorBinderHub.publish("ActivityManagerService.systemReady");
             }
         };
     }
