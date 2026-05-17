@@ -66,13 +66,6 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "35.0.0"
 
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Cirno-Release
-          path: ${{steps.sign_app.outputs.signedReleaseFile}}
-          if-no-files-found: warn
-
       - name: 重命名 APK
         id: rename
         run: |
@@ -80,6 +73,13 @@ jobs:
           NEW_NAME="Cirno-${VERSION}-${{ github.run_number }}.apk"
           cp "${{ steps.sign_app.outputs.signedReleaseFile }}" "$NEW_NAME"
           echo "new_file=$NEW_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.rename.outputs.new_file }}
+          path: ${{ steps.rename.outputs.new_file }}
+          if-no-files-found: warn
 
       - name: Publish to Telegram via bot
         env:
