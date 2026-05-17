@@ -12,8 +12,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.services.AppService;
 
 public class RWUtils {
     public static String readConfig(SuFile file) {
@@ -55,7 +60,16 @@ public class RWUtils {
             writer.write(Integer.toString(value));
             return true;
         } catch (FileNotFoundException ignored) {
-            Log.w(path + " | 文件不存在, 此进程可能已死亡, 或者你的设备不支持cgroup v2");
+            String label = "";
+            Matcher m = Pattern.compile("uid_(\\d+)").matcher(path);
+            if (m.find()) {
+                int uid = Integer.parseInt(m.group(1));
+                List<AppRecord> records = AppService.getByUid(uid);
+                if (!records.isEmpty()) {
+                    label = " [" + records.get(0).getPackageNameWithUser() + "]";
+                }
+            }
+            Log.w(path + " | 文件不存在" + label + ", 此进程可能已死亡, 或者你的设备不支持cgroup v2");
             return false;
         }
     }
