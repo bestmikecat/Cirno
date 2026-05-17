@@ -13,7 +13,7 @@ object UpdateChecker {
     private const val CHECK_URL = "https://cirno-api.vercel.app/api/check-update"
     private const val PREFS_NAME = "cirno_update"
     private const val KEY_SKIPPED = "update_skipped"
-    private const val KEY_SKIPPED_VERSION = "skipped_version_code"
+    private const val KEY_SKIPPED_VERSION = "skipped_version_name"
 
     private val gson = Gson()
 
@@ -36,18 +36,17 @@ object UpdateChecker {
 
             val json = gson.fromJson(body, JsonObject::class.java) ?: return@withContext null
 
-            val remoteVersionCode = json.get("versionCode")?.asInt ?: return@withContext null
             val versionName = json.get("versionName")?.asString ?: return@withContext null
             val downloadUrl = json.get("downloadUrl")?.asString ?: return@withContext null
             val changelog = json.get("changelog")?.asString
             val publishedAt = json.get("publishedAt")?.asString
 
-            if (remoteVersionCode <= BuildConfig.VERSION_CODE) {
+            val localVersionName = BuildConfig.VERSION_NAME
+            if (compareVersions(versionName, localVersionName) <= 0) {
                 return@withContext null
             }
 
             UpdateResult(
-                versionCode = remoteVersionCode,
                 versionName = versionName,
                 downloadUrl = downloadUrl,
                 changelog = changelog,
@@ -58,16 +57,29 @@ object UpdateChecker {
         }
     }
 
-    fun isSkipped(context: Context, versionCode: Int): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_SKIPPED, false) && prefs.getInt(KEY_SKIPPED_VERSION, 0) == versionCode
+    fun compareVersions(a: String, b: String): Int {
+        val aParts = a.split("-", limit = 2)
+        val bParts = b.split("-", limit = 2)
+
+        val aMajor = aParts[0].toIntOrNull() ?: 0
+        val bMajor = bParts[0].toIntOrNull() ?: 0
+        if (aMajor != bMajor) return aMajor.compareTo(bMajor)
+
+        val aMinor = aParts.getOrNull(1)?.toLongOrNull() ?: 0
+        val bMinor = bParts.getOrNull(1)?.toLongOrNull() ?: 0
+        return aMinor.compareTo(bMinor)
     }
 
-    fun markSkipped(context: Context, versionCode: Int) {
+    fun isSkipped(context: Context, versionName: String): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SKIPPED, false) && prefs.getString(KEY_SKIPPED_VERSION, null) == versionName
+    }
+
+    fun markSkipped(context: Context, versionName: String) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_SKIPPED, true)
-            .putInt(KEY_SKIPPED_VERSION, versionCode)
+            .putString(KEY_SKIPPED_VERSION, versionName)
             .apply()
     }
 
@@ -81,7 +93,6 @@ object UpdateChecker {
 }
 
 data class UpdateResult(
-    val versionCode: Int,
     val versionName: String,
     val downloadUrl: String,
     val changelog: String?,

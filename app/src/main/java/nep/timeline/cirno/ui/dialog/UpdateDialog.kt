@@ -102,7 +102,7 @@ fun UpdateDialog(
                     text = stringResource(R.string.update_later),
                     onClick = {
                         if (dontRemind.value) {
-                            UpdateChecker.markSkipped(context, updateResult.versionCode)
+                            UpdateChecker.markSkipped(context, updateResult.versionName)
                         }
                         isShow.value = false
                         onDismissRequest()
@@ -114,7 +114,7 @@ fun UpdateDialog(
                     colors = ButtonDefaults.textButtonColorsPrimary(),
                     onClick = {
                         if (dontRemind.value) {
-                            UpdateChecker.markSkipped(context, updateResult.versionCode)
+                            UpdateChecker.markSkipped(context, updateResult.versionName)
                         }
                         isShow.value = false
                         onDismissRequest()

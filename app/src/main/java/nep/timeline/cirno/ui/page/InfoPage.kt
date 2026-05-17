@@ -144,7 +144,7 @@ private fun InfoContent(
 
     LaunchedEffect(Unit) {
         val result = UpdateChecker.checkForUpdate()
-        if (result != null && !UpdateChecker.isSkipped(context, result.versionCode)) {
+        if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
             updateResult = result
             showUpdateDialog = true
         }
@@ -209,7 +209,7 @@ private fun InfoContent(
                                 isCheckingUpdate = false
                                 if (result == null) {
                                     WindowUtils.showToast(stringResource(R.string.update_already_latest))
-                                } else if (UpdateChecker.isSkipped(context, result.versionCode)) {
+                                } else if (UpdateChecker.isSkipped(context, result.versionName)) {
                                     WindowUtils.showToast(stringResource(R.string.update_already_latest))
                                 } else {
                                     updateResult = result
