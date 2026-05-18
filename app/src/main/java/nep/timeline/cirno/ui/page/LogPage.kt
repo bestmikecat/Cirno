@@ -15,27 +15,35 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.pageContentPadding
+import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InputField
+import top.yukonga.miuix.kmp.basic.ListPopupColumn
+import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SearchBar
@@ -46,7 +54,10 @@ import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Search
+import top.yukonga.miuix.kmp.popup.PopupPositionProvider
+import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.window.WindowListPopup
 
 @Composable
 fun LogPage(
@@ -54,6 +65,7 @@ fun LogPage(
 ) {
     val topAppBarScrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
+    val lazyListState = rememberLazyListState()
 
     Scaffold(
         topBar = {
@@ -67,6 +79,9 @@ fun LogPage(
                         onClick = { navigator.pop() },
                     )
                 },
+                actions = {
+                    LogTopBarActions(lazyListState = lazyListState)
+                }
             )
         },
     ) { innerPadding ->
@@ -76,17 +91,78 @@ fun LogPage(
                 bottom = padding.calculateBottomPadding(),
             ),
             topAppBarScrollBehavior = topAppBarScrollBehavior,
+            lazyListState = lazyListState,
         )
     }
+}
+
+@Composable
+private fun LogTopBarActions(
+    lazyListState: androidx.compose.foundation.lazy.LazyListState,
+) {
+    val showPopup = remember { mutableStateOf(false) }
+    val holdDownState = remember { mutableStateOf(false) }
+    val hapticFeedback = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val dismissState = LocalDismissState.current
+
+    IconButton(
+        onClick = {
+            showPopup.value = true
+            holdDownState.value = true
+        },
+        holdDownState = holdDownState.value,
+    ) {
+        Icon(
+            imageVector = MiuixIcons.More,
+            contentDescription = null,
+            tint = colorScheme.onBackground,
+        )
+    }
+    WindowListPopup(
+        show = showPopup.value,
+        popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
+        alignment = PopupPositionProvider.Align.TopEnd,
+        onDismissRequest = { showPopup.value = false },
+        onDismissFinished = { holdDownState.value = false },
+        content = {
+            val items = listOf(
+                stringResource(R.string.scroll_to_top),
+                stringResource(R.string.scroll_to_bottom),
+            )
+            ListPopupColumn {
+                items.forEachIndexed { index, string ->
+                    androidx.compose.runtime.key(index) {
+                        DropdownImpl(
+                            text = string,
+                            optionSize = items.size,
+                            isSelected = false,
+                            onSelectedIndexChange = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                                scope.launch {
+                                    when (index) {
+                                        0 -> lazyListState.animateScrollToItem(0)
+                                        1 -> lazyListState.animateScrollToItem(lazyListState.layoutInfo.totalItemsCount - 1)
+                                    }
+                                }
+                                dismissState?.invoke()
+                            },
+                            index = index
+                        )
+                    }
+                }
+            }
+        }
+    )
 }
 
 @Composable
 private fun LogContent(
     padding: PaddingValues,
     topAppBarScrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
+    lazyListState: androidx.compose.foundation.lazy.LazyListState,
 ) {
     val isWideScreen = LocalIsWideScreen.current
-    val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val focusManager = LocalFocusManager.current
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current

@@ -55,6 +55,8 @@
   <string name="home_logs_desc">View module log output</string>
   <string name="logs_empty">No log data</string>
   <string name="logs_title">Logs</string>
+  <string name="scroll_to_top">Scroll to top</string>
+  <string name="scroll_to_bottom">Scroll to bottom</string>
   <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
   <string name="system_fingerprint">System Fingerprint</string>
   <string name="hook_type">Hook Type</string>
