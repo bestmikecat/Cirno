@@ -2,13 +2,11 @@
 package nep.timeline.cirno.ui.page
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -22,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -89,6 +88,7 @@ private fun LogContent(
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val focusManager = LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     var logContent by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
@@ -101,77 +101,78 @@ private fun LogContent(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        SearchBar(
-            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp),
-            inputField = {
-                InputField(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onSearch = { focusManager.clearFocus() },
-                    expanded = searchExpanded,
-                    onExpandedChange = { searchExpanded = it },
-                    label = stringResource(R.string.search),
-                    leadingIcon = {
-                        Icon(
+    val allLines = logContent?.lines()?.filter { it.isNotBlank() } ?: emptyList()
+    val lines = if (searchQuery.isBlank()) allLines
+        else allLines.filter { it.contains(searchQuery, ignoreCase = true) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (logContent == null || allLines.isEmpty()) {
+            Text(
+                text = stringResource(R.string.logs_empty),
+                modifier = Modifier.align(Alignment.Center),
+                fontSize = 16.sp,
+                color = colorScheme.onSurfaceVariantSummary,
+            )
+        } else {
+            SelectionContainer {
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = contentPadding,
+                ) {
+                    item(key = "logSearch") {
+                        SearchBar(
+                            modifier = Modifier.padding(
+                                start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp
+                            ),
+                            inputField = {
+                                InputField(
+                                    query = searchQuery,
+                                    onQueryChange = { searchQuery = it },
+                                    onSearch = { keyboardController?.hide() },
+                                    expanded = searchExpanded,
+                                    onExpandedChange = { searchExpanded = it },
+                                    label = stringResource(R.string.search),
+                                    leadingIcon = {
+                                        Icon(
+                                            modifier = Modifier
+                                                .padding(start = 12.dp, end = 8.dp)
+                                                .size(20.dp)
+                                                .alpha(0.4f),
+                                            imageVector = MiuixIcons.Basic.Search,
+                                            tint = colorScheme.onSurfaceContainer,
+                                            contentDescription = null
+                                        )
+                                    }
+                                )
+                            },
+                            expanded = searchExpanded,
+                            onExpandedChange = { searchExpanded = it }
+                        ) {}
+                    }
+                    items(lines) { line ->
+                        Text(
+                            text = line,
                             modifier = Modifier
-                                .padding(start = 12.dp, end = 8.dp)
-                                .size(20.dp)
-                                .alpha(0.4f),
-                            imageVector = MiuixIcons.Basic.Search,
-                            tint = colorScheme.onSurfaceContainer,
-                            contentDescription = null
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 2.dp),
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = when {
+                                line.contains("错误") || line.contains("ERROR") -> colorScheme.error
+                                line.contains("警告") || line.contains("WARN") -> colorScheme.primary
+                                else -> colorScheme.onSurface
+                            },
                         )
                     }
-                )
-            },
-            expanded = searchExpanded,
-            onExpandedChange = { searchExpanded = it }
-        ) {}
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            val allLines = logContent?.lines()?.filter { it.isNotBlank() } ?: emptyList()
-            val lines = if (searchQuery.isBlank()) allLines
-                else allLines.filter { it.contains(searchQuery, ignoreCase = true) }
-
-            if (logContent == null || allLines.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.logs_empty),
-                    modifier = Modifier.align(Alignment.Center),
-                    fontSize = 16.sp,
-                    color = colorScheme.onSurfaceVariantSummary,
-                )
-            } else {
-                SelectionContainer {
-                    LazyColumn(
-                        state = lazyListState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = contentPadding,
-                    ) {
-                        items(lines) { line ->
-                            Text(
-                                text = line,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                                fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = when {
-                                    line.contains("错误") || line.contains("ERROR") -> colorScheme.error
-                                    line.contains("警告") || line.contains("WARN") -> colorScheme.primary
-                                    else -> colorScheme.onSurface
-                                },
-                            )
-                        }
-                    }
                 }
-
-                VerticalScrollBar(
-                    adapter = rememberScrollBarAdapter(lazyListState),
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                    trackPadding = contentPadding,
-                )
             }
+
+            VerticalScrollBar(
+                adapter = rememberScrollBarAdapter(lazyListState),
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                trackPadding = contentPadding,
+            )
         }
     }
 }
