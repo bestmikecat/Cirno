@@ -79,6 +79,7 @@ import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.AboutPage
 import nep.timeline.cirno.ui.page.AppPage
 import nep.timeline.cirno.ui.page.InfoPage
+import nep.timeline.cirno.ui.page.LogPage
 import nep.timeline.cirno.ui.page.SettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -190,6 +191,9 @@ fun AppContent(
                 }
                 entry<Route.About> {
                     AboutPage(padding = padding)
+                }
+                entry<Route.Log> {
+                    LogPage(padding = padding)
                 }
             }
         }

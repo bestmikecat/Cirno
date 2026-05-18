@@ -220,6 +220,7 @@ private fun InfoContent(
                         }
                     )
                     LearnMoreCard()
+                    LogCard()
                 }
             }
 
@@ -440,6 +441,24 @@ private fun LearnMoreCard(modifier: Modifier = Modifier, colors: CardColors = Ca
             title = stringResource(R.string.home_about_freezer),
             onClick = {
                 navigator.push(Route.About)
+            }
+        )
+    }
+}
+
+@Composable
+private fun LogCard(modifier: Modifier = Modifier, colors: CardColors = CardDefaults.defaultColors()) {
+    val navigator = LocalNavigator.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        colors = colors
+    ) {
+        ArrowPreference(
+            title = stringResource(R.string.home_logs),
+            summary = stringResource(R.string.home_logs_desc),
+            onClick = {
+                navigator.push(Route.Log)
             }
         )
     }

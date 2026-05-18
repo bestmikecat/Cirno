@@ -51,6 +51,10 @@
   <string name="system_not_flagged_but_frozen">Cirno has executed the freeze operation correctly, but the system has not processed it</string>
   <string name="about">About</string>
   <string name="home_about_freezer">About Cirno</string>
+  <string name="home_logs">Logs</string>
+  <string name="home_logs_desc">View module log output</string>
+  <string name="logs_empty">No log data</string>
+  <string name="logs_title">Logs</string>
   <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
   <string name="system_fingerprint">System Fingerprint</string>
   <string name="hook_type">Hook Type</string>

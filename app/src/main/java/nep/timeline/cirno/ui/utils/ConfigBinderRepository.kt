@@ -117,4 +117,13 @@ object ConfigBinderRepository {
             null
         }
     }
+
+    fun getLogContent(): String? {
+        val config = ConfigBinder.getInstance() ?: return null
+        return try {
+            config.logContent
+        } catch (_: Throwable) {
+            null
+        }
+    }
 }

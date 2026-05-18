@@ -19,6 +19,7 @@ import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.configs.ConfigManager;
 import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.utils.RWUtils;
 
 public final class ConfigBinderHub {
     private static final Object LOCK = new Object();
@@ -137,6 +138,15 @@ public final class ConfigBinderHub {
         @Override
         public String getModuleVersion() {
             return BuildConfig.VERSION_NAME;
+        }
+
+        @Override
+        public String getLogContent() {
+            java.io.File logFile = new java.io.File(GlobalVars.LOG_DIR, "current.log");
+            if (!logFile.exists()) {
+                return "";
+            }
+            return RWUtils.readConfig(logFile.getAbsolutePath());
         }
     };
 

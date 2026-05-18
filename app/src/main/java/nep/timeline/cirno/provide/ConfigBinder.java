@@ -63,4 +63,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public String getModuleVersion() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getLogContent() {
+        throw new UnsupportedOperationException();
+    }
 }

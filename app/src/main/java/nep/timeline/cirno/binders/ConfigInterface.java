@@ -48,6 +48,11 @@ public interface ConfigInterface extends android.os.IInterface {
         }
 
         @Override
+        public String getLogContent() throws android.os.RemoteException {
+            return "";
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -140,6 +145,12 @@ public interface ConfigInterface extends android.os.IInterface {
                 }
                 case TRANSACTION_getModuleVersion: {
                     String result = this.getModuleVersion();
+                    reply.writeNoException();
+                    reply.writeString(result);
+                    return true;
+                }
+                case TRANSACTION_getLogContent: {
+                    String result = this.getLogContent();
                     reply.writeNoException();
                     reply.writeString(result);
                     return true;
@@ -299,6 +310,21 @@ public interface ConfigInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public String getLogContent() throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_getLogContent, data, reply, 0);
+                    reply.readException();
+                    return reply.readString();
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_getGlobalSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION;
@@ -310,6 +336,7 @@ public interface ConfigInterface extends android.os.IInterface {
         static final int TRANSACTION_getSignal = android.os.IBinder.FIRST_CALL_TRANSACTION + 6;
         static final int TRANSACTION_getManagedAppKeys = android.os.IBinder.FIRST_CALL_TRANSACTION + 7;
         static final int TRANSACTION_getModuleVersion = android.os.IBinder.FIRST_CALL_TRANSACTION + 8;
+        static final int TRANSACTION_getLogContent = android.os.IBinder.FIRST_CALL_TRANSACTION + 9;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.ConfigInterface";
@@ -331,4 +358,6 @@ public interface ConfigInterface extends android.os.IInterface {
     java.util.List<java.lang.String> getManagedAppKeys() throws android.os.RemoteException;
 
     String getModuleVersion() throws android.os.RemoteException;
+
+    String getLogContent() throws android.os.RemoteException;
 }
