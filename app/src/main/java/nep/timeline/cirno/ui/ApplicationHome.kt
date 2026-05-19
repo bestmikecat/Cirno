@@ -254,7 +254,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                     }
                 }
 
-                if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && !black.value) {
+                if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
                     item {
                         SmallTitle(text = stringResource(R.string.process_freeze_control))
                         Card(modifier = Modifier.padding(12.dp)) {
