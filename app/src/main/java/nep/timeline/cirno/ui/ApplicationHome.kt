@@ -209,7 +209,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             )
                         }
 
-                        if (isSystemApp) {
+                        if (isSystemApp || isBuiltinWhitelistApp) {
                             SwitchPreference(
                                 title = stringResource(R.string.black_app),
                                 summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
