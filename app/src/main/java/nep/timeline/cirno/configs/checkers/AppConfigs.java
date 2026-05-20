@@ -45,19 +45,19 @@ public class AppConfigs {
         if (pkg == null || pkg.isEmpty()) {
             return;
         }
-        if (enabled && capability != Capability.BLACK_LIST && isBlackApp(pkg, userId)) {
+        if (enabled && capability.isExemption && isWhiteApp(pkg, userId)) {
             return;
         }
         Set<String> apps = getCapabilityApps(capability);
         String key = PolicyKey.of(pkg, userId);
         if (enabled) {
             apps.add(key);
-            if (capability == Capability.BLACK_LIST) {
-                getCapabilityApps(Capability.WHITE_LIST).remove(key);
-                getCapabilityApps(Capability.ALLOW_BACKGROUND_AUDIO).remove(key);
-                getCapabilityApps(Capability.ALLOW_LOCATION).remove(key);
-                getCapabilityApps(Capability.ALLOW_NETWORK_MESSAGE).remove(key);
-                getCapabilityApps(Capability.ALLOW_NETWORK_SPEED).remove(key);
+            if (capability == Capability.WHITE_LIST) {
+                for (Capability cap : Capability.values()) {
+                    if (cap.isExemption) {
+                        getCapabilityApps(cap).remove(key);
+                    }
+                }
             }
         } else {
             apps.remove(key);

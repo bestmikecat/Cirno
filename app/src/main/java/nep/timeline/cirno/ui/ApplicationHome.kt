@@ -133,16 +133,36 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 enabled = !isBuiltinWhitelistApp,
                                 onCheckedChange = {
                                     if (isBuiltinWhitelistApp) return@SwitchPreference
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用白名单")
-                                        return@SwitchPreference
-                                    }
-                                    val previous = white.value
+                                    val prevWhite = white.value
+                                    val prevBackground = backgroundPlay.value
+                                    val prevLocation = locationUse.value
+                                    val prevNetwork = networkMessage.value
+                                    val prevNetworkSpeed = networkSpeed.value
+
                                     white.value = it
                                     AppConfigs.setWhiteApp(packageName, userId, it)
+                                    if (it) {
+                                        backgroundPlay.value = false
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                                        locationUse.value = false
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                                        networkMessage.value = false
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                        networkSpeed.value = false
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
+                                    }
+
                                     if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                        white.value = previous
-                                        AppConfigs.setWhiteApp(packageName, userId, previous)
+                                        white.value = prevWhite
+                                        AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                                        backgroundPlay.value = prevBackground
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                                        locationUse.value = prevLocation
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                                        networkMessage.value = prevNetwork
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                        networkSpeed.value = prevNetworkSpeed
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
                                         WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("白名单更新失败"))
                                     }
                                 }
@@ -153,9 +173,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.background_play),
                                 checked = backgroundPlay.value,
+                                enabled = !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
                                         return@SwitchPreference
                                     }
                                     val previous = backgroundPlay.value
@@ -172,9 +193,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.location_check),
                                 checked = locationUse.value,
+                                enabled = !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
                                         return@SwitchPreference
                                     }
                                     val previous = locationUse.value
@@ -192,10 +214,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 title = stringResource(R.string.netreceive_unfreeze),
                                 summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
                                 checked = networkMessage.value,
-                                enabled = hasReKernel,
+                                enabled = hasReKernel && !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
                                         return@SwitchPreference
                                     }
                                     val previous = networkMessage.value
@@ -212,9 +234,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.network_speed_check),
                                 checked = networkSpeed.value,
+                                enabled = !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
                                         return@SwitchPreference
                                     }
                                     val previous = networkSpeed.value
@@ -236,40 +259,13 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 checked = black.value,
                                 onCheckedChange = {
                                     val prevBlack = black.value
-                                    val prevWhite = white.value
-                                    val prevBackground = backgroundPlay.value
-                                    val prevLocation = locationUse.value
-                                    val prevNetwork = networkMessage.value
-                                    val prevNetworkSpeed = networkSpeed.value
 
                                     black.value = it
                                     AppConfigs.setBlackApp(packageName, userId, it)
-                                    if (it) {
-                                        white.value = false
-                                        backgroundPlay.value = false
-                                        locationUse.value = false
-                                        networkMessage.value = false
-                                        networkSpeed.value = false
-                                        AppConfigs.setWhiteApp(packageName, userId, false)
-                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
-                                        AppConfigs.setLocationUseAllowed(packageName, userId, false)
-                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
-                                    }
 
                                     if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
                                         black.value = prevBlack
-                                        white.value = prevWhite
-                                        backgroundPlay.value = prevBackground
-                                        locationUse.value = prevLocation
-                                        networkMessage.value = prevNetwork
-                                        networkSpeed.value = prevNetworkSpeed
                                         AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                        AppConfigs.setWhiteApp(packageName, userId, prevWhite)
-                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
-                                        AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
-                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
-                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
                                         WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
                                     }
                                 }

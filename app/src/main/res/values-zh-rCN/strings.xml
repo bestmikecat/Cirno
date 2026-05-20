@@ -9,6 +9,7 @@
   <string name="builtin_whitelist_summary">Cirno内置白名单</string>
   <string name="builtin_whitelist_locked">内置白名单不可修改</string>
   <string name="builtin_whitelist_blacklist_blocked">内置白名单应用，开启黑名单将强制冻结</string>
+  <string name="whitelist_exemption_blocked">白名单已开启，无法启用豁免</string>
   <string name="black_app">黑名单</string>
   <string name="direct_app">强制冻结</string>
   <string name="background_play">后台播放</string>
