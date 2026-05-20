@@ -26,7 +26,7 @@ import top.yukonga.miuix.kmp.basic.Text
 fun AppItemCompose(
     app: AppItem,
 ) {
-    val configured = app.black || app.white || app.backgroundPlay || app.locationCheck != 0 || app.networkCheck || app.processConfig
+    val configured = app.black || app.white || app.backgroundPlay || app.locationCheck != 0 || app.networkCheck || app.networkSpeedEnabled || app.processConfig
     var subtitle: String? = null
     var subtitleColor = Color(60, 179, 113)
     if (configured) {
@@ -59,6 +59,7 @@ fun AppItemCompose(
                         app.backgroundPlay -> stringResource(R.string.background_play)
                         app.locationCheck != 0 -> stringResource(R.string.location_check)
                         app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
+                        app.networkSpeedEnabled -> stringResource(R.string.network_speed_check)
                         app.processConfig -> stringResource(R.string.process)
                         else -> stringResource(R.string.other_config)
                     },
