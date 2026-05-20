@@ -54,6 +54,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val hasReKernel = remember { File("/proc/rekernel").exists() }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
+    val whitelistExemptionBlocked = whitelistExemptionBlocked
     val isSystemApp = remember {
         try {
             val packageInfo = activity.packageManager.getPackageInfo(packageName, 0)
@@ -176,7 +177,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 enabled = !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
-                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = backgroundPlay.value
@@ -196,7 +197,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 enabled = !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
-                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = locationUse.value
@@ -217,7 +218,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 enabled = hasReKernel && !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
-                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = networkMessage.value
@@ -237,7 +238,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 enabled = !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
-                                        WindowUtils.showToast(stringResource(R.string.whitelist_exemption_blocked))
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = networkSpeed.value
