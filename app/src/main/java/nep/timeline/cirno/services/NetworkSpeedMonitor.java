@@ -1,6 +1,5 @@
 package nep.timeline.cirno.services;
 
-import android.net.TrafficStats;
 import android.os.IBinder;
 
 import java.lang.reflect.Method;
@@ -17,7 +16,6 @@ import nep.timeline.cirno.threads.Handlers;
 public class NetworkSpeedMonitor {
     private static volatile IBinder sNetStatsBinder;
     private static volatile boolean sMonitoring = false;
-    private static volatile boolean sUseTrafficStatsFallback = false;
 
     private static final ConcurrentHashMap<Integer, long[]> sSnapshots = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, long[]> sSpeedCache = new ConcurrentHashMap<>();
@@ -34,11 +32,10 @@ public class NetworkSpeedMonitor {
         }
 
         if (sNetStatsBinder != null) {
-            Log.i("NetworkSpeedMonitor: using NetworkStatsService via ServiceManager");
-            sUseTrafficStatsFallback = false;
+            Log.i("NetworkSpeedMonitor: initialized");
         } else {
-            Log.i("NetworkSpeedMonitor: netstats service not found, fallback to TrafficStats");
-            sUseTrafficStatsFallback = true;
+            Log.w("NetworkSpeedMonitor: netstats service not available");
+            return;
         }
 
         sMonitoring = true;
@@ -60,14 +57,10 @@ public class NetworkSpeedMonitor {
                     continue;
                 }
                 monitoredCount++;
-                if (sUseTrafficStatsFallback) {
-                    readAndCalculateViaTrafficStats(record.getUid(), now, threshold, record.getAppState());
-                } else {
-                    readAndCalculate(record.getUid(), now, threshold, record.getAppState());
-                }
+                readAndCalculate(record.getUid(), now, threshold, record.getAppState());
             }
             if (monitoredCount > 0) {
-                Log.d("NetworkSpeedMonitor: polling via " + (sUseTrafficStatsFallback ? "TrafficStats" : "NetworkStatsService") + ", monitored UIDs=" + monitoredCount);
+                Log.d("NetworkSpeedMonitor: polled " + monitoredCount + " UIDs");
             }
         } catch (Throwable e) {
             Log.e("NetworkSpeedMonitor poll error", e);
@@ -94,40 +87,24 @@ public class NetworkSpeedMonitor {
                 totalTx += (long) XposedHelpers.getObjectField(entry, "txBytes");
             }
 
-            calculateSpeed(uid, totalRx, totalTx, now, threshold, appState);
-        } catch (Throwable e) {
-            Log.d("NetworkStatsService failed for uid=" + uid + ", switching to TrafficStats fallback");
-            sUseTrafficStatsFallback = true;
-            readAndCalculateViaTrafficStats(uid, now, threshold, appState);
-        }
-    }
-
-    private static void readAndCalculateViaTrafficStats(int uid, long now, int threshold, AppState appState) {
-        try {
-            long totalRx = TrafficStats.getUidRxBytes(uid);
-            long totalTx = TrafficStats.getUidTxBytes(uid);
-            calculateSpeed(uid, totalRx, totalTx, now, threshold, appState);
-        } catch (Throwable e) {
-            Log.d("TrafficStats failed for uid=" + uid);
-        }
-    }
-
-    private static void calculateSpeed(int uid, long totalRx, long totalTx, long now, int threshold, AppState appState) {
-        long[] prev = sSnapshots.get(uid);
-        long speed = 0;
-        if (prev != null) {
-            long deltaTime = now - prev[2];
-            if (deltaTime > 0) {
-                long rxSpeed = (totalRx - (long) prev[0]) * 1000 / deltaTime;
-                long txSpeed = (totalTx - (long) prev[1]) * 1000 / deltaTime;
-                if (rxSpeed < 0) rxSpeed = 0;
-                if (txSpeed < 0) txSpeed = 0;
-                sSpeedCache.put(uid, new long[]{rxSpeed, txSpeed});
-                speed = rxSpeed + txSpeed;
+            long[] prev = sSnapshots.get(uid);
+            long speed = 0;
+            if (prev != null) {
+                long deltaTime = now - prev[2];
+                if (deltaTime > 0) {
+                    long rxSpeed = (totalRx - (long) prev[0]) * 1000 / deltaTime;
+                    long txSpeed = (totalTx - (long) prev[1]) * 1000 / deltaTime;
+                    if (rxSpeed < 0) rxSpeed = 0;
+                    if (txSpeed < 0) txSpeed = 0;
+                    sSpeedCache.put(uid, new long[]{rxSpeed, txSpeed});
+                    speed = rxSpeed + txSpeed;
+                }
             }
+            sSnapshots.put(uid, new long[]{totalRx, totalTx, now});
+            appState.setNetworkActive(speed > threshold);
+        } catch (Throwable e) {
+            Log.d("NetworkSpeedMonitor: read failed for uid=" + uid);
         }
-        sSnapshots.put(uid, new long[]{totalRx, totalTx, now});
-        appState.setNetworkActive(speed > threshold);
     }
 
     public static long[] getSpeed(int uid) {
