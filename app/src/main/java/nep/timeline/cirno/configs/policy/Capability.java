@@ -8,7 +8,7 @@ public enum Capability {
     ALLOW_NETWORK_MESSAGE(true),
     ALLOW_NETWORK_SPEED(true);
 
-    final boolean isExemption;
+    public final boolean isExemption;
 
     Capability(boolean isExemption) {
         this.isExemption = isExemption;
