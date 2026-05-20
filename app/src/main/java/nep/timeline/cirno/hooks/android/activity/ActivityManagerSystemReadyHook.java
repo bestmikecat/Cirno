@@ -5,6 +5,7 @@ import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.MonitorBinderHub;
+import nep.timeline.cirno.services.NetworkSpeedMonitor;
 import nep.timeline.cirno.utils.ReflectUtils;
 
 public class ActivityManagerSystemReadyHook extends MethodHook {
@@ -36,6 +37,7 @@ public class ActivityManagerSystemReadyHook extends MethodHook {
             protected void afterMethod(MethodHookParam param) {
                 MonitorBinderHub.setBootCompleted();
                 MonitorBinderHub.publish("ActivityManagerService.systemReady");
+                NetworkSpeedMonitor.init();
             }
         };
     }

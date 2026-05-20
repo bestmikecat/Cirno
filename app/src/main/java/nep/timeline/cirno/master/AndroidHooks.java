@@ -20,7 +20,6 @@ import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastIntentHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastSkipHook;
 import nep.timeline.cirno.hooks.android.network.NetworkManagerHook;
-import nep.timeline.cirno.hooks.android.network.NetworkStatsServiceHook;
 import nep.timeline.cirno.hooks.android.input.InputMethodManagerService;
 import nep.timeline.cirno.hooks.android.intent.PendingIntentHook;
 import nep.timeline.cirno.hooks.android.location.ListenerRegisterHook;
@@ -62,7 +61,6 @@ public class AndroidHooks {
         new InputMethodManagerService(classLoader);
         // Network
         new NetworkManagerHook(classLoader);
-        new NetworkStatsServiceHook(classLoader);
         // Alarms
         new AlarmManagerService(classLoader);
         // Broadcast
