@@ -122,6 +122,7 @@ private fun SettingsContent(
     }
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
+    val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
     val navItems = listOf(
         stringResource(R.string.normal),
         stringResource(R.string.floating),
@@ -256,6 +257,28 @@ private fun SettingsContent(
                             steps = 118,
                             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
                         )
+                        Text(
+                            text = stringResource(R.string.network_speed_threshold) + " | " + formatSpeedThreshold(networkSpeedThreshold.floatValue.toInt()),
+                            modifier = Modifier.padding(17.dp),
+                        )
+                        Slider(
+                            value = networkSpeedThreshold.floatValue,
+                            onValueChange = {
+                                networkSpeedThreshold.floatValue = it
+                            },
+                            onValueChangeFinished = {
+                                globalSettings.networkSpeedThreshold = networkSpeedThreshold.floatValue.toInt().coerceIn(102400, 2097152)
+                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    val previous = globalSettings.networkSpeedThreshold
+                                    globalSettings.networkSpeedThreshold = previous
+                                    networkSpeedThreshold.floatValue = previous.toFloat()
+                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网速识别阈值更新失败"))
+                                }
+                            },
+                            valueRange = 102400f..2097152f,
+                            steps = 99,
+                            modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                        )
                     }
                 }
 
@@ -375,4 +398,9 @@ private fun SettingsContent(
             trackPadding = contentPadding,
         )
     }
+}
+
+private fun formatSpeedThreshold(bytesPerSec: Int): String {
+    if (bytesPerSec < 1048576) return "${bytesPerSec / 1024} KB/s"
+    return String.format("%.2f MB/s", bytesPerSec / 1048576.0)
 }
