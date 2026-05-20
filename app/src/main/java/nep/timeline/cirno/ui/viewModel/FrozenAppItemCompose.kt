@@ -14,6 +14,7 @@ import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopTip
 import nep.timeline.cirno.R
 import nep.timeline.cirno.entity.AppItem
+import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.custom.CustomBasicComponent
 import nep.timeline.cirno.ui.utils.AppContext
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -54,7 +55,20 @@ fun FrozenAppItemCompose(
                 AppContext.enterAppPage(app)
             },
             onClick = {
-                if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN"))
+                if (app.networkSpeedEnabled) {
+                    val binder = ApplicationBinder.getInstance()
+                    if (binder != null) {
+                        try {
+                            val json = binder.getNetworkSpeed(app.packageName, app.userId)
+                            val rx = json.substringAfter("\"rx\":").substringBefore(",").trim().toLongOrNull() ?: 0L
+                            val tx = json.substringAfter("\"tx\":").substringBefore("}").trim().toLongOrNull() ?: 0L
+                            val speedText = "\u2191${formatSpeed(tx)} \u2193${formatSpeed(rx)}"
+                            PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(speedText).show()
+                        } catch (_: Exception) {
+                            PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage("网速获取失败").show()
+                        }
+                    }
+                } else if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN"))
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(message).show()
                 else if (!app.isFrozen) {
                     val notification = "\uD83D\uDCE2"
@@ -100,6 +114,7 @@ fun FrozenAppItemCompose(
                         "RECORDING" -> "录音中 $recording"
                         "WAITING_PUSH_RESPONSE" -> "等待推送响应 $push"
                         "VPN" -> "使用VPN服务中 $vpn"
+                        "NETWORK_SPEED" -> "网速传输中 $netTrans"
                         "VISIBLE" -> "应用前台 $visible"
                         "WINDOW" -> "窗口可见 $window"
                         "SYSTEM" -> "系统应用 $system"
@@ -123,4 +138,10 @@ private fun getMemSize(mem: Long): String {
     if (mem < 1024000) return bigDecimal.divide(BigDecimal(1024), 0, RoundingMode.HALF_UP)
         .toString() + "MB"
     return bigDecimal.divide(BigDecimal(1048576), 2, RoundingMode.HALF_UP).toString() + "GB"
+}
+
+private fun formatSpeed(bytesPerSec: Long): String {
+    if (bytesPerSec < 1024) return "${bytesPerSec}B/s"
+    if (bytesPerSec < 1024 * 1024) return "${BigDecimal(bytesPerSec).divide(BigDecimal(1024), 1, RoundingMode.HALF_UP)}KB/s"
+    return "${BigDecimal(bytesPerSec).divide(BigDecimal(1048576), 2, RoundingMode.HALF_UP)}MB/s"
 }

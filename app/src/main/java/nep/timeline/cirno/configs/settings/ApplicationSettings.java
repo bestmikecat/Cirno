@@ -9,6 +9,7 @@ public class ApplicationSettings {
     public Set<String> locationUseApps = new HashSet<>();
     public Set<String> whiteApps = new HashSet<>();
     public Set<String> networkMessageApps = new HashSet<>();
+    public Set<String> networkSpeedApps = new HashSet<>();
     public Set<String> frozenProcessExclusions = new HashSet<>();
 
     public static ApplicationSettings ensureInitialized(ApplicationSettings settings) {
@@ -19,6 +20,7 @@ public class ApplicationSettings {
         if (target.locationUseApps == null) target.locationUseApps = new HashSet<>();
         if (target.whiteApps == null) target.whiteApps = new HashSet<>();
         if (target.networkMessageApps == null) target.networkMessageApps = new HashSet<>();
+        if (target.networkSpeedApps == null) target.networkSpeedApps = new HashSet<>();
         if (target.frozenProcessExclusions == null) target.frozenProcessExclusions = new HashSet<>();
 
         return target;

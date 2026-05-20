@@ -325,6 +325,7 @@ public class PackageUtils {
             item.rss = snapshot.rss;
             item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
             item.processConfig = !AppConfigs.getExcludedProcesses(runningApp.packageName, runningApp.userId).isEmpty();
+            item.networkSpeedEnabled = AppConfigs.isNetworkSpeedAllowed(runningApp.packageName, runningApp.userId);
             result.add(item);
             index++;
         }
@@ -387,6 +388,9 @@ public class PackageUtils {
         }
         if (appState != null && appState.isVpn()) {
             return "VPN";
+        }
+        if (appState != null && AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isNetworkActive()) {
+            return "NETWORK_SPEED";
         }
         if (frozenProcessCount < processCount) {
             return "WAITING_FROZEN";

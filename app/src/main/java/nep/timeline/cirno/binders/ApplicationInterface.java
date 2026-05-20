@@ -13,6 +13,11 @@ public interface ApplicationInterface extends android.os.IInterface {
         }
 
         @Override
+        public String getNetworkSpeed(String packageName, int userId) throws android.os.RemoteException {
+            return null;
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -63,6 +68,14 @@ public interface ApplicationInterface extends android.os.IInterface {
                 reply.writeString(result);
                 return true;
             }
+            if (code == TRANSACTION_getNetworkSpeed) {
+                String packageName = data.readString();
+                int userId = data.readInt();
+                String result = this.getNetworkSpeed(packageName, userId);
+                reply.writeNoException();
+                reply.writeString(result);
+                return true;
+            }
             return super.onTransact(code, data, reply, flags);
         }
 
@@ -109,10 +122,28 @@ public interface ApplicationInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public String getNetworkSpeed(String packageName, int userId) throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    data.writeString(packageName);
+                    data.writeInt(userId);
+                    mRemote.transact(Stub.TRANSACTION_getNetworkSpeed, data, reply, 0);
+                    reply.readException();
+                    return reply.readString();
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_getRunningApplication = android.os.IBinder.FIRST_CALL_TRANSACTION;
         static final int TRANSACTION_getProcessesForApp = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
+        static final int TRANSACTION_getNetworkSpeed = android.os.IBinder.FIRST_CALL_TRANSACTION + 2;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.ApplicationInterface";
@@ -120,4 +151,6 @@ public interface ApplicationInterface extends android.os.IInterface {
     java.util.List<java.lang.String> getRunningApplication() throws android.os.RemoteException;
 
     String getProcessesForApp(String packageName, int userId) throws android.os.RemoteException;
+
+    String getNetworkSpeed(String packageName, int userId) throws android.os.RemoteException;
 }

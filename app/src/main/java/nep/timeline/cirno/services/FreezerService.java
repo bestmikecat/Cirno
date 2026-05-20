@@ -64,6 +64,11 @@ public class FreezerService {
             return;
         }
 
+        if (AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId())
+                && appRecord.getAppState().isNetworkActive()) {
+            return;
+        }
+
         for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
             if (processRecord.isDeathProcess() || processRecord.isFrozen())
                 continue;

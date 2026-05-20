@@ -133,6 +133,19 @@ public final class MonitorBinderHub {
             }
             return new Gson().toJson(new ArrayList<>(processNames));
         }
+
+        @Override
+        public String getNetworkSpeed(String packageName, int userId) {
+            if (packageName == null || packageName.isEmpty()) {
+                return "{\"rx\":0,\"tx\":0}";
+            }
+            AppRecord appRecord = AppService.get(packageName, userId);
+            if (appRecord == null) {
+                return "{\"rx\":0,\"tx\":0}";
+            }
+            long[] speed = NetworkSpeedMonitor.getSpeed(appRecord.getUid());
+            return "{\"rx\":" + speed[0] + ",\"tx\":" + speed[1] + "}";
+        }
     };
 
     private static final FrozenStateInterface.Stub frozenStateBinder = new FrozenStateInterface.Stub() {
@@ -259,6 +272,9 @@ public final class MonitorBinderHub {
         }
         if (appState != null && appState.isVpn()) {
             return "VPN";
+        }
+        if (appState != null && AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isNetworkActive()) {
+            return "NETWORK_SPEED";
         }
         if (frozenProcessCount < processCount) {
             return "WAITING_FROZEN";

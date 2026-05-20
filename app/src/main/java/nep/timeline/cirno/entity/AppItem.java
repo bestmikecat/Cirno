@@ -26,6 +26,7 @@ public class AppItem {
     public boolean socket;
     public boolean netReceive;
     public boolean networkCheck;
+    public boolean networkSpeedEnabled;
     public boolean idle;
     public int killProcCount;
     public int whiteProcCount;

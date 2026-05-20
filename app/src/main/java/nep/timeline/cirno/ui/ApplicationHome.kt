@@ -117,6 +117,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
+                        val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
 
                         if (!hasReKernel && networkMessage.value) {
                             networkMessage.value = false
@@ -207,6 +208,25 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     }
                                 }
                             )
+
+                            SwitchPreference(
+                                title = stringResource(R.string.network_speed_check),
+                                checked = networkSpeed.value,
+                                onCheckedChange = {
+                                    if (black.value && it) {
+                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                        return@SwitchPreference
+                                    }
+                                    val previous = networkSpeed.value
+                                    networkSpeed.value = it
+                                    AppConfigs.setNetworkSpeedAllowed(packageName, userId, it)
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        networkSpeed.value = previous
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网速识别配置更新失败"))
+                                    }
+                                }
+                            )
                         }
 
                         if (isSystemApp || isBuiltinWhitelistApp) {
@@ -220,6 +240,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val prevBackground = backgroundPlay.value
                                     val prevLocation = locationUse.value
                                     val prevNetwork = networkMessage.value
+                                    val prevNetworkSpeed = networkSpeed.value
 
                                     black.value = it
                                     AppConfigs.setBlackApp(packageName, userId, it)
@@ -228,10 +249,12 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         backgroundPlay.value = false
                                         locationUse.value = false
                                         networkMessage.value = false
+                                        networkSpeed.value = false
                                         AppConfigs.setWhiteApp(packageName, userId, false)
                                         AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
                                         AppConfigs.setLocationUseAllowed(packageName, userId, false)
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
                                     }
 
                                     if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
@@ -240,11 +263,13 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         backgroundPlay.value = prevBackground
                                         locationUse.value = prevLocation
                                         networkMessage.value = prevNetwork
+                                        networkSpeed.value = prevNetworkSpeed
                                         AppConfigs.setBlackApp(packageName, userId, prevBlack)
                                         AppConfigs.setWhiteApp(packageName, userId, prevWhite)
                                         AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
                                         AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
                                         WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
                                     }
                                 }

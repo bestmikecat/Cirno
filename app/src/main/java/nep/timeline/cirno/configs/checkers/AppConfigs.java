@@ -27,6 +27,8 @@ public class AppConfigs {
                 return getSafeSettings().locationUseApps;
             case ALLOW_NETWORK_MESSAGE:
                 return getSafeSettings().networkMessageApps;
+            case ALLOW_NETWORK_SPEED:
+                return getSafeSettings().networkSpeedApps;
             default:
                 throw new IllegalArgumentException("Unsupported capability: " + capability);
         }
@@ -55,6 +57,7 @@ public class AppConfigs {
                 getCapabilityApps(Capability.ALLOW_BACKGROUND_AUDIO).remove(key);
                 getCapabilityApps(Capability.ALLOW_LOCATION).remove(key);
                 getCapabilityApps(Capability.ALLOW_NETWORK_MESSAGE).remove(key);
+                getCapabilityApps(Capability.ALLOW_NETWORK_SPEED).remove(key);
             }
         } else {
             apps.remove(key);
@@ -142,6 +145,22 @@ public class AppConfigs {
 
     public static void setNetworkMessageAllowed(String pkg, boolean allowed) {
         setNetworkMessageAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isNetworkSpeedAllowed(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.ALLOW_NETWORK_SPEED);
+    }
+
+    public static boolean isNetworkSpeedAllowed(String pkg) {
+        return isNetworkSpeedAllowed(pkg, 0);
+    }
+
+    public static void setNetworkSpeedAllowed(String pkg, int userId, boolean allowed) {
+        setCapability(pkg, userId, Capability.ALLOW_NETWORK_SPEED, allowed);
+    }
+
+    public static void setNetworkSpeedAllowed(String pkg, boolean allowed) {
+        setNetworkSpeedAllowed(pkg, 0, allowed);
     }
 
     public static boolean isProcessExcludedFromFreeze(String pkg, int userId, String processName) {
