@@ -54,7 +54,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val hasReKernel = remember { File("/proc/rekernel").exists() }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
-    val whitelistExemptionBlocked = whitelistExemptionBlocked
+    val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
     val isSystemApp = remember {
         try {
             val packageInfo = activity.packageManager.getPackageInfo(packageName, 0)
