@@ -2,7 +2,6 @@ package nep.timeline.cirno.services;
 
 import android.net.TrafficStats;
 import android.os.IBinder;
-import android.os.ServiceManager;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,7 +26,9 @@ public class NetworkSpeedMonitor {
         if (sMonitoring)
             return;
         try {
-            sNetStatsBinder = ServiceManager.getService("netstats");
+            Class<?> smClass = Class.forName("android.os.ServiceManager");
+            Method getService = smClass.getDeclaredMethod("getService", String.class);
+            sNetStatsBinder = (IBinder) getService.invoke(null, "netstats");
         } catch (Throwable e) {
             Log.e("NetworkSpeedMonitor: failed to get netstats service", e);
         }
