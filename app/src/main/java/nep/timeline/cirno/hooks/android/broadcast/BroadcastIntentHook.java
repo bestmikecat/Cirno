@@ -56,6 +56,10 @@ public class BroadcastIntentHook {
                         String action = intent.getAction();
 
                         if ("nep.timeline.cirno.TILE_CLICK".equals(action)) {
+                            String logMsg = intent.getStringExtra("log_msg");
+                            if (logMsg != null) {
+                                Log.i(logMsg);
+                            }
                             String packageName = intent.getStringExtra("package_name");
                             if (packageName != null) {
                                 FreezerService.temporaryUnfreezeIfNeed(packageName, userId, "控制中心磁贴", 3000);

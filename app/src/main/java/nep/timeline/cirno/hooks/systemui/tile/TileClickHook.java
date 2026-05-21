@@ -4,9 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -16,10 +13,8 @@ import java.util.Locale;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.GlobalVars;
 
 public class TileClickHook {
-    private static final File LOG_FILE = new File(GlobalVars.LOG_DIR, "current.log");
     private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
 
     public TileClickHook(ClassLoader classLoader) {
@@ -41,38 +36,35 @@ public class TileClickHook {
                             try {
                                 Object tile = param.thisObject;
                                 String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
-                                log("磁贴被点击: " + tileSpec);
 
                                 String targetPkg = extractPackageFromTileSpec(tileSpec);
                                 if (targetPkg == null) {
-                                    log("非应用磁贴，跳过");
                                     return;
                                 }
 
                                 Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
                                 if (context == null) {
-                                    log("无法获取 Context");
                                     return;
                                 }
 
-                                log("目标应用: " + targetPkg);
-
+                                String logMsg = SDF.format(new Date()) + " TILE -> 磁贴被点击: " + tileSpec + ", 目标应用: " + targetPkg;
                                 Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
                                 intent.putExtra("package_name", targetPkg);
+                                intent.putExtra("log_msg", logMsg);
                                 intent.setPackage("android");
                                 context.sendBroadcast(intent);
-                                log("已发送解冻广播");
+                                XposedBridge.log(logMsg);
                             } catch (Throwable t) {
-                                log("Hook 异常: " + t.getMessage());
+                                XposedBridge.log("TILE -> Hook 异常: " + t.getMessage());
                             }
                         }
                     });
             log("TileClickHook 注册成功");
         } catch (Throwable t) {
-            log("Hook 注册失败: " + t);
+            XposedBridge.log("TILE -> Hook 注册失败: " + t);
             for (Method m : tileImplClass.getDeclaredMethods()) {
                 if (m.getName().equals("click")) {
-                    log("  可用签名: " + Arrays.toString(m.getParameterTypes()));
+                    XposedBridge.log("TILE -> 可用签名: " + Arrays.toString(m.getParameterTypes()));
                 }
             }
         }
@@ -89,12 +81,6 @@ public class TileClickHook {
     }
 
     private static void log(String msg) {
-        String formatted = SDF.format(new Date()) + " TILE -> " + msg;
-        XposedBridge.log(formatted);
-        try (FileWriter fw = new FileWriter(LOG_FILE, true)) {
-            fw.write(formatted + "\n");
-        } catch (IOException e) {
-            XposedBridge.log(formatted + " [FILE WRITE FAILED: " + e + "]");
-        }
+        XposedBridge.log(SDF.format(new Date()) + " TILE -> " + msg);
     }
 }
