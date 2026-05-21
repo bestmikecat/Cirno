@@ -6,8 +6,10 @@ import android.content.Intent;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -32,41 +34,49 @@ public class TileClickHook {
             return;
         }
 
-        XposedHelpers.findAndHookMethod(tileImplClass, "handleClick",
-                expandableClass, new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        try {
-                            Object tile = param.thisObject;
-                            String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
-                            log("磁贴被点击: " + tileSpec);
+        try {
+            XposedHelpers.findAndHookMethod(tileImplClass, "click",
+                    expandableClass, new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                Object tile = param.thisObject;
+                                String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
+                                log("磁贴被点击: " + tileSpec);
 
-                            String targetPkg = extractPackageFromTileSpec(tileSpec);
-                            if (targetPkg == null) {
-                                log("非应用磁贴，跳过");
-                                return;
+                                String targetPkg = extractPackageFromTileSpec(tileSpec);
+                                if (targetPkg == null) {
+                                    log("非应用磁贴，跳过");
+                                    return;
+                                }
+
+                                Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
+                                if (context == null) {
+                                    log("无法获取 Context");
+                                    return;
+                                }
+
+                                log("目标应用: " + targetPkg);
+
+                                Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
+                                intent.putExtra("package_name", targetPkg);
+                                intent.setPackage("android");
+                                context.sendBroadcast(intent);
+                                log("已发送解冻广播");
+                            } catch (Throwable t) {
+                                log("Hook 异常: " + t.getMessage());
                             }
-
-                            Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
-                            if (context == null) {
-                                log("无法获取 Context");
-                                return;
-                            }
-
-                            log("目标应用: " + targetPkg);
-
-                            Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
-                            intent.putExtra("package_name", targetPkg);
-                            intent.setPackage("android");
-                            context.sendBroadcast(intent);
-                            log("已发送解冻广播");
-                        } catch (Throwable t) {
-                            log("Hook 异常: " + t.getMessage());
                         }
-                    }
-                });
-
-        log("TileClickHook 注册成功");
+                    });
+            log("TileClickHook 注册成功");
+        } catch (Throwable t) {
+            log("Hook 注册失败: " + t);
+            for (Method m : tileImplClass.getDeclaredMethods()) {
+                if (m.getName().equals("click")) {
+                    log("  可用签名: " + Arrays.toString(m.getParameterTypes()));
+                }
+            }
+        }
     }
 
     private static String extractPackageFromTileSpec(String tileSpec) {
