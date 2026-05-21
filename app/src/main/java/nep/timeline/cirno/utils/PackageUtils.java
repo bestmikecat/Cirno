@@ -33,8 +33,6 @@ import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
-import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinder;
 import nep.timeline.cirno.provide.FrozenStateBinder;
@@ -356,47 +354,6 @@ public class PackageUtils {
             return base;
         }
         return base + "#" + userId;
-    }
-
-    private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
-        AppState appState = appRecord.getAppState();
-        if (appState != null && appState.isVisible()) {
-            return "VISIBLE";
-        }
-        if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "WHITELIST";
-        }
-        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "BLACKLIST";
-        }
-        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
-            return "INPUT";
-        }
-        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
-            return "SYSTEM";
-        }
-        if (appRecord.isWaitingNotification()) {
-            return "WAITING_PUSH_RESPONSE";
-        }
-        if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
-            return "AUDIO";
-        }
-        if (appState != null && AppConfigs.isLocationUseAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isLocation()) {
-            return "LOCATION";
-        }
-        if (appState != null && appState.isRecording()) {
-            return "RECORDING";
-        }
-        if (appState != null && appState.isVpn()) {
-            return "VPN";
-        }
-        if (appState != null && AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isNetworkActive()) {
-            return "NETWORK_SPEED";
-        }
-        if (frozenProcessCount < processCount) {
-            return "WAITING_FROZEN";
-        }
-        return "UNKNOWN";
     }
 
     private static long readProcessRssKb(int pid) {

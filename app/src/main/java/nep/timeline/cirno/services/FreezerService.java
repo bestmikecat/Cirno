@@ -3,28 +3,24 @@ package nep.timeline.cirno.services;
 import java.util.List;
 
 import nep.timeline.cirno.configs.checkers.AppConfigs;
+import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.threads.FreezerHandler;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.ForceAppStandbyListener;
+import nep.timeline.cirno.utils.FreezeExemptionChecker;
 import nep.timeline.cirno.utils.FrozenRW;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class FreezerService {
     public static synchronized void freezer(AppRecord appRecord) {
-        boolean blacklisted = AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId());
-        boolean whitelisted = AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId());
-        if (appRecord.isWaitingNotification() || appRecord.isFrozen() || (!blacklisted && appRecord.isSystem()) ||
-                appRecord.getAppState().isVisible()) {
+        FreezeExemption exemption = FreezeExemptionChecker.check(appRecord);
+        if (exemption != null) {
             return;
         }
 
-        if (!blacklisted && whitelisted) {
-            return;
-        }
-
-        if (blacklisted) {
+        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
             for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
                 if (processRecord.isDeathProcess() || processRecord.isFrozen()) {
                     continue;
@@ -36,36 +32,6 @@ public class FreezerService {
                 processRecord.setFrozen(true);
             }
             appRecord.setFrozen(true);
-            return;
-        }
-
-        // 检查后台播放开关
-        boolean backgroundPlayAllowed = AppConfigs.isBackgroundPlayAllowed(
-                appRecord.getPackageName(),
-                appRecord.getUserId()
-        );
-
-        // 检查位置使用开关
-        boolean locationUseAllowed = AppConfigs.isLocationUseAllowed(
-                appRecord.getPackageName(),
-                appRecord.getUserId()
-        );
-
-        if (backgroundPlayAllowed && appRecord.getAppState().isAudio()) {
-            return;
-        }
-
-        if (locationUseAllowed && appRecord.getAppState().isLocation()) {
-            return;
-        }
-
-        if (appRecord.getAppState().isRecording() ||
-                appRecord.getAppState().isVpn()) {
-            return;
-        }
-
-        if (AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId())
-                && appRecord.getAppState().isNetworkActive()) {
             return;
         }
 

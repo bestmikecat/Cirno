@@ -22,12 +22,10 @@ import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
-import nep.timeline.cirno.configs.checkers.AppConfigs;
+import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
-import nep.timeline.cirno.utils.InputMethodData;
-import nep.timeline.cirno.utils.PKGUtils;
+import nep.timeline.cirno.utils.FreezeExemptionChecker;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
@@ -178,7 +176,15 @@ public final class MonitorBinderHub {
             if (frozenCount > 0) {
                 return "V2(" + frozenCount + "/" + processCount + "),RSS[" + rss + "]";
             }
-            String reason = resolveNotFrozenReason(appRecord, processCount, frozenCount);
+            FreezeExemption exemption = FreezeExemptionChecker.check(appRecord);
+            String reason;
+            if (exemption != null) {
+                reason = exemption.reason;
+            } else if (frozenCount < processCount) {
+                reason = "WAITING_FROZEN";
+            } else {
+                reason = REASON_UNKNOWN;
+            }
             return "NOT_FROZEN[" + reason + "],PROCESS_COUNT[" + processCount + "],FROZEN_COUNT[" + frozenCount + "],RSS[" + rss + "]";
         }
 
@@ -241,44 +247,4 @@ public final class MonitorBinderHub {
         }
     }
 
-    private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
-        AppState appState = appRecord.getAppState();
-        if (appState != null && appState.isVisible()) {
-            return "VISIBLE";
-        }
-        if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "WHITELIST";
-        }
-        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "BLACKLIST";
-        }
-        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
-            return "INPUT";
-        }
-        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
-            return "SYSTEM";
-        }
-        if (appRecord.isWaitingNotification()) {
-            return "WAITING_PUSH_RESPONSE";
-        }
-        if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
-            return "AUDIO";
-        }
-        if (appState != null && AppConfigs.isLocationUseAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isLocation()) {
-            return "LOCATION";
-        }
-        if (appState != null && appState.isRecording()) {
-            return "RECORDING";
-        }
-        if (appState != null && appState.isVpn()) {
-            return "VPN";
-        }
-        if (appState != null && AppConfigs.isNetworkSpeedAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isNetworkActive()) {
-            return "NETWORK_SPEED";
-        }
-        if (frozenProcessCount < processCount) {
-            return "WAITING_FROZEN";
-        }
-        return REASON_UNKNOWN;
-    }
 }

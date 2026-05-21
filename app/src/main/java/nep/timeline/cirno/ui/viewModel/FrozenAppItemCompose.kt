@@ -13,6 +13,7 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopTip
 import nep.timeline.cirno.R
+import nep.timeline.cirno.configs.policy.FreezeExemption
 import nep.timeline.cirno.entity.AppItem
 import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.custom.CustomBasicComponent
@@ -71,59 +72,7 @@ fun FrozenAppItemCompose(
                 } else if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN"))
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(message).show()
                 else if (!app.isFrozen) {
-                    val notification = "\uD83D\uDCE2"
-                    val audio = "\uD83C\uDFB5"
-                    val media = "\uD83C\uDF9E"
-                    val camera = "\uD83D\uDCF7"
-                    val accessibility = "\u267F"
-                    val xposed = "\uD83E\uDDE9"
-                    val autofill = "\uD83E\uDDFB"
-                    val credential = "\uD83D\uDD11"
-                    val backup = "\uD83D\uDCC4"
-                    val input = "\u2328"
-                    val netTrans = "\uD83D\uDEDC"
-                    val location = "\uD83D\uDCCD"
-                    val recording = "\uD83C\uDF99️"
-                    val vpn = "\uD83C\uDF10"
-                    val visible = "\uD83D\uDC41"
-                    val window = "\uD83E\uDE9F"
-                    val system = "\uD83D\uDD12"
-                    val foreground = "\uD83E\uDDBE"
-                    val broadcasting = "\uD83D\uDCE2"
-                    val coldStart = "\uD83E\uDDCA"
-                    val push = "\uD83D\uDCF0"
-                    val whitelist = "\uD83E\uDEE1"
-                    val waiting = "\u23F3"
-                    val reason = when (app.notFrozenReason) {
-                        "WHITELIST" -> "白名单 $whitelist"
-                        "BLACKLIST" -> "黑名单 ⛔"
-                        "NOTIFICATION" -> "常驻通知中 $notification"
-                        "AUDIO" -> "播放音频中 $audio"
-                        "MEDIA" -> "播放媒体中 $media"
-                        "CAMERA" -> "调用摄像头中 $camera"
-                        "ACCESSIBILITY" -> "使用无障碍服务中 $accessibility"
-                        "SERVICE" -> "服务执行中"
-                        "XPOSED" -> "Xposed模块 $xposed"
-                        "AUTO_FILL" -> "使用自动填充服务中 $autofill"
-                        "CREDENTIAL" -> "使用通行密钥服务中 $credential"
-                        "BACKUP" -> "备份中 $backup"
-                        "INPUT" -> "输入法 $input"
-                        "NET_TRANS" -> "网络传输中 $netTrans"
-                        "TCP_SOCKET" -> "等待网络响应 $netTrans"
-                        "LOCATION" -> "定位中 $location"
-                        "RECORDING" -> "录音中 $recording"
-                        "WAITING_PUSH_RESPONSE" -> "等待推送响应 $push"
-                        "VPN" -> "使用VPN服务中 $vpn"
-                        "NETWORK_SPEED" -> "网速传输中 $netTrans"
-                        "VISIBLE" -> "应用前台 $visible"
-                        "WINDOW" -> "窗口可见 $window"
-                        "SYSTEM" -> "系统应用 $system"
-                        "FORE_GROUND" -> "前台服务 $foreground"
-                        "BROADCASTING" -> "广播中 $broadcasting"
-                        "COLD_START" -> "冷启动中 $coldStart"
-                        "WAITING_FROZEN" -> "等待冻结 $waiting"
-                        else -> "未知"
-                    }
+                    val reason = FreezeExemption.fromReason(app.notFrozenReason).displayText
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(reason).show()
                 }
             }
