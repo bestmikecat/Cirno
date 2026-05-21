@@ -55,6 +55,14 @@ public class BroadcastIntentHook {
                     if (intent != null) {
                         String action = intent.getAction();
 
+                        if ("nep.timeline.cirno.TILE_CLICK".equals(action)) {
+                            String packageName = intent.getStringExtra("package_name");
+                            if (packageName != null) {
+                                FreezerService.temporaryUnfreezeIfNeed(packageName, userId, "控制中心磁贴", 3000);
+                            }
+                            return;
+                        }
+
                         if (action == null || !action.endsWith(".android.c2dm.intent.RECEIVE") || action.equals("org.unifiedpush.android.connector.MESSAGE") || action.equals("com.meizu.flyme.push.intent.MESSAGE"))
                             return;
 
