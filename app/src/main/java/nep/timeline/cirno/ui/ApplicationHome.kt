@@ -119,6 +119,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
                         val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
+                        val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
 
                         if (!hasReKernel && networkMessage.value) {
                             networkMessage.value = false
@@ -139,6 +140,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val prevLocation = locationUse.value
                                     val prevNetwork = networkMessage.value
                                     val prevNetworkSpeed = networkSpeed.value
+                                    val prevRecording = recording.value
 
                                     white.value = it
                                     AppConfigs.setWhiteApp(packageName, userId, it)
@@ -151,6 +153,8 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
                                         networkSpeed.value = false
                                         AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
+                                        recording.value = false
+                                        AppConfigs.setRecordingAllowed(packageName, userId, false)
                                     }
 
                                     if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
@@ -164,6 +168,8 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
                                         networkSpeed.value = prevNetworkSpeed
                                         AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
+                                        recording.value = prevRecording
+                                        AppConfigs.setRecordingAllowed(packageName, userId, prevRecording)
                                         WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("白名单更新失败"))
                                     }
                                 }
@@ -248,6 +254,26 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         networkSpeed.value = previous
                                         AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
                                         WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网速识别配置更新失败"))
+                                    }
+                                }
+                            )
+
+                            SwitchPreference(
+                                title = stringResource(R.string.recording_unfreeze),
+                                checked = recording.value,
+                                enabled = !white.value,
+                                onCheckedChange = {
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
+                                        return@SwitchPreference
+                                    }
+                                    val previous = recording.value
+                                    recording.value = it
+                                    AppConfigs.setRecordingAllowed(packageName, userId, it)
+                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                        recording.value = previous
+                                        AppConfigs.setRecordingAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("录音解冻配置更新失败"))
                                     }
                                 }
                             )

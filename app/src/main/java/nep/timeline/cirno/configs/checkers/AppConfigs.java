@@ -29,6 +29,8 @@ public class AppConfigs {
                 return getSafeSettings().networkMessageApps;
             case ALLOW_NETWORK_SPEED:
                 return getSafeSettings().networkSpeedApps;
+            case ALLOW_RECORDING:
+                return getSafeSettings().recordingApps;
             default:
                 throw new IllegalArgumentException("Unsupported capability: " + capability);
         }
@@ -161,6 +163,22 @@ public class AppConfigs {
 
     public static void setNetworkSpeedAllowed(String pkg, boolean allowed) {
         setNetworkSpeedAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isRecordingAllowed(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.ALLOW_RECORDING);
+    }
+
+    public static boolean isRecordingAllowed(String pkg) {
+        return isRecordingAllowed(pkg, 0);
+    }
+
+    public static void setRecordingAllowed(String pkg, int userId, boolean allowed) {
+        setCapability(pkg, userId, Capability.ALLOW_RECORDING, allowed);
+    }
+
+    public static void setRecordingAllowed(String pkg, boolean allowed) {
+        setRecordingAllowed(pkg, 0, allowed);
     }
 
     public static boolean isProcessExcludedFromFreeze(String pkg, int userId, String processName) {

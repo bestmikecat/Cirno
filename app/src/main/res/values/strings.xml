@@ -35,6 +35,7 @@
   <string name="foreground_service">Foreground service</string>
   <string name="netreceive_unfreeze">NetReceive unfreeze</string>
   <string name="network_speed_check">Network speed detection</string>
+  <string name="recording_unfreeze">Recording unfreeze</string>
   <string name="network_speed_threshold">Network speed threshold</string>
   <string name="battery_opt">Battery Opt</string>
   <string name="version">Version</string>
