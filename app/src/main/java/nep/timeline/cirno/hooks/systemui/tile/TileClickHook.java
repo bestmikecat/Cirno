@@ -5,17 +5,16 @@ import android.content.Context;
 import android.content.Intent;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
-import org.apache.commons.io.FileUtils;
-
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.GlobalVars;
 
@@ -91,9 +90,11 @@ public class TileClickHook {
 
     private static void log(String msg) {
         String formatted = SDF.format(new Date()) + " TILE -> " + msg;
-        try {
-            FileUtils.write(LOG_FILE, formatted + "\n", StandardCharsets.UTF_8, true);
-        } catch (IOException ignored) {
+        XposedBridge.log(formatted);
+        try (FileWriter fw = new FileWriter(LOG_FILE, true)) {
+            fw.write(formatted + "\n");
+        } catch (IOException e) {
+            XposedBridge.log(formatted + " [FILE WRITE FAILED: " + e + "]");
         }
     }
 }
