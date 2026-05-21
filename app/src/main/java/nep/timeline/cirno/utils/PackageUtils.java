@@ -139,7 +139,7 @@ public class PackageUtils {
         if (item.white) {
             return 0;
         }
-        if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck || item.networkSpeedEnabled) {
+        if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck || item.networkSpeedEnabled || item.processConfig) {
             return 1;
         }
         if (item.black) {
