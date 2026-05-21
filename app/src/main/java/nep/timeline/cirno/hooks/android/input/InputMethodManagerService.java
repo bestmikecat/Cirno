@@ -50,7 +50,7 @@ public class InputMethodManagerService extends MethodHook {
                                 classLoader),
                         "get", userId);
             } catch (Exception e) {
-                Log.w("获取 InputMethodSettingsRepository 失败");
+                Log.e("获取 InputMethodSettingsRepository 失败", e);
                 return null;
             }
         }
@@ -58,7 +58,7 @@ public class InputMethodManagerService extends MethodHook {
         try {
             return XposedHelpers.getObjectField(service, "mSettings");
         } catch (Exception e) {
-            Log.w("获取 mSettings 失败");
+            Log.e("获取 mSettings 失败", e);
             return null;
         }
     }

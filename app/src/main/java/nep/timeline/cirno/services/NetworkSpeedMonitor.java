@@ -34,7 +34,7 @@ public class NetworkSpeedMonitor {
         if (sNetStatsBinder != null) {
             Log.i("NetworkSpeedMonitor: initialized");
         } else {
-            Log.w("NetworkSpeedMonitor: netstats service not available");
+            Log.e("NetworkSpeedMonitor: netstats service not available");
             return;
         }
 

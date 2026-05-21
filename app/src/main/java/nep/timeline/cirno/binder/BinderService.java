@@ -38,7 +38,7 @@ public class BinderService {
         try {
             intent = context.registerReceiver(null, new IntentFilter(GlobalVars.TAG + "-Binder"));
         } catch (Throwable throwable) {
-            Log.w("Binder register failed: registerReceiver", throwable);
+            Log.e("Binder register failed: registerReceiver", throwable);
             return;
         }
         Bundle extras = intent == null ? null : intent.getExtras();
