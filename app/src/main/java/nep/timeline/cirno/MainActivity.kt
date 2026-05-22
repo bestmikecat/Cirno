@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
+import nep.timeline.cirno.ui.viewModel.LogViewModel
 import nep.timeline.cirno.ui.app.App
 import nep.timeline.cirno.binder.BinderService
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -20,6 +21,10 @@ import top.yukonga.miuix.kmp.theme.lightColorScheme
 class MainActivity : ComponentActivity() {
     object AppListViewModelSingleton {
         val appListViewModel: AppListViewModel by lazy { AppListViewModel() }
+    }
+
+    object LogViewModelSingleton {
+        val logViewModel: LogViewModel by lazy { LogViewModel() }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

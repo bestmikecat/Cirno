@@ -18,12 +18,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -33,13 +31,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
@@ -71,76 +70,54 @@ fun LogPage(
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    var loadedLines by remember { mutableStateOf(emptyList<String>()) }
-    var nextStartLine by remember { mutableIntStateOf(0) }
-    var hasMore by remember { mutableStateOf(true) }
-    var isLoadingMore by remember { mutableStateOf(false) }
-    var isInitialLoadDone by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    var searchExpanded by remember { mutableStateOf(false) }
-    var pendingScrollToBottom by remember { mutableStateOf(false) }
+    val uiState by logViewModel.uiState.collectAsStateWithLifecycle()
 
-    val filteredLines by remember(loadedLines, searchQuery) {
+    val filteredLines by remember(uiState.loadedLines, uiState.searchQuery) {
         derivedStateOf {
-            if (searchQuery.isBlank()) loadedLines
-            else loadedLines.filter { it.contains(searchQuery, ignoreCase = true) }
+            if (uiState.searchQuery.isBlank()) uiState.loadedLines
+            else uiState.loadedLines.filter { it.contains(uiState.searchQuery, ignoreCase = true) }
         }
-    }
-
-    suspend fun loadNextPage() {
-        if (isLoadingMore || !hasMore) {
-            return
-        }
-        isLoadingMore = true
-        val page = ConfigBinderRepository.getLogContentPage(nextStartLine, LOG_PAGE_SIZE)
-        if (page.isNotEmpty()) {
-            loadedLines = loadedLines + page
-            nextStartLine += page.size
-        }
-        hasMore = page.size == LOG_PAGE_SIZE
-        isLoadingMore = false
     }
 
     LaunchedEffect(Unit) {
-        loadNextPage()
-        isInitialLoadDone = true
+        logViewModel.ensureInitialized()
     }
 
-    LaunchedEffect(lazyListState, hasMore, isLoadingMore) {
+    LaunchedEffect(lazyListState, uiState.hasMore, uiState.isLoadingMore) {
         snapshotFlow {
             val lastVisible = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
             val totalItems = lazyListState.layoutInfo.totalItemsCount
             lastVisible to totalItems
         }.distinctUntilChanged().collect { (lastVisible, totalItems) ->
-            if (!hasMore || isLoadingMore || totalItems <= 0) {
+            if (!uiState.hasMore || uiState.isLoadingMore || totalItems <= 0) {
                 return@collect
             }
             if (lastVisible >= totalItems - 5) {
-                loadNextPage()
+                logViewModel.loadNextPage()
             }
         }
     }
 
-    LaunchedEffect(pendingScrollToBottom, loadedLines.size, hasMore, isLoadingMore, searchQuery) {
-        if (!pendingScrollToBottom) {
+    LaunchedEffect(uiState.pendingScrollToBottom, uiState.loadedLines.size, uiState.hasMore, uiState.isLoadingMore, uiState.searchQuery) {
+        if (!uiState.pendingScrollToBottom) {
             return@LaunchedEffect
         }
 
         val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
         lazyListState.scrollToItem(bottomIndex)
 
-        if (!searchQuery.isBlank()) {
-            pendingScrollToBottom = false
+        if (uiState.searchQuery.isNotBlank()) {
+            logViewModel.cancelScrollToBottom()
             return@LaunchedEffect
         }
 
-        if (hasMore && !isLoadingMore) {
-            loadNextPage()
+        if (uiState.hasMore && !uiState.isLoadingMore) {
+            logViewModel.loadNextPage()
             return@LaunchedEffect
         }
 
-        if (!hasMore) {
-            pendingScrollToBottom = false
+        if (!uiState.hasMore) {
+            logViewModel.cancelScrollToBottom()
         }
     }
 
@@ -160,12 +137,13 @@ fun LogPage(
                     LogTopBarActions(
                         onScrollTop = {
                             scope.launch {
+                                logViewModel.cancelScrollToBottom()
                                 lazyListState.animateScrollToItem(0)
                             }
                         },
                         onScrollBottom = {
                             scope.launch {
-                                pendingScrollToBottom = true
+                                logViewModel.requestScrollToBottom()
                                 val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
                                 lazyListState.scrollToItem(bottomIndex)
                             }
@@ -182,17 +160,15 @@ fun LogPage(
             ),
             lazyListState = lazyListState,
             lines = filteredLines,
-            hasAnyLog = loadedLines.isNotEmpty(),
-            isInitialLoadDone = isInitialLoadDone,
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            searchExpanded = searchExpanded,
-            onSearchExpandedChange = { searchExpanded = it },
+            hasAnyLog = uiState.loadedLines.isNotEmpty(),
+            isInitialLoadDone = uiState.isInitialLoadDone,
+            searchQuery = uiState.searchQuery,
+            onSearchQueryChange = logViewModel::updateSearchQuery,
+            searchExpanded = uiState.searchExpanded,
+            onSearchExpandedChange = logViewModel::setSearchExpanded,
         )
     }
 }
-
-private const val LOG_PAGE_SIZE = 200
 
 @Composable
 private fun LogTopBarActions(
