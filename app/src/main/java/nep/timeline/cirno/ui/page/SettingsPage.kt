@@ -109,7 +109,7 @@ private fun SettingsContent(
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val scope = rememberCoroutineScope()
-    val globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+    var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
     val backupSuccessText = stringResource(R.string.backup_success)
     val backupFailedText = stringResource(R.string.backup_failed)
     val restoreSuccessText = stringResource(R.string.restore_success)
@@ -175,6 +175,20 @@ private fun SettingsContent(
         }
     }
 
+    fun syncLocalStateFromSettings() {
+        freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
+        wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
+        networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
+        blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
+        outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
+        levelIndex.intValue = when (globalSettings.logLevel) {
+            GlobalSettings.LOG_LEVEL_NONE -> 0
+            GlobalSettings.LOG_LEVEL_DEBUG -> 2
+            else -> 1
+        }
+    }
+
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri: Uri? ->
@@ -206,17 +220,17 @@ private fun SettingsContent(
             return@rememberLauncherForActivityResult
         }
         scope.launch {
-            val message = withContext(Dispatchers.IO) {
+            val (message, restored) = withContext(Dispatchers.IO) {
                 try {
                     val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
                     val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
                     if (!applied) {
-                        return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText)
+                        return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
                     }
                     if (!ConfigBinderRepository.loadIntoMemory()) {
-                        return@withContext restoreSuccessReloadFailedText
+                        return@withContext restoreSuccessReloadFailedText to false
                     }
-                    restoreSuccessText
+                    restoreSuccessText to true
                 } catch (e: ConfigBackupZipUtils.RestoreException) {
                     when (e.error) {
                         ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
@@ -224,10 +238,14 @@ private fun SettingsContent(
                         ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
                         ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
                         ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
-                    }
+                    } to false
                 } catch (_: Throwable) {
-                    restoreFailedUnknownText
+                    restoreFailedUnknownText to false
                 }
+            }
+            if (restored) {
+                globalSettings = GlobalVars.globalSettings ?: globalSettings
+                syncLocalStateFromSettings()
             }
             AppContext.showToast(message)
         }

@@ -347,7 +347,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     color = Color.Gray
                                 )
                                 processList.forEach { processName ->
-                                    val isExcluded = remember { mutableStateOf(processExclusions.contains(processName)) }
+                                    val isExcluded = remember(processName) { mutableStateOf(processExclusions.contains(processName)) }
                                     SwitchPreference(
                                         title = processName,
                                         checked = !isExcluded.value,

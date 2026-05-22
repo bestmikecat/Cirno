@@ -26,8 +26,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
@@ -101,7 +100,7 @@ private val AppListBottomShape = SmoothUnevenRoundedCornerShape(bottomStart = 16
 fun TopBarActions() {
     val showTopPopup = remember { mutableStateOf(false) }
     val topPopupHoldDown = remember { mutableStateOf(false) }
-    val type = appListViewModel.type.collectAsState()
+    val type by appListViewModel.type.collectAsStateWithLifecycle()
     val hapticFeedback = LocalHapticFeedback.current
     IconButton(
         onClick = {
@@ -135,7 +134,7 @@ fun TopBarActions() {
                         DropdownImpl(
                             text = string,
                             optionSize = items.size,
-                            isSelected = type.value == index,
+                            isSelected = type == index,
                             onSelectedIndexChange = { selectedIdx ->
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
                                 appListViewModel.updateByQuery(type = selectedIdx)
@@ -159,15 +158,14 @@ fun AppPage(
     val scrollBehavior = MiuixScrollBehavior()
     val isWideScreen = LocalIsWideScreen.current
 
-    val appList = viewModel.cacheFilterApps.collectAsState()
-    val filteredApps = remember { derivedStateOf { appList } }
+    val filteredApps by viewModel.cacheFilterApps.collectAsStateWithLifecycle()
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val searchValue = viewModel.search.collectAsState()
+    val searchValue by viewModel.search.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val type = viewModel.type.collectAsState()
-    val updatedApps = viewModel.updatedApps.collectAsState()
-    val isLoading = viewModel.filterApps.collectAsState()
-    val hasLoadedMonitorOnce = viewModel.hasLoadedMonitorOnce.collectAsState()
+    val type by viewModel.type.collectAsStateWithLifecycle()
+    val updatedApps by viewModel.updatedApps.collectAsStateWithLifecycle()
+    val isLoading by viewModel.filterApps.collectAsStateWithLifecycle()
+    val hasLoadedMonitorOnce by viewModel.hasLoadedMonitorOnce.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val isActive = remember { mutableStateOf(false) }
@@ -176,12 +174,11 @@ fun AppPage(
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            viewModel.update()
-            while (!updatedApps.value)
-                delay(500)
-            isRefreshing = false
+        if (!isRefreshing) {
+            return@LaunchedEffect
         }
+        viewModel.update().join()
+        isRefreshing = false
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -199,19 +196,15 @@ fun AppPage(
         }
     }
 
-    LaunchedEffect(isActive.value) {
-        if (type.value != 2)
-            appListViewModel.getFilterApps()
-        while (isActive.value) {
-            if (type.value == 2)
-                appListViewModel.getFilterApps(showLoading = false)
-            delay(1500)
+    LaunchedEffect(isActive.value, type) {
+        if (type != 2) {
+            viewModel.getFilterApps()
+            return@LaunchedEffect
         }
-    }
-
-    LaunchedEffect(type.value) {
-        if (type.value == 2) {
-            appListViewModel.getFilterApps(2)
+        viewModel.getFilterApps(2)
+        while (isActive.value && type == 2) {
+            delay(1500)
+            viewModel.getFilterApps(2, showLoading = false)
         }
     }
 
@@ -237,7 +230,7 @@ fun AppPage(
     ) { innerPadding ->
         Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
             AnimatedVisibility(
-                visible = isLoading.value.isNotEmpty() && updatedApps.value,
+                visible = isLoading.isNotEmpty() && updatedApps,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -277,31 +270,31 @@ fun AppPage(
                                             end = 12.dp,
                                             top = 12.dp,
                                             bottom = 6.dp
-                                        ),
+                                    ),
                                     inputField = {
-                                            InputField(
-                                                query = searchValue.value,
-                                                onQueryChange = {
-                                                    viewModel.updateByQuery(it, type.value)
-                                                },
-                                                onSearch = {
-                                                    keyboardController?.hide()
-                                                },
-                                                expanded = expanded,
-                                                onExpandedChange = { expanded = it },
-                                                label = stringResource(R.string.search),
-                                                leadingIcon = {
-                                                    Icon(
-                                                        modifier = Modifier
-                                                            .padding(start = 12.dp, end = 8.dp)
-                                                            .size(20.dp)
-                                                            .alpha(0.4f),
-                                                        imageVector = MiuixIcons.Basic.Search,
-                                                        tint = colorScheme.onSurfaceContainer,
-                                                        contentDescription = "Search"
-                                                    )
-                                                }
-                                            )
+                                        InputField(
+                                            query = searchValue,
+                                            onQueryChange = {
+                                                viewModel.updateByQuery(it, type)
+                                            },
+                                            onSearch = {
+                                                keyboardController?.hide()
+                                            },
+                                            expanded = expanded,
+                                            onExpandedChange = { expanded = it },
+                                            label = stringResource(R.string.search),
+                                            leadingIcon = {
+                                                Icon(
+                                                    modifier = Modifier
+                                                        .padding(start = 12.dp, end = 8.dp)
+                                                        .size(20.dp)
+                                                        .alpha(0.4f),
+                                                    imageVector = MiuixIcons.Basic.Search,
+                                                    tint = colorScheme.onSurfaceContainer,
+                                                    contentDescription = "Search"
+                                                )
+                                            }
+                                        )
                                     },
                                     outsideEndAction = {
                                         Text(
@@ -312,7 +305,7 @@ fun AppPage(
                                                     indication = null,
                                                 ) {
                                                     expanded = false
-                                                    viewModel.updateByQuery("", type.value)
+                                                    viewModel.updateByQuery("", type)
                                                 },
                                             text = stringResource(R.string.cancel),
                                             style = TextStyle(
@@ -328,14 +321,14 @@ fun AppPage(
                                 }
 
                                 SmallTitle(
-                                    text = when (type.value) {
+                                    text = when (type) {
                                         2 -> stringResource(R.string.frozen_info)
                                         else -> stringResource(R.string.app_info)
                                     }
                                 )
                             }
 
-                            val appItems = filteredApps.value.value
+                            val appItems = filteredApps
                             val appCount = appItems.size
                             itemsIndexed(
                                 items = appItems,
@@ -343,7 +336,7 @@ fun AppPage(
                             ) { i, item ->
                                 if (appCount == 1) {
                                     Card(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                        if (type.value == 2 && updatedApps.value)
+                                        if (type == 2 && updatedApps)
                                             FrozenAppItemCompose(item)
                                         else
                                             AppItemCompose(item)
@@ -363,7 +356,7 @@ fun AppPage(
                                             .clip(shape)
                                             .background(colorScheme.surfaceContainer),
                                     ) {
-                                        if (type.value == 2 && updatedApps.value)
+                                        if (type == 2 && updatedApps)
                                             FrozenAppItemCompose(item)
                                         else
                                             AppItemCompose(item)
@@ -384,7 +377,7 @@ fun AppPage(
             }
 
             AnimatedVisibility(
-                visible = !updatedApps.value,
+                visible = !updatedApps,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -412,7 +405,7 @@ fun AppPage(
             }
 
             AnimatedVisibility(
-                visible = type.value == 2 && hasLoadedMonitorOnce.value && updatedApps.value && isLoading.value.isEmpty(),
+                visible = type == 2 && hasLoadedMonitorOnce && updatedApps && isLoading.isEmpty(),
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
