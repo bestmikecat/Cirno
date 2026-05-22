@@ -19,6 +19,7 @@ public class NetworkSpeedMonitor {
 
     private static final ConcurrentHashMap<Integer, long[]> sSnapshots = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, long[]> sSpeedCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, Boolean> sReadFailed = new ConcurrentHashMap<>();
 
     public static void init() {
         if (sMonitoring)
@@ -46,21 +47,19 @@ public class NetworkSpeedMonitor {
         try {
             long now = System.currentTimeMillis();
             int threshold = GlobalVars.globalSettings != null ? GlobalVars.globalSettings.networkSpeedThreshold : 102400;
-            int monitoredCount = 0;
             for (AppRecord record : AppService.getAllRecordsSnapshot()) {
                 if (record == null)
                     continue;
                 if (!AppConfigs.isNetworkSpeedAllowed(record.getPackageName(), record.getUserId())) {
+                    sReadFailed.remove(record.getUid());
                     sSnapshots.remove(record.getUid());
                     sSpeedCache.remove(record.getUid());
-                    record.getAppState().setNetworkActive(false);
+                    if (record.getAppState().setNetworkActive(false)) {
+                        Log.i("NetworkSpeedMonitor: 网络活动结束 app=" + record.getPackageNameWithUser() + " uid=" + record.getUid());
+                    }
                     continue;
                 }
-                monitoredCount++;
-                readAndCalculate(record.getUid(), now, threshold, record.getAppState());
-            }
-            if (monitoredCount > 0) {
-                Log.d("NetworkSpeedMonitor: polled " + monitoredCount + " UIDs");
+                readAndCalculate(record, now, threshold);
             }
         } catch (Throwable e) {
             Log.e("NetworkSpeedMonitor poll error", e);
@@ -68,7 +67,9 @@ public class NetworkSpeedMonitor {
         Handlers.network.postDelayed(NetworkSpeedMonitor::poll, 1000);
     }
 
-    private static void readAndCalculate(int uid, long now, int threshold, AppState appState) {
+    private static void readAndCalculate(AppRecord appRecord, long now, int threshold) {
+        int uid = appRecord.getUid();
+        AppState appState = appRecord.getAppState();
         try {
             Class<?> serviceClass = sNetStatsBinder.getClass();
             Method readMethod = serviceClass.getDeclaredMethod("readNetworkStatsUidDetail",
@@ -88,23 +89,50 @@ public class NetworkSpeedMonitor {
             }
 
             long[] prev = sSnapshots.get(uid);
-            long speed = 0;
+            long rxSpeed = 0;
+            long txSpeed = 0;
+            boolean active = false;
             if (prev != null) {
                 long deltaTime = now - prev[2];
                 if (deltaTime > 0) {
-                    long rxSpeed = (totalRx - (long) prev[0]) * 1000 / deltaTime;
-                    long txSpeed = (totalTx - (long) prev[1]) * 1000 / deltaTime;
+                    rxSpeed = (totalRx - (long) prev[0]) * 1000 / deltaTime;
+                    txSpeed = (totalTx - (long) prev[1]) * 1000 / deltaTime;
                     if (rxSpeed < 0) rxSpeed = 0;
                     if (txSpeed < 0) txSpeed = 0;
                     sSpeedCache.put(uid, new long[]{rxSpeed, txSpeed});
-                    speed = rxSpeed + txSpeed;
+                    active = rxSpeed + txSpeed > threshold;
                 }
             }
             sSnapshots.put(uid, new long[]{totalRx, totalTx, now});
-            appState.setNetworkActive(speed > threshold);
+            if (Boolean.TRUE.equals(sReadFailed.remove(uid))) {
+                Log.i("NetworkSpeedMonitor: 读取恢复 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
+            }
+            if (appState.setNetworkActive(active)) {
+                if (active) {
+                    Log.i("NetworkSpeedMonitor: 检测到网络活动 app=" + appRecord.getPackageNameWithUser()
+                            + " uid=" + uid
+                            + " rx=" + formatSpeed(rxSpeed)
+                            + " tx=" + formatSpeed(txSpeed)
+                            + " threshold=" + formatSpeed(threshold));
+                } else {
+                    Log.i("NetworkSpeedMonitor: 网络活动结束 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
+                }
+            }
         } catch (Throwable e) {
-            Log.d("NetworkSpeedMonitor: read failed for uid=" + uid);
+            if (sReadFailed.put(uid, true) == null) {
+                Log.w("NetworkSpeedMonitor: 读取失败 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid, e);
+            }
         }
+    }
+
+    private static String formatSpeed(long bytesPerSec) {
+        if (bytesPerSec < 1024) {
+            return bytesPerSec + "B/s";
+        }
+        if (bytesPerSec < 1048576) {
+            return (bytesPerSec / 1024) + "KB/s";
+        }
+        return String.format(java.util.Locale.US, "%.2fMB/s", bytesPerSec / 1048576.0);
     }
 
     public static long[] getSpeed(int uid) {
