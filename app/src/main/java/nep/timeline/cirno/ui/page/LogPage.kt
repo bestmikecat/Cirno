@@ -78,6 +78,7 @@ fun LogPage(
     var isInitialLoadDone by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var searchExpanded by remember { mutableStateOf(false) }
+    var pendingScrollToBottom by remember { mutableStateOf(false) }
 
     val filteredLines by remember(loadedLines, searchQuery) {
         derivedStateOf {
@@ -120,6 +121,29 @@ fun LogPage(
         }
     }
 
+    LaunchedEffect(pendingScrollToBottom, loadedLines.size, hasMore, isLoadingMore, searchQuery) {
+        if (!pendingScrollToBottom) {
+            return@LaunchedEffect
+        }
+
+        val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+        lazyListState.scrollToItem(bottomIndex)
+
+        if (!searchQuery.isBlank()) {
+            pendingScrollToBottom = false
+            return@LaunchedEffect
+        }
+
+        if (hasMore && !isLoadingMore) {
+            loadNextPage()
+            return@LaunchedEffect
+        }
+
+        if (!hasMore) {
+            pendingScrollToBottom = false
+        }
+    }
+
     Scaffold(
         topBar = {
             SmallTopAppBar(
@@ -141,11 +165,9 @@ fun LogPage(
                         },
                         onScrollBottom = {
                             scope.launch {
-                                while (hasMore) {
-                                    loadNextPage()
-                                }
+                                pendingScrollToBottom = true
                                 val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
-                                lazyListState.animateScrollToItem(bottomIndex)
+                                lazyListState.scrollToItem(bottomIndex)
                             }
                         }
                     )
