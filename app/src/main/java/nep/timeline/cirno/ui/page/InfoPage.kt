@@ -79,7 +79,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -102,6 +104,13 @@ private data class HookScopeStatus(
         return scopes
     }
 }
+
+private data class InfoBinderState(
+    val hasError: Boolean = false,
+    val androidReady: Boolean = false,
+    val systemUiReady: Boolean = false,
+    val moduleVersion: String? = null
+)
 
 @Composable
 fun InfoPage(
@@ -157,8 +166,17 @@ private fun InfoContent(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
+    var binderState by remember { mutableStateOf(InfoBinderState()) }
 
     LaunchedEffect(Unit) {
+        binderState = withContext(Dispatchers.IO) {
+            InfoBinderState(
+                hasError = ConfigBinderRepository.hasErrorSignal(),
+                androidReady = ConfigBinderRepository.isAndroidHookReady(),
+                systemUiReady = ConfigBinderRepository.isSystemUIHookReady(),
+                moduleVersion = ConfigBinderRepository.getModuleVersion()
+            )
+        }
         val result = UpdateChecker.checkForUpdate()
         if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
             updateResult = result
@@ -166,12 +184,14 @@ private fun InfoContent(
         }
     }
 
-    if (showUpdateDialog && updateResult != null) {
-        UpdateDialog(
-            show = showUpdateDialog,
-            updateResult = updateResult!!,
-            onDismissRequest = { showUpdateDialog = false }
-        )
+    updateResult?.let { result ->
+        if (showUpdateDialog) {
+            UpdateDialog(
+                show = true,
+                updateResult = result,
+                onDismissRequest = { showUpdateDialog = false }
+            )
+        }
     }
 
     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
@@ -186,12 +206,12 @@ private fun InfoContent(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
-                val hasError = ConfigBinderRepository.hasErrorSignal()
+                val hasError = binderState.hasError
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
-                    androidReady = ConfigBinderRepository.isAndroidHookReady(),
-                    systemUiReady = ConfigBinderRepository.isSystemUIHookReady()
+                    androidReady = binderState.androidReady,
+                    systemUiReady = binderState.systemUiReady
                 )
                 val missingScopes = hookScopeStatus.missingScopes()
                 val missingScopeLabels = missingScopes.joinToString(separator = ", ") { scope ->
@@ -218,7 +238,7 @@ private fun InfoContent(
                     StatusCard(
                         active = active,
                         working = active && !hasError,
-                        version = ConfigBinderRepository.getModuleVersion()
+                        version = binderState.moduleVersion
                             ?: stringResource(R.string.not_running),
                         onClickStatus = {
 

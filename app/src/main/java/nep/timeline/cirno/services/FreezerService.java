@@ -21,30 +21,50 @@ public class FreezerService {
         }
 
         if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
+            boolean hasFrozenProcess = false;
             for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
-                if (processRecord.isDeathProcess() || processRecord.isFrozen()) {
+                if (processRecord.isDeathProcess()) {
+                    continue;
+                }
+                if (processRecord.isFrozen()) {
+                    hasFrozenProcess = true;
                     continue;
                 }
                 if (AppConfigs.isProcessExcludedFromFreeze(appRecord.getPackageName(), appRecord.getUserId(), processRecord.getProcessName())) {
                     continue;
                 }
-                FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid());
-                processRecord.setFrozen(true);
+                if (FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid())) {
+                    processRecord.setFrozen(true);
+                    hasFrozenProcess = true;
+                }
             }
-            appRecord.setFrozen(true);
+            appRecord.setFrozen(hasFrozenProcess);
             return;
         }
 
+        boolean hasFrozenProcess = false;
         for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
-            if (processRecord.isDeathProcess() || processRecord.isFrozen())
+            if (processRecord.isDeathProcess())
                 continue;
+
+            if (processRecord.isFrozen()) {
+                hasFrozenProcess = true;
+                continue;
+            }
 
             if (AppConfigs.isProcessExcludedFromFreeze(appRecord.getPackageName(), appRecord.getUserId(), processRecord.getProcessName())) {
                 continue;
             }
 
-            FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid());
-            processRecord.setFrozen(true);
+            if (FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid())) {
+                processRecord.setFrozen(true);
+                hasFrozenProcess = true;
+            }
+        }
+
+        if (!hasFrozenProcess) {
+            appRecord.setFrozen(false);
+            return;
         }
 
         Handlers.alarms.post(() -> {
@@ -70,11 +90,12 @@ public class FreezerService {
             if (processRecord.isDeathProcess() || !processRecord.isFrozen())
                 continue;
 
-            FrozenRW.thaw(processRecord.getRunningUid(), processRecord.getPid());
-            processRecord.setFrozen(false);
+            if (FrozenRW.thaw(processRecord.getRunningUid(), processRecord.getPid())) {
+                processRecord.setFrozen(false);
+            }
         }
 
-        appRecord.setFrozen(false);
+        appRecord.setFrozen(hasFrozenProcess(appRecord));
     }
 
     public static void temporaryUnfreezeIfNeed(int uid, String reason, long interval) {
@@ -106,27 +127,19 @@ public class FreezerService {
             Log.i(appRecord.getPackageNameWithUser() + " " + reason);
 
         thaw(appRecord);
-        Thread waitingNotification = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long startTime = System.currentTimeMillis();
-                while(!Thread.currentThread().isInterrupted()) {
-                    if (System.currentTimeMillis() - startTime > interval) {
-                        appRecord.setWaitingNotification(false);
-                        Log.d(appRecord.getPackageName() + " 等待消息通知超时");
-                    }
-                    try {
-                        if(!appRecord.isWaitingNotification()) {
-                            break;
-                        }
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
+        if (appRecord.isWaitingNotification()) {
+            FreezerHandler.sendWaitingNotificationFreezeMessage(appRecord, interval);
+        } else {
+            FreezerHandler.sendTemporaryFreezeMessage(appRecord, interval);
+        }
+    }
+
+    private static boolean hasFrozenProcess(AppRecord appRecord) {
+        for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
+            if (processRecord != null && !processRecord.isDeathProcess() && processRecord.isFrozen()) {
+                return true;
             }
-        });
-        waitingNotification.start();
+        }
+        return false;
     }
 }

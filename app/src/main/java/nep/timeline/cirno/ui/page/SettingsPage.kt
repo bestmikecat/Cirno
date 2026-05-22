@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +51,9 @@ import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -104,6 +108,7 @@ private fun SettingsContent(
     val updateAppState = LocalUpdateAppState.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
+    val scope = rememberCoroutineScope()
     val globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
     val backupSuccessText = stringResource(R.string.backup_success)
     val backupFailedText = stringResource(R.string.backup_failed)
@@ -154,23 +159,43 @@ private fun SettingsContent(
         )
     }
 
+    fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                if (ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                    null
+                } else {
+                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                }
+            }
+            if (error != null) {
+                onFailed()
+                WindowUtils.showToast(error)
+            }
+        }
+    }
+
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri: Uri? ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
-        val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
-        val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
-        if (globalJson == null || applicationJson == null) {
-            AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(backupFailedText))
-            return@rememberLauncherForActivityResult
-        }
-        try {
-            ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
-            AppContext.showToast(backupSuccessText)
-        } catch (_: Throwable) {
-            AppContext.showToast(backupFailedText)
+        scope.launch {
+            val message = withContext(Dispatchers.IO) {
+                val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
+                val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+                if (globalJson == null || applicationJson == null) {
+                    return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
+                }
+                try {
+                    ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
+                    backupSuccessText
+                } catch (_: Throwable) {
+                    backupFailedText
+                }
+            }
+            AppContext.showToast(message)
         }
     }
 
@@ -180,29 +205,31 @@ private fun SettingsContent(
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
-        try {
-            val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
-            val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
-            if (!applied) {
-                AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText))
-                return@rememberLauncherForActivityResult
-            }
-            if (!ConfigBinderRepository.loadIntoMemory()) {
-                AppContext.showToast(restoreSuccessReloadFailedText)
-                return@rememberLauncherForActivityResult
-            }
-            AppContext.showToast(restoreSuccessText)
-        } catch (e: ConfigBackupZipUtils.RestoreException) {
-            val message = when (e.error) {
-                ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
-                ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> restoreFailedStructureText
-                ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
-                ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
-                ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
+        scope.launch {
+            val message = withContext(Dispatchers.IO) {
+                try {
+                    val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
+                    val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
+                    if (!applied) {
+                        return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText)
+                    }
+                    if (!ConfigBinderRepository.loadIntoMemory()) {
+                        return@withContext restoreSuccessReloadFailedText
+                    }
+                    restoreSuccessText
+                } catch (e: ConfigBackupZipUtils.RestoreException) {
+                    when (e.error) {
+                        ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
+                        ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> restoreFailedStructureText
+                        ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
+                        ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
+                        ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
+                    }
+                } catch (_: Throwable) {
+                    restoreFailedUnknownText
+                }
             }
             AppContext.showToast(message)
-        } catch (_: Throwable) {
-            AppContext.showToast(restoreFailedUnknownText)
         }
     }
 
@@ -224,14 +251,13 @@ private fun SettingsContent(
                             value = freezeDelay.floatValue,
                             onValueChange = {
                                 freezeDelay.floatValue = it
-                                globalSettings.freezeDelay = it.toInt().coerceAtLeast(1)
                             },
                             onValueChangeFinished = {
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    val previous = globalSettings.freezeDelay
+                                val previous = globalSettings.freezeDelay
+                                globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceAtLeast(1)
+                                saveGlobalSettingsAsync("冻结延迟更新失败") {
                                     globalSettings.freezeDelay = previous
                                     freezeDelay.floatValue = previous.toFloat()
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("冻结延迟更新失败"))
                                 }
                             },
                             valueRange = 1f..30f,
@@ -248,9 +274,11 @@ private fun SettingsContent(
                                 wakeFreezeDelay.floatValue = it
                             },
                             onValueChangeFinished = {
+                                val previous = globalSettings.wakeFreezeDelay
                                 globalSettings.wakeFreezeDelay = wakeFreezeDelay.floatValue.toInt().coerceIn(1,120)
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("唤醒冻结延迟更新失败"))
+                                saveGlobalSettingsAsync("唤醒冻结延迟更新失败") {
+                                    globalSettings.wakeFreezeDelay = previous
+                                    wakeFreezeDelay.floatValue = previous.toFloat()
                                 }
                             },
                             valueRange = 1f..120f,
@@ -267,12 +295,11 @@ private fun SettingsContent(
                                 networkSpeedThreshold.floatValue = it
                             },
                             onValueChangeFinished = {
+                                val previous = globalSettings.networkSpeedThreshold
                                 globalSettings.networkSpeedThreshold = networkSpeedThreshold.floatValue.toInt().coerceIn(102400, 2097152)
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    val previous = globalSettings.networkSpeedThreshold
+                                saveGlobalSettingsAsync("网速识别阈值更新失败") {
                                     globalSettings.networkSpeedThreshold = previous
                                     networkSpeedThreshold.floatValue = previous.toFloat()
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网速识别阈值更新失败"))
                                 }
                             },
                             valueRange = 102400f..2097152f,
@@ -294,11 +321,10 @@ private fun SettingsContent(
                                 navIndex.intValue = it
                                 globalSettings.navigationStyle = it
                                 updateAppState { state -> state.copy(navigationStyle = it) }
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("导航样式更新失败") {
                                     globalSettings.navigationStyle = previous
                                     navIndex.intValue = previous.coerceIn(0, 2)
                                     updateAppState { state -> state.copy(navigationStyle = previous) }
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("导航样式更新失败"))
                                 }
                             }
                         )
@@ -313,11 +339,10 @@ private fun SettingsContent(
                                     blurEnabled.intValue = if (it) 1 else 0
                                     globalSettings.blurUI = it
                                     updateAppState { state -> state.copy(blur = it) }
-                                    if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    saveGlobalSettingsAsync("模糊效果更新失败") {
                                         globalSettings.blurUI = previous
                                         blurEnabled.intValue = if (previous) 1 else 0
                                         updateAppState { state -> state.copy(blur = previous) }
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("模糊效果更新失败"))
                                     }
                                 }
                             )
@@ -336,10 +361,9 @@ private fun SettingsContent(
                                 val previous = globalSettings.logOutputMode
                                 outputIndex.intValue = it
                                 globalSettings.logOutputMode = if (it == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("日志输出更新失败") {
                                     globalSettings.logOutputMode = previous
                                     outputIndex.intValue = if (previous == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("日志输出更新失败"))
                                 }
                             }
                         )
@@ -355,14 +379,13 @@ private fun SettingsContent(
                                     2 -> GlobalSettings.LOG_LEVEL_DEBUG
                                     else -> GlobalSettings.LOG_LEVEL_INFO
                                 }
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("日志级别更新失败") {
                                     globalSettings.logLevel = previous
                                     levelIndex.intValue = when (previous) {
                                         GlobalSettings.LOG_LEVEL_NONE -> 0
                                         GlobalSettings.LOG_LEVEL_DEBUG -> 2
                                         else -> 1
                                     }
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("日志级别更新失败"))
                                 }
                             }
                         )

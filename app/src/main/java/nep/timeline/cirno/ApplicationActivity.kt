@@ -5,6 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import nep.timeline.cirno.ui.ApplicationHome
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
@@ -16,7 +19,9 @@ class ApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
-        ConfigBinderRepository.loadIntoMemory()
+        lifecycleScope.launch(Dispatchers.IO) {
+            ConfigBinderRepository.loadIntoMemory()
+        }
         enableEdgeToEdge()
         setContent {
             MiuixTheme(

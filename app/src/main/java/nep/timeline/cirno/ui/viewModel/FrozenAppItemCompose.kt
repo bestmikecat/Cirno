@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,9 @@ import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.custom.CustomBasicComponent
 import nep.timeline.cirno.ui.utils.AppContext
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -27,6 +31,7 @@ fun FrozenAppItemCompose(
     app: AppItem
 ) {
     val message = stringResource(R.string.system_not_flagged_but_frozen)
+    val scope = rememberCoroutineScope()
 
     CustomBasicComponent(
         title = app.appName,
@@ -57,17 +62,19 @@ fun FrozenAppItemCompose(
             },
             onClick = {
                 if (app.networkSpeedEnabled) {
-                    val binder = ApplicationBinder.getInstance()
-                    if (binder != null) {
-                        try {
-                            val json = binder.getNetworkSpeed(app.packageName, app.userId)
-                            val rx = json.substringAfter("\"rx\":").substringBefore(",").trim().toLongOrNull() ?: 0L
-                            val tx = json.substringAfter("\"tx\":").substringBefore("}").trim().toLongOrNull() ?: 0L
-                            val speedText = "\u2191${formatSpeed(tx)} \u2193${formatSpeed(rx)}"
-                            PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(speedText).show()
-                        } catch (_: Exception) {
-                            PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage("网速获取失败").show()
+                    scope.launch {
+                        val speedText = withContext(Dispatchers.IO) {
+                            val binder = ApplicationBinder.getInstance() ?: return@withContext null
+                            try {
+                                val json = binder.getNetworkSpeed(app.packageName, app.userId)
+                                val rx = json.substringAfter("\"rx\":").substringBefore(",").trim().toLongOrNull() ?: 0L
+                                val tx = json.substringAfter("\"tx\":").substringBefore("}").trim().toLongOrNull() ?: 0L
+                                "\u2191${formatSpeed(tx)} \u2193${formatSpeed(rx)}"
+                            } catch (_: Exception) {
+                                null
+                            }
                         }
+                        PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(speedText ?: "网速获取失败").show()
                     }
                 } else if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN"))
                     PopTip.build().setTheme(DialogX.THEME.AUTO).setMessage(message).show()

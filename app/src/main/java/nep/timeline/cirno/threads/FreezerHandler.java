@@ -7,11 +7,9 @@ import nep.timeline.cirno.entity.AppRecord;
 
 public class FreezerHandler {
     public static final Handler handler = new FreezerMessageHandler(Handlers.makeLooper("Freezer"));
-    private static final long FreezeDelayNum = 1000 * GlobalVars.globalSettings.freezeDelay;
 
     public static void removeAppMessage(AppRecord appRecord) {
-        if (handler.hasMessages(0, appRecord))
-            handler.removeMessages(0, appRecord);
+        handler.removeCallbacksAndMessages(appRecord);
     }
 
     public static void sendFreezeMessage(AppRecord appRecord) {
@@ -22,12 +20,35 @@ public class FreezerHandler {
     }
 
     public static void sendFreezeMessageIgnoreMessages(AppRecord appRecord) {
+        sendFreezeMessageDelayed(appRecord, getFreezeDelayMs());
+    }
+
+    public static void sendTemporaryFreezeMessage(AppRecord appRecord, long delayMs) {
+        sendFreezeMessageDelayed(appRecord, Math.max(0L, delayMs));
+    }
+
+    public static void sendWaitingNotificationFreezeMessage(AppRecord appRecord, long delayMs) {
+        removeAppMessage(appRecord);
+        handler.postDelayed(() -> {
+            appRecord.setWaitingNotification(false);
+            sendFreezeMessageIgnoreMessages(appRecord);
+        }, appRecord, Math.max(0L, delayMs));
+    }
+
+    private static void sendFreezeMessageDelayed(AppRecord appRecord, long delayMs) {
         removeAppMessage(appRecord);
 
         Message obtain = handler.obtainMessage(0, appRecord);
-        if (FreezeDelayNum < 1)
+        if (delayMs < 1)
             handler.sendMessage(obtain);
         else
-            handler.sendMessageDelayed(obtain, FreezeDelayNum);
+            handler.sendMessageDelayed(obtain, delayMs);
+    }
+
+    private static long getFreezeDelayMs() {
+        if (GlobalVars.globalSettings == null) {
+            return 0L;
+        }
+        return 1000L * GlobalVars.globalSettings.freezeDelay;
     }
 }

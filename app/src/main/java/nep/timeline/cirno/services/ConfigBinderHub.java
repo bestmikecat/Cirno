@@ -4,7 +4,9 @@ import org.apache.commons.io.FileUtils;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Binder;
+import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 
@@ -41,6 +43,9 @@ public final class ConfigBinderHub {
     public static final ConfigInterface.Stub configBinder = new ConfigInterface.Stub() {
         @Override
         public String getGlobalSettingsJson() {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             synchronized (LOCK) {
                 return ConfigManager.manager.dumpGlobalSettingsJson();
             }
@@ -48,6 +53,9 @@ public final class ConfigBinderHub {
 
         @Override
         public String getApplicationSettingsJson() {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             synchronized (LOCK) {
                 return ConfigManager.manager.dumpApplicationSettingsJson();
             }
@@ -55,6 +63,9 @@ public final class ConfigBinderHub {
 
         @Override
         public boolean setGlobalSettingsJson(String json) {
+            if (!isTrustedCaller()) {
+                return false;
+            }
             synchronized (LOCK) {
                 boolean ok = ConfigManager.manager.applyGlobalSettingsJson(json);
                 if (!ok) {
@@ -70,6 +81,9 @@ public final class ConfigBinderHub {
 
         @Override
         public boolean setApplicationSettingsJson(String json) {
+            if (!isTrustedCaller()) {
+                return false;
+            }
             synchronized (LOCK) {
                 boolean ok = ConfigManager.manager.applyApplicationSettingsJson(json);
                 if (!ok) {
@@ -85,11 +99,17 @@ public final class ConfigBinderHub {
 
         @Override
         public String getLastError() {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             return LAST_ERROR.get();
         }
 
         @Override
         public boolean setSignal(String key, String value) {
+            if (!isTrustedCaller()) {
+                return false;
+            }
             if (key == null || key.isEmpty()) {
                 return false;
             }
@@ -99,6 +119,9 @@ public final class ConfigBinderHub {
 
         @Override
         public String getSignal(String key) {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             if (key == null || key.isEmpty()) {
                 return "";
             }
@@ -108,6 +131,9 @@ public final class ConfigBinderHub {
 
         @Override
         public List<String> getManagedAppKeys() {
+            if (!isTrustedCaller()) {
+                return new ArrayList<>();
+            }
             long token = Binder.clearCallingIdentity();
             try {
                 LinkedHashSet<String> result = new LinkedHashSet<>();
@@ -145,11 +171,17 @@ public final class ConfigBinderHub {
 
         @Override
         public String getModuleVersion() {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             return BuildConfig.VERSION_NAME;
         }
 
         @Override
         public String getLogContent() {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             File logFile = new File(GlobalVars.LOG_DIR, "current.log");
             if (!logFile.exists()) {
                 return "";
@@ -159,6 +191,9 @@ public final class ConfigBinderHub {
 
         @Override
         public String getLogContentPage(int startLine, int lineCount) {
+            if (!isTrustedCaller()) {
+                return "";
+            }
             File logFile = new File(GlobalVars.LOG_DIR, "current.log");
             if (!logFile.exists() || lineCount <= 0) {
                 return "";
@@ -216,6 +251,40 @@ public final class ConfigBinderHub {
             Log.e("Config binder UserManager users query failed", e);
         }
         return new ArrayList<>(userIds);
+    }
+
+    private static boolean isTrustedCaller() {
+        int callingUid = Binder.getCallingUid();
+        if (callingUid == Process.myUid() || callingUid == Process.SYSTEM_UID || callingUid == Process.ROOT_UID) {
+            return true;
+        }
+
+        Context context = ActivityManagerService.getContext();
+        if (context == null || context.getPackageManager() == null) {
+            Log.w("Config binder rejected caller: context unavailable, uid=" + callingUid);
+            return false;
+        }
+
+        try {
+            PackageManager packageManager = context.getPackageManager();
+            String[] packages = packageManager.getPackagesForUid(callingUid);
+            if (packages == null) {
+                Log.w("Config binder rejected caller: no packages, uid=" + callingUid);
+                return false;
+            }
+            for (String packageName : packages) {
+                if (BuildConfig.APPLICATION_ID.equals(packageName)) {
+                    return true;
+                }
+                if (packageManager.checkSignatures(BuildConfig.APPLICATION_ID, packageName) == PackageManager.SIGNATURE_MATCH) {
+                    return true;
+                }
+            }
+        } catch (Throwable e) {
+            Log.w("Config binder caller check failed, uid=" + callingUid, e);
+        }
+        Log.w("Config binder rejected caller uid=" + callingUid);
+        return false;
     }
 
     private static List<String> getInstalledPackagesForUserByFramework(Context context, int userId) {

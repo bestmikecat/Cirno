@@ -19,7 +19,7 @@ public class AppRecord {
     private final List<ProcessRecord> processRecords = new CopyOnWriteArrayList<>();
     private volatile AppState appState;
     private volatile boolean frozen;
-    private boolean waitingNotification = false;
+    private volatile boolean waitingNotification = false;
 
     public AppRecord(ApplicationInfo applicationInfo) {
         this.packageName = applicationInfo.packageName;

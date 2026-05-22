@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +44,9 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ApplicationHome(activity: ApplicationActivity) {
@@ -69,22 +73,40 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val processListLoaded = remember { mutableStateOf(false) }
     val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
     val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(packageName, userId) {
-        val appBinder = ApplicationBinder.getInstance()
-        if (appBinder != null) {
-            try {
-                val json = appBinder.getProcessesForApp(packageName, userId)
-                if (json != null) {
-                    val type = object : TypeToken<List<String>>() {}.type
-                    val names: List<String> = Gson().fromJson(json, type) ?: emptyList()
-                    processList.clear()
-                    processList.addAll(names)
+    fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                if (ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                    null
+                } else {
+                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
                 }
-            } catch (_: Throwable) {
+            }
+            if (error != null) {
+                onFailed(error)
             }
         }
-        val excluded = AppConfigs.getExcludedProcesses(packageName, userId)
+    }
+
+    LaunchedEffect(packageName, userId) {
+        val (names, excluded) = withContext(Dispatchers.IO) {
+            val processNames = mutableListOf<String>()
+            val appBinder = ApplicationBinder.getInstance()
+            if (appBinder != null) {
+                try {
+                    val json = appBinder.getProcessesForApp(packageName, userId)
+                    val type = object : TypeToken<List<String>>() {}.type
+                    val parsed: List<String> = Gson().fromJson(json, type) ?: emptyList()
+                    processNames.addAll(parsed)
+                } catch (_: Throwable) {
+                }
+            }
+            processNames to AppConfigs.getExcludedProcesses(packageName, userId)
+        }
+        processList.clear()
+        processList.addAll(names)
         processExclusions.clear()
         processExclusions.addAll(excluded)
         processListLoaded.value = true
@@ -124,7 +146,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         if (!hasReKernel && networkMessage.value) {
                             networkMessage.value = false
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                            ConfigBinderRepository.saveApplicationSettingsFromMemory()
+                            saveApplicationSettingsAsync()
                         }
 
                         if (!isSystemApp) {
@@ -157,7 +179,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         AppConfigs.setRecordingAllowed(packageName, userId, false)
                                     }
 
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("白名单更新失败") { error ->
                                         white.value = prevWhite
                                         AppConfigs.setWhiteApp(packageName, userId, prevWhite)
                                         backgroundPlay.value = prevBackground
@@ -170,7 +192,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                         AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
                                         recording.value = prevRecording
                                         AppConfigs.setRecordingAllowed(packageName, userId, prevRecording)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("白名单更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -189,10 +211,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val previous = backgroundPlay.value
                                     backgroundPlay.value = it
                                     AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("后台播放配置更新失败") { error ->
                                         backgroundPlay.value = previous
                                         AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("后台播放配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -209,10 +231,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val previous = locationUse.value
                                     locationUse.value = it
                                     AppConfigs.setLocationUseAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("定位配置更新失败") { error ->
                                         locationUse.value = previous
                                         AppConfigs.setLocationUseAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("定位配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -230,10 +252,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val previous = networkMessage.value
                                     networkMessage.value = it
                                     AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("网络消息配置更新失败") { error ->
                                         networkMessage.value = previous
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -250,10 +272,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val previous = networkSpeed.value
                                     networkSpeed.value = it
                                     AppConfigs.setNetworkSpeedAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("网速识别配置更新失败") { error ->
                                         networkSpeed.value = previous
                                         AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网速识别配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -270,10 +292,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val previous = recording.value
                                     recording.value = it
                                     AppConfigs.setRecordingAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("录音解冻配置更新失败") { error ->
                                         recording.value = previous
                                         AppConfigs.setRecordingAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("录音解冻配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -290,10 +312,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     black.value = it
                                     AppConfigs.setBlackApp(packageName, userId, it)
 
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("黑名单更新失败") { error ->
                                         black.value = prevBlack
                                         AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -338,7 +360,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                             } else {
                                                 processExclusions.add(processName)
                                             }
-                                            if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                            saveApplicationSettingsAsync("进程冻结配置更新失败") { error ->
                                                 isExcluded.value = previous
                                                 AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, previous)
                                                 if (previous) {
@@ -346,7 +368,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                                 } else {
                                                     processExclusions.remove(processName)
                                                 }
-                                                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("进程冻结配置更新失败"))
+                                                WindowUtils.showToast(error)
                                             }
                                         }
                                     )
