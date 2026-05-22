@@ -126,4 +126,15 @@ object ConfigBinderRepository {
             null
         }
     }
+
+    fun getLogContentPage(startLine: Int, lineCount: Int): List<String> {
+        val config = ConfigBinder.getInstance() ?: return emptyList()
+        return try {
+            config.getLogContentPage(startLine, lineCount)
+                .lines()
+                .filter { it.isNotBlank() }
+        } catch (_: Throwable) {
+            emptyList()
+        }
+    }
 }

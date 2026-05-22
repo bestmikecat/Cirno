@@ -1,11 +1,16 @@
 package nep.timeline.cirno.services;
 
+import org.apache.commons.io.FileUtils;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Binder;
 import android.os.UserHandle;
 import android.os.UserManager;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -143,11 +148,32 @@ public final class ConfigBinderHub {
 
         @Override
         public String getLogContent() {
-            java.io.File logFile = new java.io.File(GlobalVars.LOG_DIR, "current.log");
+            File logFile = new File(GlobalVars.LOG_DIR, "current.log");
             if (!logFile.exists()) {
                 return "";
             }
             return RWUtils.readConfig(logFile.getAbsolutePath());
+        }
+
+        @Override
+        public String getLogContentPage(int startLine, int lineCount) {
+            File logFile = new File(GlobalVars.LOG_DIR, "current.log");
+            if (!logFile.exists() || lineCount <= 0) {
+                return "";
+            }
+
+            int safeStartLine = Math.max(0, startLine);
+            try {
+                List<String> lines = FileUtils.readLines(logFile, StandardCharsets.UTF_8);
+                if (safeStartLine >= lines.size()) {
+                    return "";
+                }
+                int endLine = Math.min(lines.size(), safeStartLine + lineCount);
+                return String.join("\n", lines.subList(safeStartLine, endLine));
+            } catch (IOException e) {
+                Log.e("Config binder read log page failed", e);
+                return "";
+            }
         }
     };
 

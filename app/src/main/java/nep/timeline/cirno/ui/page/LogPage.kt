@@ -9,27 +9,31 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
@@ -55,7 +59,6 @@ import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Search
 import top.yukonga.miuix.kmp.icon.extended.More
-import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
@@ -66,6 +69,56 @@ fun LogPage(
     val topAppBarScrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
     val lazyListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    var loadedLines by remember { mutableStateOf(emptyList<String>()) }
+    var nextStartLine by remember { mutableIntStateOf(0) }
+    var hasMore by remember { mutableStateOf(true) }
+    var isLoadingMore by remember { mutableStateOf(false) }
+    var isInitialLoadDone by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchExpanded by remember { mutableStateOf(false) }
+
+    val filteredLines by remember(loadedLines, searchQuery) {
+        derivedStateOf {
+            if (searchQuery.isBlank()) loadedLines
+            else loadedLines.filter { it.contains(searchQuery, ignoreCase = true) }
+        }
+    }
+
+    suspend fun loadNextPage() {
+        if (isLoadingMore || !hasMore) {
+            return
+        }
+        isLoadingMore = true
+        val page = ConfigBinderRepository.getLogContentPage(nextStartLine, LOG_PAGE_SIZE)
+        if (page.isNotEmpty()) {
+            loadedLines = loadedLines + page
+            nextStartLine += page.size
+        }
+        hasMore = page.size == LOG_PAGE_SIZE
+        isLoadingMore = false
+    }
+
+    LaunchedEffect(Unit) {
+        loadNextPage()
+        isInitialLoadDone = true
+    }
+
+    LaunchedEffect(lazyListState, hasMore, isLoadingMore) {
+        snapshotFlow {
+            val lastVisible = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val totalItems = lazyListState.layoutInfo.totalItemsCount
+            lastVisible to totalItems
+        }.distinctUntilChanged().collect { (lastVisible, totalItems) ->
+            if (!hasMore || isLoadingMore || totalItems <= 0) {
+                return@collect
+            }
+            if (lastVisible >= totalItems - 5) {
+                loadNextPage()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -80,7 +133,22 @@ fun LogPage(
                     )
                 },
                 actions = {
-                    LogTopBarActions(lazyListState = lazyListState)
+                    LogTopBarActions(
+                        onScrollTop = {
+                            scope.launch {
+                                lazyListState.animateScrollToItem(0)
+                            }
+                        },
+                        onScrollBottom = {
+                            scope.launch {
+                                while (hasMore) {
+                                    loadNextPage()
+                                }
+                                val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+                                lazyListState.animateScrollToItem(bottomIndex)
+                            }
+                        }
+                    )
                 }
             )
         },
@@ -90,21 +158,28 @@ fun LogPage(
                 top = innerPadding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding(),
             ),
-            topAppBarScrollBehavior = topAppBarScrollBehavior,
             lazyListState = lazyListState,
+            lines = filteredLines,
+            hasAnyLog = loadedLines.isNotEmpty(),
+            isInitialLoadDone = isInitialLoadDone,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            searchExpanded = searchExpanded,
+            onSearchExpandedChange = { searchExpanded = it },
         )
     }
 }
 
+private const val LOG_PAGE_SIZE = 200
+
 @Composable
 private fun LogTopBarActions(
-    lazyListState: androidx.compose.foundation.lazy.LazyListState,
+    onScrollTop: () -> Unit,
+    onScrollBottom: () -> Unit,
 ) {
     val showPopup = remember { mutableStateOf(false) }
     val holdDownState = remember { mutableStateOf(false) }
     val hapticFeedback = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
-    val dismissState = LocalDismissState.current
 
     IconButton(
         onClick = {
@@ -126,24 +201,23 @@ private fun LogTopBarActions(
         onDismissRequest = { showPopup.value = false },
         onDismissFinished = { holdDownState.value = false },
         content = {
+            val dismissState = top.yukonga.miuix.kmp.theme.LocalDismissState.current
             val items = listOf(
                 stringResource(R.string.scroll_to_top),
                 stringResource(R.string.scroll_to_bottom),
             )
             ListPopupColumn {
                 items.forEachIndexed { index, string ->
-                    androidx.compose.runtime.key(index) {
+                    key(index) {
                         DropdownImpl(
                             text = string,
                             optionSize = items.size,
                             isSelected = false,
                             onSelectedIndexChange = {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                                scope.launch {
-                                    when (index) {
-                                        0 -> lazyListState.animateScrollToItem(0)
-                                        1 -> lazyListState.animateScrollToItem(lazyListState.layoutInfo.totalItemsCount - 1)
-                                    }
+                                when (index) {
+                                    0 -> onScrollTop()
+                                    1 -> onScrollBottom()
                                 }
                                 dismissState?.invoke()
                             },
@@ -159,31 +233,21 @@ private fun LogTopBarActions(
 @Composable
 private fun LogContent(
     padding: PaddingValues,
-    topAppBarScrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
-    lazyListState: androidx.compose.foundation.lazy.LazyListState,
+    lazyListState: LazyListState,
+    lines: List<String>,
+    hasAnyLog: Boolean,
+    isInitialLoadDone: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    searchExpanded: Boolean,
+    onSearchExpandedChange: (Boolean) -> Unit,
 ) {
     val isWideScreen = LocalIsWideScreen.current
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
-    val focusManager = LocalFocusManager.current
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
-    var logContent by remember { mutableStateOf<String?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
-    var searchExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            logContent = ConfigBinderRepository.getLogContent()
-            delay(3000)
-        }
-    }
-
-    val allLines = logContent?.lines()?.filter { it.isNotBlank() } ?: emptyList()
-    val lines = if (searchQuery.isBlank()) allLines
-        else allLines.filter { it.contains(searchQuery, ignoreCase = true) }
-
     Box(modifier = Modifier.fillMaxSize()) {
-        if (logContent == null || allLines.isEmpty()) {
+        if (isInitialLoadDone && !hasAnyLog) {
             Text(
                 text = stringResource(R.string.logs_empty),
                 modifier = Modifier.align(Alignment.Center),
@@ -205,10 +269,10 @@ private fun LogContent(
                             inputField = {
                                 InputField(
                                     query = searchQuery,
-                                    onQueryChange = { searchQuery = it },
+                                    onQueryChange = onSearchQueryChange,
                                     onSearch = { keyboardController?.hide() },
                                     expanded = searchExpanded,
-                                    onExpandedChange = { searchExpanded = it },
+                                    onExpandedChange = onSearchExpandedChange,
                                     label = stringResource(R.string.search),
                                     leadingIcon = {
                                         Icon(
@@ -224,7 +288,7 @@ private fun LogContent(
                                 )
                             },
                             expanded = searchExpanded,
-                            onExpandedChange = { searchExpanded = it }
+                            onExpandedChange = onSearchExpandedChange
                         ) {}
                     }
                     items(lines) { line ->

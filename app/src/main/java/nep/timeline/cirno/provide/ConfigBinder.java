@@ -68,4 +68,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public String getLogContent() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getLogContentPage(int startLine, int lineCount) {
+        throw new UnsupportedOperationException();
+    }
 }
