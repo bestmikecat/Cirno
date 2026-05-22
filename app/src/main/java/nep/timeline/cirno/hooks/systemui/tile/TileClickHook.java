@@ -16,6 +16,7 @@ import de.robv.android.xposed.XposedHelpers;
 
 public class TileClickHook {
     private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
+    private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
 
     public TileClickHook(ClassLoader classLoader) {
         Class<?> tileImplClass = XposedHelpers.findClassIfExists(
@@ -24,7 +25,7 @@ public class TileClickHook {
                 "com.android.systemui.animation.Expandable", classLoader);
 
         if (tileImplClass == null || expandableClass == null) {
-            log("QSTileImpl 或 Expandable 类未找到");
+            fallbackLog("QSTileImpl 或 Expandable 类未找到");
             return;
         }
 
@@ -35,36 +36,34 @@ public class TileClickHook {
                         protected void beforeHookedMethod(MethodHookParam param) {
                             try {
                                 Object tile = param.thisObject;
+                                Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
                                 String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
+                                log(context, "d", null, "磁贴被点击: " + tileSpec);
 
                                 String targetPkg = extractPackageFromTileSpec(tileSpec);
                                 if (targetPkg == null) {
+                                    log(context, "w", null, "非应用磁贴，跳过");
                                     return;
                                 }
 
-                                Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
                                 if (context == null) {
+                                    fallbackLog("无法获取 Context");
                                     return;
                                 }
 
-                                String logMsg = SDF.format(new Date()) + " TILE -> 磁贴被点击: " + tileSpec + ", 目标应用: " + targetPkg;
-                                Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
-                                intent.putExtra("package_name", targetPkg);
-                                intent.putExtra("log_msg", logMsg);
-                                intent.setPackage("android");
-                                context.sendBroadcast(intent);
-                                XposedBridge.log(logMsg);
+                                log(context, "i", null, "目标应用: " + targetPkg);
+                                log(context, "i", targetPkg, "已发送解冻广播");
                             } catch (Throwable t) {
-                                XposedBridge.log("TILE -> Hook 异常: " + t.getMessage());
+                                fallbackLog("Hook 异常: " + t.getMessage());
                             }
                         }
                     });
-            log("TileClickHook 注册成功");
+            fallbackLog("TileClickHook 注册成功");
         } catch (Throwable t) {
-            XposedBridge.log("TILE -> Hook 注册失败: " + t);
+            fallbackLog("Hook 注册失败: " + t);
             for (Method m : tileImplClass.getDeclaredMethods()) {
                 if (m.getName().equals("click")) {
-                    XposedBridge.log("TILE -> 可用签名: " + Arrays.toString(m.getParameterTypes()));
+                    fallbackLog("可用签名: " + Arrays.toString(m.getParameterTypes()));
                 }
             }
         }
@@ -80,7 +79,32 @@ public class TileClickHook {
         return null;
     }
 
-    private static void log(String msg) {
-        XposedBridge.log(SDF.format(new Date()) + " TILE -> " + msg);
+    private static void log(Context context, String level, String packageName, String msg) {
+        String formatted = SDF.format(new Date()) + " TILE -> " + msg;
+        if (context == null) {
+            fallbackLog(msg);
+            return;
+        }
+        Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
+        intent.putExtra("log_level", level);
+        intent.putExtra("log_msg", formatted);
+        if (packageName != null) {
+            intent.putExtra("package_name", packageName);
+        }
+        intent.setPackage("android");
+        try {
+            context.sendBroadcast(intent);
+        } catch (Throwable t) {
+            fallbackLog(msg + " | 广播发送失败: " + t.getMessage());
+            return;
+        }
+    }
+
+    private static void fallbackLog(String msg) {
+        try {
+            String formatted = SDF.format(new Date()) + " TILE -> " + msg;
+            XposedBridge.log(formatted);
+        } catch (Throwable ignored) {
+        }
     }
 }

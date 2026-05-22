@@ -56,9 +56,18 @@ public class BroadcastIntentHook {
                         String action = intent.getAction();
 
                         if ("nep.timeline.cirno.TILE_CLICK".equals(action)) {
+                            String logLevel = intent.getStringExtra("log_level");
                             String logMsg = intent.getStringExtra("log_msg");
                             if (logMsg != null) {
-                                Log.i(logMsg);
+                                if ("e".equals(logLevel)) {
+                                    Log.e(logMsg);
+                                } else if ("w".equals(logLevel)) {
+                                    Log.w(logMsg);
+                                } else if ("d".equals(logLevel)) {
+                                    Log.d(logMsg);
+                                } else {
+                                    Log.i(logMsg);
+                                }
                             }
                             String packageName = intent.getStringExtra("package_name");
                             if (packageName != null) {
