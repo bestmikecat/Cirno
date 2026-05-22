@@ -69,6 +69,9 @@
   <string name="error">Error</string>
   <string name="not_running">Not running</string>
   <string name="internal_error">Cirno encountered an internal error. Please check the logs!</string>
+  <string name="scope_not_running">These scopes are not running: %s</string>
+  <string name="scope_android">android</string>
+  <string name="scope_systemui">systemui</string>
   <string name="navigation_style">Navigation style</string>
   <string name="blur_ui">Blur</string>
   <string name="blur_ui_desc">Enable the blur effect for the top and navigation bars</string>

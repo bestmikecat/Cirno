@@ -31,6 +31,8 @@ public final class ConfigBinderHub {
     private static final Object LOCK = new Object();
     private static final AtomicReference<String> LAST_ERROR = new AtomicReference<>("");
     private static final Map<String, String> SIGNALS = new ConcurrentHashMap<>();
+    public static final String SIGNAL_ANDROID_HOOK_READY = "android_hook_ready";
+    public static final String SIGNAL_SYSTEMUI_HOOK_READY = "systemui_hook_ready";
     private static volatile long lastManagedAppsLogAtMs = 0L;
 
     private ConfigBinderHub() {
@@ -179,6 +181,13 @@ public final class ConfigBinderHub {
 
     public static void signalError() {
         SIGNALS.put("error", "1");
+    }
+
+    public static void setSignal(String key, String value) {
+        if (key == null || key.isEmpty()) {
+            return;
+        }
+        SIGNALS.put(key, value == null ? "" : value);
     }
 
     public static void readConfigSynchronized() {

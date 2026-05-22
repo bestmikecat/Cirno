@@ -12,9 +12,13 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
+import nep.timeline.cirno.services.ConfigBinderHub;
 import nep.timeline.cirno.services.FreezerService;
 
 public class BroadcastIntentHook {
+    private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
+    private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
+
     public BroadcastIntentHook(ClassLoader classLoader) {
         try {
             Class<?> clazz = XposedHelpers.findClassIfExists("com.android.server.am.ActivityManagerService", classLoader);
@@ -55,7 +59,16 @@ public class BroadcastIntentHook {
                     if (intent != null) {
                         String action = intent.getAction();
 
-                        if ("nep.timeline.cirno.TILE_CLICK".equals(action)) {
+                        if (ACTION_HOOK_READY.equals(action)) {
+                            String scope = intent.getStringExtra("scope");
+                            if ("systemui".equals(scope)) {
+                                ConfigBinderHub.setSignal(ConfigBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
+                                Log.i("SystemUI hook ready");
+                            }
+                            return;
+                        }
+
+                        if (ACTION_TILE_CLICK.equals(action)) {
                             String logLevel = intent.getStringExtra("log_level");
                             String logMsg = intent.getStringExtra("log_msg");
                             if (logMsg != null) {

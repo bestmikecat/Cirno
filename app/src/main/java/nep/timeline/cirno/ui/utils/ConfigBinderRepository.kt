@@ -70,6 +70,24 @@ object ConfigBinderRepository {
         }
     }
 
+    fun isAndroidHookReady(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.getSignal("android_hook_ready") == "1"
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun isSystemUIHookReady(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.getSignal("systemui_hook_ready") == "1"
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     fun getManagedAppKeySet(): Set<String> {
         val config = ConfigBinder.getInstance() ?: return emptySet()
         return try {

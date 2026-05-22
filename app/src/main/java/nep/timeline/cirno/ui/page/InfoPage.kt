@@ -87,6 +87,22 @@ var clickNum = 0
 var lastClickTime = 0L
 val fool = SimpleDateFormat("MMdd").format(Date()).equals("0401")
 
+private data class HookScopeStatus(
+    val androidReady: Boolean,
+    val systemUiReady: Boolean
+) {
+    fun missingScopes(): List<String> {
+        val scopes = mutableListOf<String>()
+        if (!androidReady) {
+            scopes += "android"
+        }
+        if (!systemUiReady) {
+            scopes += "systemui"
+        }
+        return scopes
+    }
+}
+
 @Composable
 fun InfoPage(
     callback: (Int) -> Unit,
@@ -171,6 +187,19 @@ private fun InfoContent(
             item {
                 val active = GlobalVars.isModuleActive
                 val hasError = ConfigBinderRepository.hasErrorSignal()
+                val androidScopeLabel = stringResource(R.string.scope_android)
+                val systemUiScopeLabel = stringResource(R.string.scope_systemui)
+                val hookScopeStatus = HookScopeStatus(
+                    androidReady = ConfigBinderRepository.isAndroidHookReady(),
+                    systemUiReady = ConfigBinderRepository.isSystemUIHookReady()
+                )
+                val missingScopes = hookScopeStatus.missingScopes()
+                val missingScopeLabels = missingScopes.joinToString(separator = ", ") { scope ->
+                    when (scope) {
+                        "android" -> androidScopeLabel
+                        else -> systemUiScopeLabel
+                    }
+                }
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -180,6 +209,10 @@ private fun InfoContent(
                         WarningCard(stringResource(R.string.fools_day))
                     if (!active)
                         WarningCard(stringResource(R.string.not_active))
+                    if (active && missingScopes.isNotEmpty())
+                        WarningCard(
+                            stringResource(R.string.scope_not_running, missingScopeLabels)
+                        )
                     if (hasError)
                         WarningCard(stringResource(R.string.internal_error))
                     StatusCard(

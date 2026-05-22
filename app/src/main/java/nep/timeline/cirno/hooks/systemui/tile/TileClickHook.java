@@ -17,6 +17,7 @@ import de.robv.android.xposed.XposedHelpers;
 public class TileClickHook {
     private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
     private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
+    private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
 
     public TileClickHook(ClassLoader classLoader) {
         Class<?> tileImplClass = XposedHelpers.findClassIfExists(
@@ -58,6 +59,7 @@ public class TileClickHook {
                             }
                         }
                     });
+            notifyHookReady(classLoader);
             fallbackLog("TileClickHook 注册成功");
         } catch (Throwable t) {
             fallbackLog("Hook 注册失败: " + t);
@@ -66,6 +68,27 @@ public class TileClickHook {
                     fallbackLog("可用签名: " + Arrays.toString(m.getParameterTypes()));
                 }
             }
+        }
+    }
+
+    private static void notifyHookReady(ClassLoader classLoader) {
+        try {
+            Class<?> appClass = XposedHelpers.findClassIfExists("android.app.ActivityThread", classLoader);
+            if (appClass == null) {
+                fallbackLog("ActivityThread 类未找到，无法上报 SystemUI hook 状态");
+                return;
+            }
+            Object app = XposedHelpers.callStaticMethod(appClass, "currentApplication");
+            if (!(app instanceof Context)) {
+                fallbackLog("无法获取 Application，上报 SystemUI hook 状态失败");
+                return;
+            }
+            Intent intent = new Intent(ACTION_HOOK_READY);
+            intent.putExtra("scope", "systemui");
+            intent.setPackage("android");
+            ((Context) app).sendBroadcast(intent);
+        } catch (Throwable t) {
+            fallbackLog("上报 SystemUI hook 状态失败: " + t.getMessage());
         }
     }
 
@@ -85,7 +108,7 @@ public class TileClickHook {
             fallbackLog(msg);
             return;
         }
-        Intent intent = new Intent("nep.timeline.cirno.TILE_CLICK");
+        Intent intent = new Intent(ACTION_TILE_CLICK);
         intent.putExtra("log_level", level);
         intent.putExtra("log_msg", formatted);
         if (packageName != null) {

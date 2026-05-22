@@ -8,6 +8,7 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import nep.timeline.cirno.master.AndroidHooks;
 import nep.timeline.cirno.master.SystemUIHooks;
+import nep.timeline.cirno.services.ConfigBinderHub;
 
 public class HookInit implements IXposedHookLoadPackage {
     @Override
@@ -47,6 +48,7 @@ public class HookInit implements IXposedHookLoadPackage {
             boolean ignoredDelete = dest.delete();
             boolean ignoredRename = source.renameTo(dest);
             AndroidHooks.start(classLoader);
+            ConfigBinderHub.setSignal(ConfigBinderHub.SIGNAL_ANDROID_HOOK_READY, "1");
         } catch (Throwable throwable) {
             XposedBridge.log("Cirno (" + packageName + ") -> Hook failed:");
             XposedBridge.log(throwable);
