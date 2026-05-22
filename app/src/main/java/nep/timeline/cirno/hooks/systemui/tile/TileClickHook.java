@@ -15,13 +15,9 @@ public class TileClickHook extends MethodHook {
     private static final String TARGET_METHOD = "click";
     private static final String EXPANDABLE_CLASS = "com.android.systemui.animation.Expandable";
     private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
-    private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
 
     public TileClickHook(ClassLoader classLoader) {
         super(classLoader);
-        if (isHooked()) {
-            notifyHookReady();
-        }
     }
 
     @Override
@@ -73,28 +69,6 @@ public class TileClickHook extends MethodHook {
                 }
             }
         };
-    }
-
-    private void notifyHookReady() {
-        try {
-            Class<?> appClass = XposedHelpers.findClassIfExists("android.app.ActivityThread", classLoader);
-            if (appClass == null) {
-                Log.w("ActivityThread 类未找到，无法上报 SystemUI hook 状态");
-                return;
-            }
-            Object app = XposedHelpers.callStaticMethod(appClass, "currentApplication");
-            if (!(app instanceof Context)) {
-                Log.w("无法获取 Application，上报 SystemUI hook 状态失败");
-                return;
-            }
-            Intent intent = new Intent(ACTION_HOOK_READY);
-            intent.putExtra("scope", "systemui");
-            intent.setPackage("android");
-            ((Context) app).sendBroadcast(intent);
-            Log.i("SystemUI hook ready");
-        } catch (Throwable t) {
-            Log.e("上报 SystemUI hook 状态失败", t);
-        }
     }
 
     private void sendTileClickBroadcast(Context context, String packageName) {
