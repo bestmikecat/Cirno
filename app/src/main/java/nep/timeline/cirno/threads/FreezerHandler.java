@@ -7,6 +7,7 @@ import nep.timeline.cirno.entity.AppRecord;
 
 public class FreezerHandler {
     public static final Handler handler = new FreezerMessageHandler(Handlers.makeLooper("Freezer"));
+    private static final long FreezeDelayNum = getFreezeDelayMs();
 
     public static void removeAppMessage(AppRecord appRecord) {
         handler.removeCallbacksAndMessages(appRecord);
@@ -20,7 +21,7 @@ public class FreezerHandler {
     }
 
     public static void sendFreezeMessageIgnoreMessages(AppRecord appRecord) {
-        sendFreezeMessageDelayed(appRecord, getFreezeDelayMs());
+        sendFreezeMessageDelayed(appRecord, FreezeDelayNum);
     }
 
     public static void sendTemporaryFreezeMessage(AppRecord appRecord, long delayMs) {
