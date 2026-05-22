@@ -15,6 +15,7 @@ public abstract class MethodHook {
     public final int ANY_VERSION = -1;
     public final ClassLoader classLoader;
     private XC_MethodHook.Unhook unhook = null;
+    private boolean hooked = false;
 
     public MethodHook(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -48,7 +49,7 @@ public abstract class MethodHook {
             Object[] targetParam = getTargetParam();
             XC_MethodHook targetHook = getTargetHook();
 
-            if (targetHook == null)
+            if (targetHook == null || targetParam == null)
                 return;
 
             String targetMethod = getTargetMethod();
@@ -61,12 +62,17 @@ public abstract class MethodHook {
                     unhook = XposedHelpers.findAndHookConstructor(targetClass, classLoader, param.toArray());
                 else
                     unhook = XposedHelpers.findAndHookMethod(targetClass, classLoader, targetMethod, param.toArray());
+                hooked = true;
                 Log.i(getTargetMethod() + " -> 成功Hook完毕!");
             } catch (Throwable t) {
                 logAvailableSignatures(targetClass, targetMethod, targetMethod == null);
                 throw t;
             }
         }
+    }
+
+    public boolean isHooked() {
+        return hooked;
     }
 
     private void logAvailableSignatures(String className, String methodName, boolean isConstructor) {

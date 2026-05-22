@@ -69,19 +69,6 @@ public class BroadcastIntentHook {
                         }
 
                         if (ACTION_TILE_CLICK.equals(action)) {
-                            String logLevel = intent.getStringExtra("log_level");
-                            String logMsg = intent.getStringExtra("log_msg");
-                            if (logMsg != null) {
-                                if ("e".equals(logLevel)) {
-                                    Log.e(logMsg);
-                                } else if ("w".equals(logLevel)) {
-                                    Log.w(logMsg);
-                                } else if ("d".equals(logLevel)) {
-                                    Log.d(logMsg);
-                                } else {
-                                    Log.i(logMsg);
-                                }
-                            }
                             String packageName = intent.getStringExtra("package_name");
                             if (packageName != null) {
                                 FreezerService.temporaryUnfreezeIfNeed(packageName, userId, "控制中心磁贴", 3000);

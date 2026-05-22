@@ -4,130 +4,122 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Locale;
-
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.framework.MethodHook;
+import nep.timeline.cirno.log.Log;
 
-public class TileClickHook {
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
+public class TileClickHook extends MethodHook {
+    private static final String TARGET_CLASS = "com.android.systemui.qs.tileimpl.QSTileImpl";
+    private static final String TARGET_METHOD = "click";
+    private static final String EXPANDABLE_CLASS = "com.android.systemui.animation.Expandable";
     private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
     private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
 
     public TileClickHook(ClassLoader classLoader) {
-        Class<?> tileImplClass = XposedHelpers.findClassIfExists(
-                "com.android.systemui.qs.tileimpl.QSTileImpl", classLoader);
-        Class<?> expandableClass = XposedHelpers.findClassIfExists(
-                "com.android.systemui.animation.Expandable", classLoader);
-
-        if (tileImplClass == null || expandableClass == null) {
-            fallbackLog("QSTileImpl 或 Expandable 类未找到");
-            return;
-        }
-
-        try {
-            XposedHelpers.findAndHookMethod(tileImplClass, "click",
-                    expandableClass, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            try {
-                                Object tile = param.thisObject;
-                                Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
-                                String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
-                                log(context, "d", null, "磁贴被点击: " + tileSpec);
-
-                                String targetPkg = extractPackageFromTileSpec(tileSpec);
-                                if (targetPkg == null) {
-                                    log(context, "w", null, "非应用磁贴，跳过");
-                                    return;
-                                }
-
-                                if (context == null) {
-                                    fallbackLog("无法获取 Context");
-                                    return;
-                                }
-
-                                log(context, "i", null, "目标应用: " + targetPkg);
-                                log(context, "i", targetPkg, "已发送解冻广播");
-                            } catch (Throwable t) {
-                                fallbackLog("Hook 异常: " + t.getMessage());
-                            }
-                        }
-                    });
-            notifyHookReady(classLoader);
-            fallbackLog("TileClickHook 注册成功");
-        } catch (Throwable t) {
-            fallbackLog("Hook 注册失败: " + t);
-            for (Method m : tileImplClass.getDeclaredMethods()) {
-                if (m.getName().equals("click")) {
-                    fallbackLog("可用签名: " + Arrays.toString(m.getParameterTypes()));
-                }
-            }
+        super(classLoader);
+        if (isHooked()) {
+            notifyHookReady();
         }
     }
 
-    private static void notifyHookReady(ClassLoader classLoader) {
+    @Override
+    public String getTargetClass() {
+        return TARGET_CLASS;
+    }
+
+    @Override
+    public String getTargetMethod() {
+        return TARGET_METHOD;
+    }
+
+    @Override
+    public Object[] getTargetParam() {
+        Class<?> expandableClass = XposedHelpers.findClassIfExists(EXPANDABLE_CLASS, classLoader);
+        if (expandableClass == null) {
+            Log.e("QSTileImpl -> Expandable 类未找到");
+            return null;
+        }
+        return new Object[]{expandableClass};
+    }
+
+    @Override
+    public XC_MethodHook getTargetHook() {
+        return new AbstractMethodHook() {
+            @Override
+            protected void beforeMethod(MethodHookParam param) {
+                try {
+                    Object tile = param.thisObject;
+                    Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
+                    String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
+                    Log.d("磁贴被点击: " + tileSpec);
+
+                    String targetPkg = extractPackageFromTileSpec(tileSpec);
+                    if (targetPkg == null) {
+                        Log.w("非应用磁贴，跳过");
+                        return;
+                    }
+
+                    if (context == null) {
+                        Log.w("无法获取 Context");
+                        return;
+                    }
+
+                    Log.i("目标应用: " + targetPkg);
+                    sendTileClickBroadcast(context, targetPkg);
+                } catch (Throwable t) {
+                    Log.e("Hook 异常", t);
+                }
+            }
+        };
+    }
+
+    private void notifyHookReady() {
         try {
             Class<?> appClass = XposedHelpers.findClassIfExists("android.app.ActivityThread", classLoader);
             if (appClass == null) {
-                fallbackLog("ActivityThread 类未找到，无法上报 SystemUI hook 状态");
+                Log.w("ActivityThread 类未找到，无法上报 SystemUI hook 状态");
                 return;
             }
             Object app = XposedHelpers.callStaticMethod(appClass, "currentApplication");
             if (!(app instanceof Context)) {
-                fallbackLog("无法获取 Application，上报 SystemUI hook 状态失败");
+                Log.w("无法获取 Application，上报 SystemUI hook 状态失败");
                 return;
             }
             Intent intent = new Intent(ACTION_HOOK_READY);
             intent.putExtra("scope", "systemui");
             intent.setPackage("android");
             ((Context) app).sendBroadcast(intent);
+            Log.i("SystemUI hook ready");
         } catch (Throwable t) {
-            fallbackLog("上报 SystemUI hook 状态失败: " + t.getMessage());
+            Log.e("上报 SystemUI hook 状态失败", t);
+        }
+    }
+
+    private void sendTileClickBroadcast(Context context, String packageName) {
+        Intent intent = new Intent(ACTION_TILE_CLICK);
+        intent.putExtra("package_name", packageName);
+        intent.setPackage("android");
+        try {
+            context.sendBroadcast(intent);
+            Log.i("已发送解冻广播");
+        } catch (Throwable t) {
+            Log.e("广播发送失败", t);
         }
     }
 
     private static String extractPackageFromTileSpec(String tileSpec) {
-        if (tileSpec == null) return null;
+        if (tileSpec == null) {
+            return null;
+        }
         if (tileSpec.startsWith("custom(") && tileSpec.endsWith(")")) {
             String component = tileSpec.substring(7, tileSpec.length() - 1);
             ComponentName cn = ComponentName.unflattenFromString(component);
-            if (cn != null) return cn.getPackageName();
+            if (cn != null) {
+                return cn.getPackageName();
+            }
         }
         return null;
-    }
-
-    private static void log(Context context, String level, String packageName, String msg) {
-        String formatted = SDF.format(new Date()) + " TILE -> " + msg;
-        if (context == null) {
-            fallbackLog(msg);
-            return;
-        }
-        Intent intent = new Intent(ACTION_TILE_CLICK);
-        intent.putExtra("log_level", level);
-        intent.putExtra("log_msg", formatted);
-        if (packageName != null) {
-            intent.putExtra("package_name", packageName);
-        }
-        intent.setPackage("android");
-        try {
-            context.sendBroadcast(intent);
-        } catch (Throwable t) {
-            fallbackLog(msg + " | 广播发送失败: " + t.getMessage());
-            return;
-        }
-    }
-
-    private static void fallbackLog(String msg) {
-        try {
-            String formatted = SDF.format(new Date()) + " TILE -> " + msg;
-            XposedBridge.log(formatted);
-        } catch (Throwable ignored) {
-        }
     }
 }
