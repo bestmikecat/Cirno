@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import nep.timeline.cirno.entity.AppRecord;
+import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.utils.PKGUtils;
 
 public class AppService {
@@ -41,8 +42,8 @@ public class AppService {
             if (records == null)
                 return Collections.emptyList();
             return records;
-        } catch (Throwable ignored) {
-
+        } catch (Throwable e) {
+            Log.d("AppService getByUid uid=" + uid, e);
         }
         return Collections.emptyList();
     }

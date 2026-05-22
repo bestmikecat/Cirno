@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.GlobalVars;
@@ -28,8 +29,8 @@ public class BinderService {
     private static final int NETLINK_UNIT_DEFAULT = 22;
     private static final int NETLINK_UNIT_MAX = 26;
     private static final long TEMP_UNFREEZE_INTERVAL_MS = 3000L;
-    public static boolean received = false;
-    private static boolean isRunning = false;
+    public static volatile boolean received = false;
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     private static Map<String, String> parseParams(String message) {
         Map<String, String> map = new HashMap<>();
@@ -43,7 +44,7 @@ public class BinderService {
     }
 
     public static void start(ClassLoader classLoader) {
-        if (isRunning)
+        if (!isRunning.compareAndSet(false, true))
             return;
 
         executorService.execute(() -> {
@@ -58,6 +59,7 @@ public class BinderService {
                         File[] files = dir.listFiles();
                         if (files == null) {
                             Log.w("找不到ReKernel单元");
+                            isRunning.set(false);
                             return;
                         }
                         File unitFile = files[0];
@@ -68,12 +70,11 @@ public class BinderService {
                 try (NetlinkClient netlinkClient = new NetlinkClient(classLoader, netlinkUnit)) {
                     if (!netlinkClient.getMDescriptor().valid()) {
                         Log.w("无法连接至ReKernel服务器");
+                        isRunning.set(false);
                         return;
                     }
 
                     netlinkClient.bind((SocketAddress) new NetlinkSocketAddress(100).toInstance(classLoader));
-
-                    isRunning = true;
 
                     Log.i("已连接至ReKernel, " + netlinkUnit + "#100");
 
@@ -136,8 +137,10 @@ public class BinderService {
                 }
             } catch (ErrnoException | IOException e) {
                 Log.w("无法连接至ReKernel服务器");
+                isRunning.set(false);
             } catch (Throwable throwable) {
                 Log.w("ReKernel", throwable);
+                isRunning.set(false);
             }
         });
     }

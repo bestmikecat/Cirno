@@ -14,8 +14,10 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.threads.Handlers;
 
 public class NetworkSpeedMonitor {
+    private static final Object READ_METHOD_LOCK = new Object();
     private static volatile IBinder sNetStatsBinder;
     private static volatile boolean sMonitoring = false;
+    private static volatile Method sReadNetworkStatsUidDetailMethod;
 
     private static final ConcurrentHashMap<Integer, long[]> sSnapshots = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, long[]> sSpeedCache = new ConcurrentHashMap<>();
@@ -71,10 +73,19 @@ public class NetworkSpeedMonitor {
         int uid = appRecord.getUid();
         AppState appState = appRecord.getAppState();
         try {
-            Class<?> serviceClass = sNetStatsBinder.getClass();
-            Method readMethod = serviceClass.getDeclaredMethod("readNetworkStatsUidDetail",
-                    int.class, String[].class, int.class);
-            readMethod.setAccessible(true);
+            Method readMethod = sReadNetworkStatsUidDetailMethod;
+            if (readMethod == null) {
+                synchronized (READ_METHOD_LOCK) {
+                    readMethod = sReadNetworkStatsUidDetailMethod;
+                    if (readMethod == null) {
+                        Class<?> serviceClass = sNetStatsBinder.getClass();
+                        readMethod = serviceClass.getDeclaredMethod("readNetworkStatsUidDetail",
+                                int.class, String[].class, int.class);
+                        readMethod.setAccessible(true);
+                        sReadNetworkStatsUidDetailMethod = readMethod;
+                    }
+                }
+            }
             Object stats = readMethod.invoke(sNetStatsBinder, uid, null, -1);
 
             long totalRx = 0;

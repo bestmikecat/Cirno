@@ -33,6 +33,7 @@ public final class MonitorBinderHub {
     private static volatile long lastPublishedAtMs = 0L;
     private static volatile boolean bootCompleted = false;
     private static volatile List<String> cachedRunningApps = new ArrayList<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, List<String>> PROCESS_NAME_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private MonitorBinderHub() {
     }
@@ -60,6 +61,24 @@ public final class MonitorBinderHub {
             result.add(appRecord.getPackageName() + ":" + appRecord.getUserId() + ":" + appRecord.getUid());
         }
         cachedRunningApps = result;
+        for (String key : PROCESS_NAME_CACHE.keySet()) {
+            int separator = key.lastIndexOf('#');
+            if (separator <= 0) {
+                PROCESS_NAME_CACHE.remove(key);
+                continue;
+            }
+            String packageName = key.substring(0, separator);
+            int userId;
+            try {
+                userId = Integer.parseInt(key.substring(separator + 1));
+            } catch (NumberFormatException e) {
+                PROCESS_NAME_CACHE.remove(key);
+                continue;
+            }
+            if (AppService.get(packageName, userId) == null) {
+                PROCESS_NAME_CACHE.remove(key);
+            }
+        }
     }
 
     private static final ApplicationInterface.Stub applicationBinder = new ApplicationInterface.Stub() {
@@ -72,6 +91,11 @@ public final class MonitorBinderHub {
         public String getProcessesForApp(String packageName, int userId) {
             if (packageName == null || packageName.isEmpty()) {
                 return "[]";
+            }
+            String cacheKey = packageName + "#" + userId;
+            List<String> cached = PROCESS_NAME_CACHE.get(cacheKey);
+            if (cached != null) {
+                return new Gson().toJson(cached);
             }
             LinkedHashSet<String> processNames = new LinkedHashSet<>();
             try {
@@ -116,7 +140,8 @@ public final class MonitorBinderHub {
                         }
                     }
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                Log.w("MonitorBinder getProcessesForApp failed pkg=" + packageName + " userId=" + userId, e);
             }
             if (processNames.isEmpty()) {
                 processNames.add(packageName);
@@ -129,7 +154,9 @@ public final class MonitorBinderHub {
                     }
                 }
             }
-            return new Gson().toJson(new ArrayList<>(processNames));
+            List<String> result = new ArrayList<>(processNames);
+            PROCESS_NAME_CACHE.put(cacheKey, result);
+            return new Gson().toJson(result);
         }
 
         @Override
@@ -194,6 +221,7 @@ public final class MonitorBinderHub {
             if (apps == null) {
                 return result;
             }
+            java.util.HashMap<String, String> localCache = new java.util.HashMap<>();
             for (String entry : apps) {
                 if (entry == null || entry.isEmpty()) {
                     result.add("");
@@ -212,7 +240,13 @@ public final class MonitorBinderHub {
                     result.add("");
                     continue;
                 }
-                result.add(isFrozen(packageName, userId));
+                String cacheKey = packageName + "#" + userId;
+                String frozenState = localCache.get(cacheKey);
+                if (frozenState == null) {
+                    frozenState = isFrozen(packageName, userId);
+                    localCache.put(cacheKey, frozenState);
+                }
+                result.add(frozenState);
             }
             return result;
         }

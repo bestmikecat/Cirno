@@ -71,6 +71,7 @@ public class Log {
             detail += ": " + message;
         }
         w(msg + " 失败: " + detail);
+        XposedBridge.log(throwable);
     }
 
     public static void e(String msg) {
@@ -90,6 +91,7 @@ public class Log {
             detail += ": " + message;
         }
         e(msg + " 失败: " + detail);
+        XposedBridge.log(throwable);
     }
 
     private static String getLogLevel() {

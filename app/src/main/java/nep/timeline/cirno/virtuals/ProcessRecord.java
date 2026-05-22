@@ -20,7 +20,7 @@ public class ProcessRecord {
     private final String packageName;
     private final String processName;
     private AppRecord appRecord;
-    private boolean frozen;
+    private volatile boolean frozen;
     private volatile long cachedRssKb = 0L;
 
     public ProcessRecord(Object instance) {
