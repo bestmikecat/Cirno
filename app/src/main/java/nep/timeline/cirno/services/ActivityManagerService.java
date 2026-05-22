@@ -26,9 +26,20 @@ public class ActivityManagerService {
                 return null;
             return (ApplicationInfo) XposedHelpers.callMethod(packageManager, "getApplicationInfoAsUser", packageName, PackageManager.GET_META_DATA | PackageManager.GET_SIGNING_CERTIFICATES, userId);
         } catch (Throwable e) {
+            if (isNameNotFound(e))
+                return null;
             Log.d("ActivityManagerService getApplicationInfo package=" + packageName + " userId=" + userId, e);
         }
         return null;
+    }
+
+    private static boolean isNameNotFound(Throwable throwable) {
+        while (throwable != null) {
+            if (throwable instanceof PackageManager.NameNotFoundException)
+                return true;
+            throwable = throwable.getCause();
+        }
+        return false;
     }
 
     public static int getCurrentOrTargetUserId() {

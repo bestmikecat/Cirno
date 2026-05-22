@@ -64,7 +64,9 @@ public class AppService {
         for (String key : keys) {
             String[] split = key.split(":");
             int userId = split.length == 1 ? PKGUtils.getUserId(uid) : Integer.parseInt(split[1].trim());
-            appRecords.add(get(split[0], userId));
+            AppRecord appRecord = get(split[0], userId);
+            if (appRecord != null)
+                appRecords.add(appRecord);
         }
 
         UID_RECORD_MAP.put(uid, appRecords);
