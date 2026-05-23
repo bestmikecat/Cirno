@@ -69,6 +69,7 @@
   <string name="error">错误</string>
   <string name="not_running">未运行</string>
   <string name="internal_error">Cirno 遇到内部错误，请检查日志！</string>
+  <string name="module_version_mismatch">当前运行版本与管理器版本不一致，您似乎已更新过，请重启手机以应用更新。</string>
   <string name="scope_not_running">以下作用域未运行：%s</string>
   <string name="scope_android">android</string>
   <string name="scope_systemui">systemui</string>

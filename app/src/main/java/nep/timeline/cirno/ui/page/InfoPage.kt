@@ -221,6 +221,8 @@ private fun InfoContent(
                 val active = GlobalVars.isModuleActive
                 val binderAvailable = binderState.binderAvailable
                 val hasError = binderState.hasError
+                val moduleVersion = binderState.moduleVersion
+                val versionMismatch = active && binderAvailable && moduleVersion != null && moduleVersion != BuildConfig.VERSION_NAME
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
@@ -249,10 +251,12 @@ private fun InfoContent(
                         )
                     if (hasError)
                         WarningCard(stringResource(R.string.internal_error))
+                    if (versionMismatch)
+                        WarningCard(stringResource(R.string.module_version_mismatch))
                     StatusCard(
                         active = active,
                         working = active && !hasError,
-                        version = binderState.moduleVersion
+                        version = moduleVersion
                             ?: stringResource(R.string.not_running),
                         onClickStatus = {
 
