@@ -106,6 +106,7 @@ private data class HookScopeStatus(
 }
 
 private data class InfoBinderState(
+    val binderAvailable: Boolean = false,
     val hasError: Boolean = false,
     val androidReady: Boolean = false,
     val systemUiReady: Boolean = false,
@@ -170,12 +171,15 @@ private fun InfoContent(
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
-            InfoBinderState(
-                hasError = ConfigBinderRepository.hasErrorSignal(),
-                androidReady = ConfigBinderRepository.isAndroidHookReady(),
-                systemUiReady = ConfigBinderRepository.isSystemUIHookReady(),
-                moduleVersion = ConfigBinderRepository.getModuleVersion()
-            )
+            ConfigBinderRepository.loadInfoBinderSnapshot().let { snapshot ->
+                InfoBinderState(
+                    binderAvailable = snapshot.binderAvailable,
+                    hasError = snapshot.hasError,
+                    androidReady = snapshot.androidReady,
+                    systemUiReady = snapshot.systemUiReady,
+                    moduleVersion = snapshot.moduleVersion
+                )
+            }
         }
         val result = UpdateChecker.checkForUpdate()
         if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
@@ -206,6 +210,7 @@ private fun InfoContent(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
+                val binderAvailable = binderState.binderAvailable
                 val hasError = binderState.hasError
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
@@ -229,7 +234,7 @@ private fun InfoContent(
                         WarningCard(stringResource(R.string.fools_day))
                     if (!active)
                         WarningCard(stringResource(R.string.not_active))
-                    if (active && missingScopes.isNotEmpty())
+                    if (active && binderAvailable && missingScopes.isNotEmpty())
                         WarningCard(
                             stringResource(R.string.scope_not_running, missingScopeLabels)
                         )

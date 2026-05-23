@@ -12,6 +12,14 @@ import java.util.LinkedHashSet
 object ConfigBinderRepository {
     private val gson = Gson()
 
+    data class InfoBinderSnapshot(
+        val binderAvailable: Boolean,
+        val hasError: Boolean = false,
+        val androidReady: Boolean = false,
+        val systemUiReady: Boolean = false,
+        val moduleVersion: String? = null
+    )
+
     fun loadIntoMemory(): Boolean {
         BinderService.register(AppContext.context)
         val config = ConfigBinder.getInstance() ?: return false
@@ -133,6 +141,23 @@ object ConfigBinderRepository {
             if (version.isNullOrBlank()) null else version
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    fun loadInfoBinderSnapshot(): InfoBinderSnapshot {
+        BinderService.register(AppContext.context)
+        val config = ConfigBinder.getInstance() ?: return InfoBinderSnapshot(binderAvailable = false)
+        return try {
+            val version = config.moduleVersion
+            InfoBinderSnapshot(
+                binderAvailable = true,
+                hasError = config.getSignal("error") == "1",
+                androidReady = config.getSignal("android_hook_ready") == "1",
+                systemUiReady = config.getSignal("systemui_hook_ready") == "1",
+                moduleVersion = if (version.isNullOrBlank()) null else version
+            )
+        } catch (_: Throwable) {
+            InfoBinderSnapshot(binderAvailable = false)
         }
     }
 
