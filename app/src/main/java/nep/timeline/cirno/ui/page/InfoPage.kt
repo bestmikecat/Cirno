@@ -80,6 +80,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -171,13 +172,21 @@ private fun InfoContent(
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
-            ConfigBinderRepository.loadInfoBinderSnapshot().let { snapshot ->
+            var snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            for (attempt in 0 until 5) {
+                if (snapshot.binderAvailable) {
+                    break
+                }
+                delay(300)
+                snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            }
+            snapshot.let {
                 InfoBinderState(
-                    binderAvailable = snapshot.binderAvailable,
-                    hasError = snapshot.hasError,
-                    androidReady = snapshot.androidReady,
-                    systemUiReady = snapshot.systemUiReady,
-                    moduleVersion = snapshot.moduleVersion
+                    binderAvailable = it.binderAvailable,
+                    hasError = it.hasError,
+                    androidReady = it.androidReady,
+                    systemUiReady = it.systemUiReady,
+                    moduleVersion = it.moduleVersion
                 )
             }
         }
