@@ -2,12 +2,17 @@ package nep.timeline.cirno.ui.app
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -20,14 +25,110 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeColorSpec
 import top.yukonga.miuix.kmp.theme.ThemeController
 import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.unit.dp
 
 const val UI_STYLE_MIUIX = 0
 const val UI_STYLE_MATERIAL = 1
 
 val LocalColorMode = compositionLocalOf { 0 }
 val LocalUiStyle = compositionLocalOf { UI_STYLE_MIUIX }
+
+private val WarmLightColorScheme = lightColorScheme(
+    primary = Color(0xFF3A6B35),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFBBCFb2),
+    onPrimaryContainer = Color(0xFF0D2109),
+    secondary = Color(0xFF54634D),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFD7E8CD),
+    onSecondaryContainer = Color(0xFF121F0D),
+    tertiary = Color(0xFF386668),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFBBECEF),
+    onTertiaryContainer = Color(0xFF002022),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    background = Color(0xFFF6F7F1),
+    onBackground = Color(0xFF1A1C18),
+    surface = Color(0xFFF6F7F1),
+    onSurface = Color(0xFF1A1C18),
+    surfaceVariant = Color(0xFFDFE4D7),
+    onSurfaceVariant = Color(0xFF43483E),
+    outline = Color(0xFF73796D),
+    outlineVariant = Color(0xFFC3C8BC),
+    inverseSurface = Color(0xFF2F312C),
+    inverseOnSurface = Color(0xFFF0F1EB),
+    surfaceDim = Color(0xFFD6D8D0),
+    surfaceBright = Color(0xFFF6F7F1),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFEDF0E9),
+    surfaceContainer = Color(0xFFE7EAE1),
+    surfaceContainerHigh = Color(0xFFE1E4DC),
+    surfaceContainerHighest = Color(0xFFDBDED6),
+)
+
+private val WarmDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFA1D399),
+    onPrimary = Color(0xFF1D3719),
+    primaryContainer = Color(0xFF334F2D),
+    onPrimaryContainer = Color(0xFFBBCFb2),
+    secondary = Color(0xFFBBCDB2),
+    onSecondary = Color(0xFF273422),
+    secondaryContainer = Color(0xFF3D4B37),
+    onSecondaryContainer = Color(0xFFD7E8CD),
+    tertiary = Color(0xFFA0D0D3),
+    onTertiary = Color(0xFF003739),
+    tertiaryContainer = Color(0xFF1E4E50),
+    onTertiaryContainer = Color(0xFFBBECEF),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF1A1C18),
+    onBackground = Color(0xFFE2E3DC),
+    surface = Color(0xFF1A1C18),
+    onSurface = Color(0xFFE2E3DC),
+    surfaceVariant = Color(0xFF43483E),
+    onSurfaceVariant = Color(0xFFC3C8BC),
+    outline = Color(0xFF8D9387),
+    outlineVariant = Color(0xFF43483E),
+    inverseSurface = Color(0xFFE2E3DC),
+    inverseOnSurface = Color(0xFF1A1C18),
+    surfaceDim = Color(0xFF1A1C18),
+    surfaceBright = Color(0xFF40423B),
+    surfaceContainerLowest = Color(0xFF0F110C),
+    surfaceContainerLow = Color(0xFF22241E),
+    surfaceContainer = Color(0xFF262922),
+    surfaceContainerHigh = Color(0xFF31332D),
+    surfaceContainerHighest = Color(0xFF3C3E38),
+)
+
+private val MaterialShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(28.dp),
+)
+
+private val MaterialTypography = Typography(
+    displayLarge = TextStyle(fontSize = 57.sp, fontWeight = FontWeight.Normal, lineHeight = 64.sp, letterSpacing = (-0.25).sp),
+    displayMedium = TextStyle(fontSize = 45.sp, fontWeight = FontWeight.Normal, lineHeight = 52.sp),
+    displaySmall = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Normal, lineHeight = 44.sp),
+    headlineLarge = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold, lineHeight = 40.sp),
+    headlineMedium = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold, lineHeight = 36.sp),
+    headlineSmall = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold, lineHeight = 32.sp),
+    titleLarge = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Medium, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium, lineHeight = 24.sp, letterSpacing = 0.15.sp),
+    titleSmall = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    bodyLarge = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Normal, lineHeight = 24.sp, letterSpacing = 0.5.sp),
+    bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal, lineHeight = 20.sp, letterSpacing = 0.25.sp),
+    bodySmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal, lineHeight = 16.sp, letterSpacing = 0.4.sp),
+    labelLarge = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 20.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+    labelSmall = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, lineHeight = 16.sp, letterSpacing = 0.5.sp),
+)
 
 @Composable
 fun AppTheme(
@@ -62,18 +163,9 @@ fun AppTheme(
         when {
             useDynamic && useDarkMaterial -> dynamicDarkColorScheme(context)
             useDynamic -> dynamicLightColorScheme(context)
-            useDarkMaterial -> darkColorScheme()
-            else -> lightColorScheme()
+            useDarkMaterial -> WarmDarkColorScheme
+            else -> WarmLightColorScheme
         }
-    }
-    val materialShapes = remember {
-        Shapes(
-            extraSmall = RoundedCornerShape(12.dp),
-            small = RoundedCornerShape(18.dp),
-            medium = RoundedCornerShape(24.dp),
-            large = RoundedCornerShape(28.dp),
-            extraLarge = RoundedCornerShape(32.dp),
-        )
     }
     CompositionLocalProvider(
         LocalColorMode provides colorMode,
@@ -85,8 +177,8 @@ fun AppTheme(
         ) {
             MaterialTheme(
                 colorScheme = materialColors,
-                shapes = materialShapes,
-                typography = Typography(),
+                shapes = MaterialShapes,
+                typography = MaterialTypography,
                 content = content,
             )
         }
