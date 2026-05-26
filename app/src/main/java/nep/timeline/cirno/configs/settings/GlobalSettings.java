@@ -14,6 +14,7 @@ public class GlobalSettings {
     public String logLevel = LOG_LEVEL_INFO;
     public String logOutputMode = LOG_OUTPUT_FILE;
 
+    public int uiStyle;
     public int navigationStyle;
     public int colorMode;
     public boolean blurUI = true;

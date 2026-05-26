@@ -30,7 +30,10 @@ class ApplicationActivity : ComponentActivity() {
                 }
                 configLoaded = true
             }
-            AppTheme(colorMode = if (configLoaded) GlobalVars.globalSettings?.colorMode ?: 0 else 0) {
+            AppTheme(
+                uiStyle = if (configLoaded) GlobalVars.globalSettings?.uiStyle ?: 0 else 0,
+                colorMode = if (configLoaded) GlobalVars.globalSettings?.colorMode ?: 0 else 0,
+            ) {
                 ApplicationHome(this)
             }
         }

@@ -27,6 +27,8 @@ import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalUpdateAppState
+import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
+import nep.timeline.cirno.ui.app.UI_STYLE_MIUIX
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -133,6 +135,10 @@ private fun SettingsContent(
         stringResource(R.string.floating),
         stringResource(R.string.apple_floating),
     )
+    val uiStyleItems = listOf(
+        stringResource(R.string.ui_style_miuix),
+        stringResource(R.string.ui_style_material),
+    )
     val themeItems = listOf(
         stringResource(R.string.theme_follow_system),
         stringResource(R.string.theme_light),
@@ -141,6 +147,7 @@ private fun SettingsContent(
         stringResource(R.string.theme_monet_light),
         stringResource(R.string.theme_monet_dark),
     )
+    val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
@@ -188,6 +195,7 @@ private fun SettingsContent(
         freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
         blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
@@ -258,6 +266,7 @@ private fun SettingsContent(
                 syncLocalStateFromSettings()
                 updateAppState { state ->
                     state.copy(
+                        uiStyle = globalSettings.uiStyle,
                         navigationStyle = globalSettings.navigationStyle,
                         colorMode = globalSettings.colorMode,
                         blur = globalSettings.blurUI,
@@ -347,6 +356,23 @@ private fun SettingsContent(
                 item {
                     SmallTitle(text = stringResource(R.string.settings_ui_group))
                     Card(modifier = Modifier.padding(12.dp)) {
+                        OverlayDropdownPreference(
+                            title = stringResource(R.string.ui_style),
+                            items = uiStyleItems,
+                            selectedIndex = uiStyleIndex.intValue,
+                            onSelectedIndexChange = {
+                                val previous = globalSettings.uiStyle
+                                uiStyleIndex.intValue = it
+                                globalSettings.uiStyle = it
+                                updateAppState { state -> state.copy(uiStyle = it) }
+                                saveGlobalSettingsAsync("界面风格更新失败") {
+                                    globalSettings.uiStyle = previous
+                                    uiStyleIndex.intValue = previous.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
+                                    updateAppState { state -> state.copy(uiStyle = previous) }
+                                }
+                            }
+                        )
+
                         OverlayDropdownPreference(
                             title = stringResource(R.string.navigation_style),
                             items = navItems,

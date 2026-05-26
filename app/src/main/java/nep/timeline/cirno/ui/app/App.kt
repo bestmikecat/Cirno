@@ -21,6 +21,7 @@ fun App(
         mutableStateOf(
             if (settings != null) {
                 AppState(
+                    uiStyle = settings.uiStyle,
                     navigationStyle = settings.navigationStyle,
                     colorMode = settings.colorMode,
                     blur = settings.blurUI,
@@ -35,6 +36,7 @@ fun App(
     }
 
     AppTheme(
+        uiStyle = appState.uiStyle,
         colorMode = appState.colorMode,
         smoothRounding = false,
     ) {
@@ -42,7 +44,11 @@ fun App(
             LocalAppState provides appState,
             LocalUpdateAppState provides updateAppState,
         ) {
-            AppContent(active, padding)
+            if (appState.uiStyle == UI_STYLE_MATERIAL) {
+                MaterialAppContent(active, padding)
+            } else {
+                AppContent(active, padding)
+            }
         }
     }
 }
