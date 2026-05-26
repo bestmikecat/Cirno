@@ -9,6 +9,7 @@ import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 data class AppState(
     // UI
     val navigationStyle: Int = 0,
+    val colorMode: Int = 0,
     val blur: Boolean = isRenderEffectSupported(),
     val enablePageUserScroll: Boolean = false,
     val enableScrollEndHaptic: Boolean = true,

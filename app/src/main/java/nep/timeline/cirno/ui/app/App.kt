@@ -13,14 +13,29 @@ import nep.timeline.cirno.GlobalVars
 @Composable
 fun App(
     active: Boolean,
-    padding: PaddingValues = PaddingValues(0.dp)
+    padding: PaddingValues = PaddingValues(0.dp),
+    configLoadKey: Any? = null,
 ) {
-    var appState by if (GlobalVars.globalSettings != null) remember { mutableStateOf(AppState(navigationStyle = GlobalVars.globalSettings.navigationStyle, blur = GlobalVars.globalSettings.blurUI)) } else remember { mutableStateOf(AppState()) }
+    var appState by remember(configLoadKey) {
+        val settings = GlobalVars.globalSettings
+        mutableStateOf(
+            if (settings != null) {
+                AppState(
+                    navigationStyle = settings.navigationStyle,
+                    colorMode = settings.colorMode,
+                    blur = settings.blurUI,
+                )
+            } else {
+                AppState()
+            }
+        )
+    }
     val updateAppState: ((AppState) -> AppState) -> Unit = remember {
         { transform -> appState = transform(appState) }
     }
 
     AppTheme(
+        colorMode = appState.colorMode,
         smoothRounding = false,
     ) {
         CompositionLocalProvider(

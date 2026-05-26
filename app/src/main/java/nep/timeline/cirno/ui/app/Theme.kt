@@ -48,11 +48,11 @@ fun AppTheme(
 fun isInDarkTheme(): Boolean = when (LocalColorMode.current) {
     1, 4 -> false
 
-    // Force light mode
+    // Force dark mode
     2, 5, 6 -> true
 
-    // Force dark mode
-    else -> isSystemInDarkTheme() // Follow system (0 or default)
+    // Follow system (0 or default)
+    else -> isSystemInDarkTheme()
 }
 
 val KeyColors: List<Pair<String, Color>> = listOf(

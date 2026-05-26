@@ -133,7 +133,16 @@ private fun SettingsContent(
         stringResource(R.string.floating),
         stringResource(R.string.apple_floating),
     )
+    val themeItems = listOf(
+        stringResource(R.string.theme_follow_system),
+        stringResource(R.string.theme_light),
+        stringResource(R.string.theme_dark),
+        stringResource(R.string.theme_monet_system),
+        stringResource(R.string.theme_monet_light),
+        stringResource(R.string.theme_monet_dark),
+    )
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
+    val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
     val outputItems = listOf(
         stringResource(R.string.log_xposed),
@@ -180,6 +189,7 @@ private fun SettingsContent(
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
         navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
+        themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
         blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
         outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
         levelIndex.intValue = when (globalSettings.logLevel) {
@@ -246,6 +256,13 @@ private fun SettingsContent(
             if (restored) {
                 globalSettings = GlobalVars.globalSettings ?: globalSettings
                 syncLocalStateFromSettings()
+                updateAppState { state ->
+                    state.copy(
+                        navigationStyle = globalSettings.navigationStyle,
+                        colorMode = globalSettings.colorMode,
+                        blur = globalSettings.blurUI,
+                    )
+                }
             }
             AppContext.showToast(message)
         }
@@ -343,6 +360,23 @@ private fun SettingsContent(
                                     globalSettings.navigationStyle = previous
                                     navIndex.intValue = previous.coerceIn(0, 2)
                                     updateAppState { state -> state.copy(navigationStyle = previous) }
+                                }
+                            }
+                        )
+
+                        OverlayDropdownPreference(
+                            title = stringResource(R.string.theme_mode),
+                            items = themeItems,
+                            selectedIndex = themeIndex.intValue,
+                            onSelectedIndexChange = {
+                                val previous = globalSettings.colorMode
+                                themeIndex.intValue = it
+                                globalSettings.colorMode = it
+                                updateAppState { state -> state.copy(colorMode = it) }
+                                saveGlobalSettingsAsync("主题模式更新失败") {
+                                    globalSettings.colorMode = previous
+                                    themeIndex.intValue = previous.coerceIn(0, 5)
+                                    updateAppState { state -> state.copy(colorMode = previous) }
                                 }
                             }
                         )

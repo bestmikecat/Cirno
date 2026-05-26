@@ -74,6 +74,13 @@
   <string name="scope_android">android</string>
   <string name="scope_systemui">systemui</string>
   <string name="navigation_style">导航样式</string>
+  <string name="theme_mode">主题模式</string>
+  <string name="theme_follow_system">跟随系统</string>
+  <string name="theme_light">浅色</string>
+  <string name="theme_dark">深色</string>
+  <string name="theme_monet_system">莫奈跟随系统</string>
+  <string name="theme_monet_light">莫奈浅色</string>
+  <string name="theme_monet_dark">莫奈深色</string>
   <string name="blur_ui">模糊</string>
   <string name="blur_ui_desc">为顶部栏和导航栏启用模糊效果</string>
   <string name="normal">默认</string>
