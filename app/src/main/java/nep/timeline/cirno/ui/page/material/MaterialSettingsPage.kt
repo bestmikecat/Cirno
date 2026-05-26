@@ -3,19 +3,20 @@ package nep.timeline.cirno.ui.page.material
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -29,9 +30,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -64,6 +65,7 @@ fun MaterialSettingsPage(
     val updateAppState = LocalUpdateAppState.current
     val scope = rememberCoroutineScope()
     var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+
     val backupFailedText = stringResource(R.string.backup_failed)
     val backupSuccessText = stringResource(R.string.backup_success)
     val restoreSuccessText = stringResource(R.string.restore_success)
@@ -75,6 +77,7 @@ fun MaterialSettingsPage(
     val restoreFailedJsonText = stringResource(R.string.restore_failed_json)
     val restoreFailedIoText = stringResource(R.string.restore_failed_io)
     val restoreFailedUnknownText = stringResource(R.string.restore_failed_unknown)
+
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
@@ -136,18 +139,20 @@ fun MaterialSettingsPage(
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-                val message = withContext(Dispatchers.IO) {
-                    val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
-                    val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
-                    if (globalJson == null || applicationJson == null) return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
-                    try {
-                        ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
-                        backupSuccessText
-                    } catch (_: Throwable) {
-                        backupFailedText
-                    }
+            val message = withContext(Dispatchers.IO) {
+                val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
+                val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+                if (globalJson == null || applicationJson == null) {
+                    return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
                 }
-                AppContext.showToast(message)
+                try {
+                    ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
+                    backupSuccessText
+                } catch (_: Throwable) {
+                    backupFailedText
+                }
+            }
+            AppContext.showToast(message)
         }
     }
 
@@ -214,12 +219,12 @@ fun MaterialSettingsPage(
                             steps = 28,
                             onValueChange = { freezeDelay.floatValue = it },
                             onValueFinished = {
-                            val previous = globalSettings.freezeDelay
-                            globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceAtLeast(1)
-                            saveGlobalSettingsAsync("冻结延迟更新失败") {
-                                globalSettings.freezeDelay = previous
-                                freezeDelay.floatValue = previous.toFloat()
-                            }
+                                val previous = globalSettings.freezeDelay
+                                globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceAtLeast(1)
+                                saveGlobalSettingsAsync("冻结延迟更新失败") {
+                                    globalSettings.freezeDelay = previous
+                                    freezeDelay.floatValue = previous.toFloat()
+                                }
                             },
                         )
                         MaterialSliderItem(
@@ -230,28 +235,28 @@ fun MaterialSettingsPage(
                             steps = 118,
                             onValueChange = { wakeFreezeDelay.floatValue = it },
                             onValueFinished = {
-                            val previous = globalSettings.wakeFreezeDelay
-                            globalSettings.wakeFreezeDelay = wakeFreezeDelay.floatValue.toInt().coerceIn(1, 120)
-                            saveGlobalSettingsAsync("唤醒冻结延迟更新失败") {
-                                globalSettings.wakeFreezeDelay = previous
-                                wakeFreezeDelay.floatValue = previous.toFloat()
-                            }
+                                val previous = globalSettings.wakeFreezeDelay
+                                globalSettings.wakeFreezeDelay = wakeFreezeDelay.floatValue.toInt().coerceIn(1, 120)
+                                saveGlobalSettingsAsync("唤醒冻结延迟更新失败") {
+                                    globalSettings.wakeFreezeDelay = previous
+                                    wakeFreezeDelay.floatValue = previous.toFloat()
+                                }
                             },
                         )
                         MaterialSliderItem(
                             title = stringResource(R.string.network_speed_threshold),
-                            valueText = formatSpeedThreshold(networkSpeedThreshold.floatValue.toInt()),
+                            valueText = materialFormatSpeedThreshold(networkSpeedThreshold.floatValue.toInt()),
                             value = networkSpeedThreshold.floatValue,
                             valueRange = 102400f..2097152f,
                             steps = 99,
                             onValueChange = { networkSpeedThreshold.floatValue = it },
                             onValueFinished = {
-                            val previous = globalSettings.networkSpeedThreshold
-                            globalSettings.networkSpeedThreshold = networkSpeedThreshold.floatValue.toInt().coerceIn(102400, 2097152)
-                            saveGlobalSettingsAsync("网速识别阈值更新失败") {
-                                globalSettings.networkSpeedThreshold = previous
-                                networkSpeedThreshold.floatValue = previous.toFloat()
-                            }
+                                val previous = globalSettings.networkSpeedThreshold
+                                globalSettings.networkSpeedThreshold = networkSpeedThreshold.floatValue.toInt().coerceIn(102400, 2097152)
+                                saveGlobalSettingsAsync("网速识别阈值更新失败") {
+                                    globalSettings.networkSpeedThreshold = previous
+                                    networkSpeedThreshold.floatValue = previous.toFloat()
+                                }
                             },
                         )
                     }
@@ -307,6 +312,7 @@ fun MaterialSettingsPage(
                     }
                 }
             }
+
             item {
                 MaterialSettingsSection(title = stringResource(R.string.settings_log_group)) {
                     MaterialDropdownItem(stringResource(R.string.log_print), outputItems, outputIndex.intValue) {
@@ -337,6 +343,7 @@ fun MaterialSettingsPage(
                     }
                 }
             }
+
             if (active) {
                 item {
                     MaterialSettingsSection(title = stringResource(R.string.settings_backup_group)) {
@@ -359,7 +366,7 @@ fun MaterialSettingsPage(
 }
 
 @Composable
-private fun MaterialSettingsSection(title: String, content: @Composable Column.() -> Unit) {
+private fun MaterialSettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
@@ -411,7 +418,7 @@ private fun MaterialDropdownItem(title: String, items: List<String>, selectedInd
             label = { Text(title) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEachIndexed { index, item ->
                 DropdownMenuItem(
                     text = { Text(item) },
@@ -423,4 +430,9 @@ private fun MaterialDropdownItem(title: String, items: List<String>, selectedInd
             }
         }
     }
+}
+
+private fun materialFormatSpeedThreshold(bytesPerSec: Int): String {
+    if (bytesPerSec < 1048576) return "${bytesPerSec / 1024} KB/s"
+    return String.format("%.2f MB/s", bytesPerSec / 1048576.0)
 }

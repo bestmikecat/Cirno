@@ -1,12 +1,13 @@
 package nep.timeline.cirno.ui.page.material
 
 import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,17 +23,20 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,19 +49,15 @@ import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
+import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
-import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.utils.VersionUtils
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 
 private data class MaterialInfoBinderState(
     val binderAvailable: Boolean = false,
     val hasError: Boolean = false,
-    val androidReady: Boolean = false,
-    val systemUiReady: Boolean = false,
     val moduleVersion: String? = null,
 )
 
@@ -69,7 +69,7 @@ fun MaterialInfoPage(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var updateAvailable by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var binderState by remember { mutableStateOf(MaterialInfoBinderState()) }
 
@@ -84,14 +84,31 @@ fun MaterialInfoPage(
             MaterialInfoBinderState(
                 binderAvailable = snapshot.binderAvailable,
                 hasError = snapshot.hasError,
-                androidReady = snapshot.androidReady,
-                systemUiReady = snapshot.systemUiReady,
                 moduleVersion = snapshot.moduleVersion,
             )
         }
         val result = UpdateChecker.checkForUpdate()
         if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
-            updateResult = result
+            updateAvailable = true
+        }
+    }
+
+    LaunchedEffect(updateAvailable) {
+        if (updateAvailable) {
+            WindowUtils.showToast(context.getString(R.string.update_available))
+        }
+    }
+
+    LaunchedEffect(isCheckingUpdate) {
+        if (!isCheckingUpdate) return@LaunchedEffect
+        scope.launch {
+            val result = UpdateChecker.checkForUpdate()
+            isCheckingUpdate = false
+            if (result == null || UpdateChecker.isSkipped(context, result.versionName)) {
+                WindowUtils.showToast(context.getString(R.string.update_already_latest))
+            } else {
+                updateAvailable = true
+            }
         }
     }
 
@@ -115,8 +132,7 @@ fun MaterialInfoPage(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
-                val hasError = binderState.hasError
-                val working = active && !hasError
+                val working = active && !binderState.hasError
                 val moduleVersion = binderState.moduleVersion ?: stringResource(R.string.not_running)
                 val versionMismatch = active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
 
@@ -124,12 +140,13 @@ fun MaterialInfoPage(
                     if (!active) {
                         MaterialWarningCard(stringResource(R.string.not_active))
                     }
-                    if (hasError) {
+                    if (binderState.hasError) {
                         MaterialWarningCard(stringResource(R.string.internal_error))
                     }
                     if (versionMismatch) {
                         MaterialWarningCard(stringResource(R.string.module_version_mismatch))
                     }
+
                     Card(colors = CardDefaults.cardColors(containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer)) {
                         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             Row(
@@ -177,6 +194,7 @@ fun MaterialInfoPage(
                             }
                         }
                     }
+
                     MaterialSectionCard {
                         MaterialInfoRow(stringResource(R.string.manager_version), "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}-${BuildConfig.BUILD_TIME})")
                         MaterialInfoRow(stringResource(R.string.hook_type), if (working) "Xposed" else stringResource(R.string.unknown))
@@ -184,6 +202,7 @@ fun MaterialInfoPage(
                         MaterialInfoRow(stringResource(R.string.xposed_version), if (working) GlobalVars.XposedVersion.toString() else stringResource(R.string.unknown))
                         MaterialInfoRow(stringResource(R.string.system_fingerprint), Build.FINGERPRINT, divider = false)
                     }
+
                     MaterialSectionCard {
                         ListItem(
                             headlineContent = { Text(if (isCheckingUpdate) stringResource(R.string.update_checking) else stringResource(R.string.check_update)) },
@@ -191,38 +210,21 @@ fun MaterialInfoPage(
                             modifier = Modifier.fillMaxWidth().clickable(enabled = !isCheckingUpdate) { isCheckingUpdate = true },
                         )
                     }
+
                     MaterialSectionCard {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.home_about_freezer)) },
-                            modifier = Modifier.fillMaxWidth().clickable { navigator.push(nep.timeline.cirno.ui.navigation3.Route.About) },
                             supportingContent = { Text(stringResource(R.string.home_click_to_learn_freezer)) },
+                            modifier = Modifier.fillMaxWidth().clickable { navigator.push(Route.About) },
                         )
                     }
+
                     MaterialSectionCard {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.home_logs)) },
                             supportingContent = { Text(stringResource(R.string.home_logs_desc)) },
-                            modifier = Modifier.fillMaxWidth().clickable { navigator.push(nep.timeline.cirno.ui.navigation3.Route.Log) },
+                            modifier = Modifier.fillMaxWidth().clickable { navigator.push(Route.Log) },
                         )
-                    }
-                }
-
-                LaunchedEffect(updateResult) {
-                    if (updateResult != null) {
-                        WindowUtils.showToast(stringResource(R.string.update_available))
-                    }
-                }
-
-                LaunchedEffect(isCheckingUpdate) {
-                    if (!isCheckingUpdate) return@LaunchedEffect
-                    scope.launch {
-                        val result = UpdateChecker.checkForUpdate()
-                        isCheckingUpdate = false
-                        if (result == null || UpdateChecker.isSkipped(context, result.versionName)) {
-                            WindowUtils.showToast(stringResource(R.string.update_already_latest))
-                        } else {
-                            updateResult = result
-                        }
                     }
                 }
             }
@@ -266,7 +268,7 @@ private fun MaterialStatCard(
 }
 
 @Composable
-private fun MaterialSectionCard(content: @Composable Column.() -> Unit) {
+private fun MaterialSectionCard(content: @Composable ColumnScope.() -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
         Column(modifier = Modifier.fillMaxWidth(), content = content)
     }

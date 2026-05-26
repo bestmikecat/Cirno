@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
@@ -32,8 +32,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -44,8 +50,15 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplayTransitionEffects
-import nep.timeline.cirno.R
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
+import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.AboutPage
@@ -69,7 +82,7 @@ fun MaterialAppContent(
     val pageCount = if (active) 3 else 2
     val settingsPageIndex = if (active) 2 else 1
     val pagerState = rememberPagerState(pageCount = { pageCount })
-    val mainPagerState = rememberMainPagerState(pagerState)
+    val mainPagerState = rememberMaterialMainPagerState(pagerState)
     LaunchedEffect(mainPagerState.pagerState.currentPage) {
         mainPagerState.syncPage()
     }
@@ -92,11 +105,11 @@ fun MaterialAppContent(
         }
     }
 
-    MainScreenBackHandler(mainPagerState, navigator)
+    MaterialMainScreenBackHandler(mainPagerState, navigator)
 
     CompositionLocalProvider(
         LocalNavigator provides navigator,
-        LocalMainPagerState provides mainPagerState,
+        LocalMainPagerState provides rememberMainPagerState(pagerState),
         LocalIsWideScreen provides isWideScreen,
     ) {
         val entryProvider = remember(backStack) {
@@ -153,7 +166,7 @@ fun MaterialAppContent(
 private fun MaterialHome(
     padding: PaddingValues,
     navigationItems: List<MaterialNavItem>,
-    mainPagerState: MainPagerState,
+    mainPagerState: MaterialMainPagerState,
     settingsPageIndex: Int,
 ) {
     val isWideScreen = LocalIsWideScreen.current
@@ -195,7 +208,7 @@ private fun MaterialHome(
                         }
                     }
                 }
-                Box(modifier = Modifier.weight(1f)) {
+                Box(modifier = Modifier.fillMaxSize()) {
                     MaterialAppPager(
                         active = settingsPageIndex == 2,
                         padding = PaddingValues(top = innerPadding.calculateTopPadding()),
@@ -222,7 +235,7 @@ private fun MaterialHome(
 private fun MaterialAppPager(
     active: Boolean,
     padding: PaddingValues,
-    pagerState: MainPagerState,
+    pagerState: MaterialMainPagerState,
     modifier: Modifier = Modifier,
 ) {
     val appState = LocalAppState.current
@@ -255,4 +268,74 @@ private fun MaterialAppPager(
             )
         }
     }
+}
+
+@Composable
+private fun MaterialMainScreenBackHandler(
+    mainState: MaterialMainPagerState,
+    navigator: Navigator,
+) {
+    val isPagerBackHandlerEnabled by remember {
+        derivedStateOf {
+            navigator.current() is Route.Main && navigator.backStackSize() == 1 && mainState.selectedPage != 0
+        }
+    }
+
+    val navEventState = rememberNavigationEventState(NavigationEventInfo.None)
+
+    NavigationBackHandler(
+        state = navEventState,
+        isBackEnabled = isPagerBackHandlerEnabled,
+        onBackCompleted = {
+            mainState.animateToPage(0)
+        },
+    )
+}
+
+private class MaterialMainPagerState(
+    val pagerState: PagerState,
+    private val coroutineScope: CoroutineScope,
+) {
+    var selectedPage by mutableIntStateOf(pagerState.currentPage)
+        private set
+
+    var isNavigating by mutableStateOf(false)
+        private set
+
+    private var navJob: Job? = null
+
+    fun animateToPage(targetIndex: Int) {
+        if (targetIndex == selectedPage) return
+        navJob?.cancel()
+        selectedPage = targetIndex
+        isNavigating = true
+
+        navJob = coroutineScope.launch {
+            val myJob = coroutineContext.job
+            try {
+                pagerState.animateScrollToPage(targetIndex)
+            } finally {
+                if (navJob == myJob) {
+                    isNavigating = false
+                    if (pagerState.currentPage != targetIndex) {
+                        selectedPage = pagerState.currentPage
+                    }
+                }
+            }
+        }
+    }
+
+    fun syncPage() {
+        if (!isNavigating && selectedPage != pagerState.currentPage) {
+            selectedPage = pagerState.currentPage
+        }
+    }
+}
+
+@Composable
+private fun rememberMaterialMainPagerState(
+    pagerState: PagerState,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+): MaterialMainPagerState = remember(pagerState, coroutineScope) {
+    MaterialMainPagerState(pagerState, coroutineScope)
 }
