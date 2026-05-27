@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Sort
@@ -70,8 +69,6 @@ import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.policy.FreezeExemption
 import nep.timeline.cirno.entity.AppItem
 import nep.timeline.cirno.provide.ApplicationBinder
-import nep.timeline.cirno.ui.app.LocalMainPagerState
-import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
@@ -86,8 +83,6 @@ fun MaterialAppPage(
     viewModel: AppListViewModel,
     padding: PaddingValues,
 ) {
-    val navigator = LocalNavigator.current
-    val mainPagerState = LocalMainPagerState.current
     val apps by viewModel.cacheFilterApps.collectAsStateWithLifecycle()
     val searchValue by viewModel.search.collectAsStateWithLifecycle()
     val type by viewModel.type.collectAsStateWithLifecycle()
@@ -145,9 +140,6 @@ fun MaterialAppPage(
             ) {
                 item(key = "toolbar") {
                     MaterialAppToolbar(
-                        onBack = {
-                            if (navigator.backStackSize() > 1) navigator.pop() else mainPagerState.animateToPage(0)
-                        },
                         onSearch = { searchExpanded = !searchExpanded },
                         onSort = { sortAscending = !sortAscending },
                         onFilter = { filterExpanded = true },
@@ -232,7 +224,6 @@ fun MaterialAppPage(
 
 @Composable
 private fun MaterialAppToolbar(
-    onBack: () -> Unit,
     onSearch: () -> Unit,
     onSort: () -> Unit,
     onFilter: () -> Unit,
@@ -242,14 +233,6 @@ private fun MaterialAppToolbar(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        }
         Spacer(modifier = Modifier.weight(1f))
         IconButton(onClick = onSearch, modifier = Modifier.size(40.dp)) {
             Icon(
