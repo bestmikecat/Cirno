@@ -27,6 +27,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -184,8 +185,10 @@ private fun MaterialHome(
                             icon = { Icon(item.icon, contentDescription = item.label) },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                selectedIconColor = MaterialTheme.colorScheme.onSurface,
                                 selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unselectedIconColor = MaterialTheme.colorScheme.outline,
+                                unselectedTextColor = MaterialTheme.colorScheme.outline,
                                 indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
                             ),
                         )
@@ -210,6 +213,13 @@ private fun MaterialHome(
                                 onClick = { mainPagerState.animateToPage(index) },
                                 icon = { Icon(item.icon, contentDescription = item.label) },
                                 label = { Text(item.label) },
+                                colors = NavigationRailItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unselectedIconColor = MaterialTheme.colorScheme.outline,
+                                    unselectedTextColor = MaterialTheme.colorScheme.outline,
+                                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                                ),
                             )
                         }
                     }
@@ -253,7 +263,6 @@ private fun MaterialAppPager(
     ) { page ->
         when (page) {
             0 -> MaterialInfoPage(
-                callback = { pagerState.animateToPage(it) },
                 padding = padding,
             )
             1 -> if (active) {
