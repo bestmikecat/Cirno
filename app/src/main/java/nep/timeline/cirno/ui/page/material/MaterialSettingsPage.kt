@@ -511,7 +511,7 @@ private fun MaterialSettingsSectionScope.MaterialDropdownItem(
             modifier = Modifier.clickable { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuGroup {
+            DropdownMenuGroup(shapes = MaterialTheme.shapes) {
                 items.forEachIndexed { index, item ->
                     DropdownMenuItem(
                         text = { Text(item) },
