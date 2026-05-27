@@ -3,6 +3,7 @@ package nep.timeline.cirno.ui.page.material
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -154,17 +155,22 @@ fun MaterialInfoPage(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                            )
+                            Box(
+                                modifier = Modifier.size(40.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                    tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                )
+                            }
                             Spacer(modifier = Modifier.size(12.dp))
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
-                                    style = MaterialTheme.typography.titleLarge,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 Text(
