@@ -68,6 +68,8 @@ import nep.timeline.cirno.ui.app.LocalMainPagerState
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
+import nep.timeline.cirno.utils.PackageUtils
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,8 +116,8 @@ fun MaterialAppPage(
         }
     }
 
-    val sortedApps = remember(apps, sortAscending) {
-        if (sortAscending) apps.sortedBy { it.appName.lowercase() } else apps.sortedByDescending { it.appName.lowercase() }
+    val sortedApps = remember(apps, type, sortAscending) {
+        if (type == 2) sortMonitorApps(apps, sortAscending) else sortConfiguredApps(apps)
     }
 
     Scaffold(
@@ -210,7 +212,7 @@ fun MaterialAppPage(
                         key = { it.packageName + "#" + it.userId },
                     ) { app ->
                         Box(modifier = Modifier.padding(bottom = 12.dp)) {
-                            MaterialAppListItem(app = app)
+                            MaterialAppListItem(app = app, monitorMode = type == 2)
                         }
                     }
                 }
@@ -301,7 +303,7 @@ private fun MaterialAppFilterMenu(
 }
 
 @Composable
-private fun MaterialAppListItem(app: AppItem) {
+private fun MaterialAppListItem(app: AppItem, monitorMode: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { AppContext.enterAppPage(app) },
         shape = RoundedCornerShape(16.dp),
@@ -337,26 +339,30 @@ private fun MaterialAppListItem(app: AppItem) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            MaterialAppBadge(app = app)
+            MaterialAppBadge(app = app, monitorMode = monitorMode)
         }
     }
 }
 
 @Composable
-private fun MaterialAppBadge(app: AppItem) {
-    val label = when {
-        app.black -> stringResource(R.string.black_app)
-        app.white -> stringResource(R.string.white_app)
-        app.backgroundPlay -> stringResource(R.string.background_play)
-        app.locationCheck != 0 -> stringResource(R.string.location_check)
-        app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
-        app.networkSpeedEnabled -> stringResource(R.string.network_speed_check)
-        app.recordingAllowed -> stringResource(R.string.recording_unfreeze)
-        app.processConfig -> stringResource(R.string.process)
-        app.backgroundLevel == 1 -> stringResource(R.string.direct_app)
-        app.backgroundLevel == 2 -> stringResource(R.string.foreground_service)
-        app.idle -> stringResource(R.string.battery_opt)
-        else -> null
+private fun MaterialAppBadge(app: AppItem, monitorMode: Boolean) {
+    val label = if (monitorMode) {
+        if (app.isFrozen && app.frozenType != null) app.frozenType + " " + stringResource(R.string.freezing) else null
+    } else {
+        when {
+            app.black -> stringResource(R.string.black_app)
+            app.white -> stringResource(R.string.white_app)
+            app.backgroundPlay -> stringResource(R.string.background_play)
+            app.locationCheck != 0 -> stringResource(R.string.location_check)
+            app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
+            app.networkSpeedEnabled -> stringResource(R.string.network_speed_check)
+            app.recordingAllowed -> stringResource(R.string.recording_unfreeze)
+            app.processConfig -> stringResource(R.string.process)
+            app.backgroundLevel == 1 -> stringResource(R.string.direct_app)
+            app.backgroundLevel == 2 -> stringResource(R.string.foreground_service)
+            app.idle -> stringResource(R.string.battery_opt)
+            else -> null
+        }
     }
 
     if (label == null) return
@@ -379,3 +385,28 @@ private fun MaterialAppBadge(app: AppItem) {
         )
     }
 }
+
+private fun sortConfiguredApps(apps: List<AppItem>): List<AppItem> = apps
+    .withIndex()
+    .sortedWith(
+        compareBy<IndexedValue<AppItem>> { !it.value.hasMaterialBadgeConfig() }
+            .thenBy { it.index }
+    )
+    .map { it.value }
+
+private fun sortMonitorApps(apps: List<AppItem>, ascending: Boolean): List<AppItem> = apps.sortedWith(
+    compareBy<AppItem> { PackageUtils.isSystemUIChecker(AppContext.context, it.packageInfo) }
+        .thenBy { !it.isFrozen }
+        .thenName(ascending)
+)
+
+private fun Comparator<AppItem>.thenName(ascending: Boolean): Comparator<AppItem> {
+    val nameComparator = compareBy<AppItem> { it.appName.orEmpty().lowercase(Locale.ROOT) }
+        .thenBy { it.packageName.orEmpty() }
+        .thenBy { it.userId }
+    return if (ascending) then(nameComparator) else then(nameComparator.reversed())
+}
+
+private fun AppItem.hasMaterialBadgeConfig(): Boolean = black || white || backgroundPlay || locationCheck != 0
+    || networkCheck || networkSpeedEnabled || recordingAllowed || processConfig || backgroundLevel == 1
+    || backgroundLevel == 2 || idle
