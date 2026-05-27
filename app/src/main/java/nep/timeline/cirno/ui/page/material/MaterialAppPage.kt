@@ -3,7 +3,7 @@ package nep.timeline.cirno.ui.page.material
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -61,14 +62,22 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nep.timeline.cirno.R
+import nep.timeline.cirno.configs.policy.FreezeExemption
 import nep.timeline.cirno.entity.AppItem
+import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.app.LocalMainPagerState
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.utils.PackageUtils
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -304,8 +313,33 @@ private fun MaterialAppFilterMenu(
 
 @Composable
 private fun MaterialAppListItem(app: AppItem, monitorMode: Boolean) {
+    val scope = rememberCoroutineScope()
+    val systemNotFlaggedText = stringResource(R.string.system_not_flagged_but_frozen)
+    val networkSpeedFailedText = "网速获取失败"
+    val frozenText = app.frozenType + " " + stringResource(R.string.freezing)
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { AppContext.enterAppPage(app) },
+        modifier = Modifier.fillMaxWidth().combinedClickable(
+            onClick = {
+                if (!monitorMode) {
+                    AppContext.enterAppPage(app)
+                    return@combinedClickable
+                }
+                when {
+                    app.networkSpeedEnabled -> {
+                        scope.launch {
+                            val speedText = withContext(Dispatchers.IO) { getNetworkSpeedText(app) }
+                            WindowUtils.showToast(speedText ?: networkSpeedFailedText)
+                        }
+                    }
+                    app.frozenType == "SYSTEM_NOT_FLAGGED_BUT_FROZEN" -> WindowUtils.showToast(systemNotFlaggedText)
+                    !app.isFrozen -> WindowUtils.showToast(FreezeExemption.fromReason(app.notFrozenReason).displayText)
+                    else -> WindowUtils.showToast(frozenText)
+                }
+            },
+            onLongClick = {
+                if (monitorMode) AppContext.enterAppPage(app)
+            },
+        ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -410,3 +444,21 @@ private fun Comparator<AppItem>.thenName(ascending: Boolean): Comparator<AppItem
 private fun AppItem.hasMaterialBadgeConfig(): Boolean = black || white || backgroundPlay || locationCheck != 0
     || networkCheck || networkSpeedEnabled || recordingAllowed || processConfig || backgroundLevel == 1
     || backgroundLevel == 2 || idle
+
+private fun getNetworkSpeedText(app: AppItem): String? {
+    val binder = ApplicationBinder.getInstance() ?: return null
+    return try {
+        val json = binder.getNetworkSpeed(app.packageName, app.userId)
+        val rx = json.substringAfter("\"rx\":").substringBefore(",").trim().toLongOrNull() ?: 0L
+        val tx = json.substringAfter("\"tx\":").substringBefore("}").trim().toLongOrNull() ?: 0L
+        "↑${formatSpeed(tx)} ↓${formatSpeed(rx)}"
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+private fun formatSpeed(bytesPerSec: Long): String {
+    if (bytesPerSec < 1024) return "${bytesPerSec}B/s"
+    if (bytesPerSec < 1024 * 1024) return "${BigDecimal(bytesPerSec).divide(BigDecimal(1024), 1, RoundingMode.HALF_UP)}KB/s"
+    return "${BigDecimal(bytesPerSec).divide(BigDecimal(1048576), 2, RoundingMode.HALF_UP)}MB/s"
+}
