@@ -122,7 +122,7 @@ fun MaterialInfoPage(
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
-                top = innerPadding.calculateTopPadding() + 8.dp,
+                top = innerPadding.calculateTopPadding() + 64.dp,
                 bottom = padding.calculateBottomPadding() + 20.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
