@@ -139,9 +139,6 @@ fun MaterialInfoPage(
                 val active = GlobalVars.isModuleActive
                 val working = active && !binderState.hasError
                 val moduleVersion = binderState.moduleVersion ?: stringResource(R.string.not_running)
-                val hasWarning = !active || binderState.hasError || (
-                    active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
-                )
 
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -152,48 +149,47 @@ fun MaterialInfoPage(
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                )
-                                Spacer(modifier = Modifier.size(12.dp))
+                            Icon(
+                                imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(modifier = Modifier.size(12.dp))
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
                                     text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.SemiBold,
                                 )
+                                Text(
+                                    text = moduleVersion,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
-                        }
-
-                        Text(
-                            text = moduleVersion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        if (hasWarning) {
-                            val warningText = when {
-                                !active -> stringResource(R.string.not_active)
-                                binderState.hasError -> stringResource(R.string.internal_error)
-                                else -> stringResource(R.string.module_version_mismatch)
-                            }
-                            Text(
-                                text = warningText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (working) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onErrorContainer,
-                            )
                         }
                     }
+                }
+            }
+
+            item {
+                val active = GlobalVars.isModuleActive
+                val hasWarning = !active || binderState.hasError || (
+                    active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
+                )
+                if (hasWarning) {
+                    val warningText = when {
+                        !active -> stringResource(R.string.not_active)
+                        binderState.hasError -> stringResource(R.string.internal_error)
+                        else -> stringResource(R.string.module_version_mismatch)
+                    }
+                    MaterialWarningCard(warningText)
                 }
             }
 
@@ -247,9 +243,24 @@ private fun MaterialSectionCard(content: @Composable ColumnScope.() -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             content = content,
+        )
+    }
+}
+
+@Composable
+private fun MaterialWarningCard(text: String) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
         )
     }
 }
