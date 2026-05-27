@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material.icons.outlined.ViewCarousel
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -510,14 +511,16 @@ private fun MaterialSettingsSectionScope.MaterialDropdownItem(
             modifier = Modifier.clickable { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            items.forEachIndexed { index, item ->
-                DropdownMenuItem(
-                    text = { Text(item) },
-                    onClick = {
-                        expanded = false
-                        onSelectedIndexChange(index)
-                    },
-                )
+            DropdownMenuGroup {
+                items.forEachIndexed { index, item ->
+                    DropdownMenuItem(
+                        text = { Text(item) },
+                        onClick = {
+                            expanded = false
+                            onSelectedIndexChange(index)
+                        },
+                    )
+                }
             }
         }
     }
