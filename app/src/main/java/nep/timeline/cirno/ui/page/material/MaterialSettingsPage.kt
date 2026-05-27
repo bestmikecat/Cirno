@@ -37,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -511,7 +512,7 @@ private fun MaterialSettingsSectionScope.MaterialDropdownItem(
             modifier = Modifier.clickable { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuGroup(shapes = MaterialTheme.shapes) {
+            DropdownMenuGroup(shapes = MenuDefaults.groupShape(0, 1)) {
                 items.forEachIndexed { index, item ->
                     DropdownMenuItem(
                         text = { Text(item) },
