@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -467,7 +468,20 @@ private fun MaterialSettingsSectionScope.MaterialSliderItem(
     MaterialSettingsRow(icon = icon, title = title, summary = valueText) {
         Column(modifier = Modifier.fillMaxWidth()) {
             MaterialRowText(title = title, summary = valueText)
-            Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, onValueChangeFinished = onValueFinished)
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                steps = steps,
+                onValueChangeFinished = onValueFinished,
+                colors = SliderDefaults.colors(
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    activeTickColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                    inactiveTickColor = MaterialTheme.colorScheme.secondaryContainer,
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
         }
     }
 }
