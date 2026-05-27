@@ -55,6 +55,9 @@
   <string name="system_not_flagged_but_frozen">Cirno has executed the freeze operation correctly, but the system has not processed it</string>
   <string name="about">About</string>
   <string name="home_about_freezer">About Cirno</string>
+  <string name="about_github_source">View source on GitHub</string>
+  <string name="about_telegram_channel">Join our Telegram channel</string>
+  <string name="about_qq_group">Join our QQ group</string>
   <string name="home_logs">Logs</string>
   <string name="home_logs_desc">View module log output</string>
   <string name="logs_empty">No log data</string>

@@ -63,9 +63,9 @@ import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewMode
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
-import nep.timeline.cirno.ui.page.AboutPage
 import nep.timeline.cirno.ui.page.AppPage
 import nep.timeline.cirno.ui.page.LogPage
+import nep.timeline.cirno.ui.page.material.MaterialAboutPage
 import nep.timeline.cirno.ui.page.material.MaterialInfoPage
 import nep.timeline.cirno.ui.page.material.MaterialSettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
@@ -125,7 +125,7 @@ fun MaterialAppContent(
                     )
                 }
                 entry<Route.About> {
-                    AboutPage(padding = padding)
+                    MaterialAboutPage(padding = padding)
                 }
                 entry<Route.Log> {
                     LogPage(padding = padding)
