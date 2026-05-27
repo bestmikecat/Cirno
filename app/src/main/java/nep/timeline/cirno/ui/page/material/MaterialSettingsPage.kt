@@ -3,29 +3,43 @@ package nep.timeline.cirno.ui.page.material
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.NavigateNext
+import androidx.compose.material.icons.outlined.Article
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.BlurOn
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.Update
+import androidx.compose.material.icons.outlined.ViewCarousel
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +49,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -213,11 +230,13 @@ fun MaterialSettingsPage(
                     text = stringResource(R.string.settings),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "v${BuildConfig.VERSION_NAME}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
 
@@ -225,6 +244,7 @@ fun MaterialSettingsPage(
                 item {
                     MaterialSettingsSection(title = stringResource(R.string.settings_freeze_group)) {
                         MaterialSliderItem(
+                            icon = Icons.Outlined.Timer,
                             title = stringResource(R.string.interval_freeze_delay),
                             valueText = "${freezeDelay.floatValue.toInt()} s",
                             value = freezeDelay.floatValue,
@@ -241,6 +261,7 @@ fun MaterialSettingsPage(
                             },
                         )
                         MaterialSliderItem(
+                            icon = Icons.Outlined.Update,
                             title = stringResource(R.string.wake_freeze_delay),
                             valueText = "${wakeFreezeDelay.floatValue.toInt()} s",
                             value = wakeFreezeDelay.floatValue,
@@ -257,6 +278,7 @@ fun MaterialSettingsPage(
                             },
                         )
                         MaterialSliderItem(
+                            icon = Icons.Outlined.Speed,
                             title = stringResource(R.string.network_speed_threshold),
                             valueText = materialFormatSpeedThreshold(networkSpeedThreshold.floatValue.toInt()),
                             value = networkSpeedThreshold.floatValue,
@@ -276,7 +298,7 @@ fun MaterialSettingsPage(
                 }
                 item {
                     MaterialSettingsSection(title = stringResource(R.string.settings_ui_group)) {
-                        MaterialDropdownItem(stringResource(R.string.ui_style), uiStyleItems, uiStyleIndex.intValue) {
+                        MaterialDropdownItem(Icons.Outlined.Dashboard, stringResource(R.string.ui_style), uiStyleItems, uiStyleIndex.intValue) {
                             val previous = globalSettings.uiStyle
                             uiStyleIndex.intValue = it
                             globalSettings.uiStyle = it
@@ -287,7 +309,7 @@ fun MaterialSettingsPage(
                                 updateAppState { state -> state.copy(uiStyle = previous) }
                             }
                         }
-                        MaterialDropdownItem(stringResource(R.string.navigation_style), navItems, navIndex.intValue) {
+                        MaterialDropdownItem(Icons.Outlined.ViewCarousel, stringResource(R.string.navigation_style), navItems, navIndex.intValue) {
                             val previous = globalSettings.navigationStyle
                             navIndex.intValue = it
                             globalSettings.navigationStyle = it
@@ -298,7 +320,7 @@ fun MaterialSettingsPage(
                                 updateAppState { state -> state.copy(navigationStyle = previous) }
                             }
                         }
-                        MaterialDropdownItem(stringResource(R.string.theme_mode), themeItems, themeIndex.intValue) {
+                        MaterialDropdownItem(Icons.Outlined.Palette, stringResource(R.string.theme_mode), themeItems, themeIndex.intValue) {
                             val previous = globalSettings.colorMode
                             themeIndex.intValue = it
                             globalSettings.colorMode = it
@@ -310,7 +332,7 @@ fun MaterialSettingsPage(
                             }
                         }
                         if (isRenderEffectSupported()) {
-                            MaterialSwitchItem(stringResource(R.string.blur_ui), stringResource(R.string.blur_ui_desc), blurEnabled.intValue == 1) {
+                            MaterialSwitchItem(Icons.Outlined.BlurOn, stringResource(R.string.blur_ui), stringResource(R.string.blur_ui_desc), blurEnabled.intValue == 1) {
                                 val previous = globalSettings.blurUI
                                 blurEnabled.intValue = if (it) 1 else 0
                                 globalSettings.blurUI = it
@@ -328,7 +350,7 @@ fun MaterialSettingsPage(
 
             item {
                 MaterialSettingsSection(title = stringResource(R.string.settings_log_group)) {
-                    MaterialDropdownItem(stringResource(R.string.log_print), outputItems, outputIndex.intValue) {
+                    MaterialDropdownItem(Icons.Outlined.Article, stringResource(R.string.log_print), outputItems, outputIndex.intValue) {
                         val previous = globalSettings.logOutputMode
                         outputIndex.intValue = it
                         globalSettings.logOutputMode = if (it == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
@@ -337,7 +359,7 @@ fun MaterialSettingsPage(
                             outputIndex.intValue = if (previous == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
                         }
                     }
-                    MaterialDropdownItem(stringResource(R.string.log_level), levelItems, levelIndex.intValue) {
+                    MaterialDropdownItem(Icons.Outlined.BugReport, stringResource(R.string.log_level), levelItems, levelIndex.intValue) {
                         val previous = globalSettings.logLevel
                         levelIndex.intValue = it
                         globalSettings.logLevel = when (it) {
@@ -360,15 +382,17 @@ fun MaterialSettingsPage(
             if (active) {
                 item {
                     MaterialSettingsSection(title = stringResource(R.string.settings_backup_group)) {
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.backup_config)) },
-                            supportingContent = { Text(stringResource(R.string.backup_config_desc)) },
-                            modifier = Modifier.fillMaxWidth().clickable { backupLauncher.launch("cirno-config-backup.zip") },
+                        MaterialActionItem(
+                            icon = Icons.Outlined.Backup,
+                            title = stringResource(R.string.backup_config),
+                            summary = stringResource(R.string.backup_config_desc),
+                            onClick = { backupLauncher.launch("cirno-config-backup.zip") },
                         )
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.restore_config)) },
-                            supportingContent = { Text(stringResource(R.string.restore_config_desc)) },
-                            modifier = Modifier.fillMaxWidth().clickable { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
+                        MaterialActionItem(
+                            icon = Icons.Outlined.Restore,
+                            title = stringResource(R.string.restore_config),
+                            summary = stringResource(R.string.restore_config_desc),
+                            onClick = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
                         )
                     }
                 }
@@ -378,7 +402,7 @@ fun MaterialSettingsPage(
 }
 
 @Composable
-private fun MaterialSettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+private fun MaterialSettingsSection(title: String, content: @Composable MaterialSettingsSectionScope.() -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
@@ -386,25 +410,52 @@ private fun MaterialSettingsSection(title: String, content: @Composable ColumnSc
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow),
         ) {
-            Column(modifier = Modifier.fillMaxWidth(), content = content)
+            val scope = remember { MaterialSettingsSectionScope() }
+            scope.rowCount = 0
+            scope.content()
         }
     }
 }
 
+private class MaterialSettingsSectionScope {
+    var rowCount = 0
+}
+
 @Composable
-private fun MaterialSwitchItem(title: String, summary: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(summary) },
-        trailingContent = { Switch(checked = checked, onCheckedChange = onCheckedChange) },
+private fun MaterialSettingsSectionScope.MaterialSwitchItem(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    MaterialSettingsRow(
+        icon = icon,
+        title = title,
+        summary = summary,
+        trailing = {
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                ),
+            )
+        },
     )
 }
 
 @Composable
-private fun MaterialSliderItem(
+private fun MaterialSettingsSectionScope.MaterialSliderItem(
+    icon: ImageVector,
     title: String,
     valueText: String,
     value: Float,
@@ -413,34 +464,36 @@ private fun MaterialSliderItem(
     onValueChange: (Float) -> Unit,
     onValueFinished: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Text(valueText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    MaterialSettingsRow(icon = icon, title = title, summary = valueText) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            MaterialRowText(title = title, summary = valueText)
+            Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, onValueChangeFinished = onValueFinished)
         }
-        Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps, onValueChangeFinished = onValueFinished)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MaterialDropdownItem(title: String, items: List<String>, selectedIndex: Int, onSelectedIndexChange: (Int) -> Unit) {
+private fun MaterialSettingsSectionScope.MaterialDropdownItem(
+    icon: ImageVector,
+    title: String,
+    items: List<String>,
+    selectedIndex: Int,
+    onSelectedIndexChange: (Int) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = items[selectedIndex],
-            onValueChange = {},
-            readOnly = true,
-            singleLine = true,
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            label = { Text(title) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+    Box {
+        MaterialSettingsRow(
+            icon = icon,
+            title = title,
+            trailing = {
+                Text(
+                    text = items[selectedIndex],
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            modifier = Modifier.clickable { expanded = true },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEachIndexed { index, item ->
@@ -452,6 +505,92 @@ private fun MaterialDropdownItem(title: String, items: List<String>, selectedInd
                     },
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MaterialSettingsSectionScope.MaterialActionItem(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    onClick: () -> Unit,
+) {
+    MaterialSettingsRow(
+        icon = icon,
+        title = title,
+        summary = summary,
+        trailing = {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.outline,
+            )
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+}
+
+@Composable
+private fun MaterialSettingsSectionScope.MaterialSettingsRow(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
+    content: (@Composable () -> Unit)? = null,
+) {
+    if (rowCount > 0) {
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+    }
+    rowCount += 1
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+        Box(modifier = Modifier.width(16.dp))
+        Box(modifier = Modifier.weight(1f)) {
+            if (content != null) {
+                content()
+            } else {
+                MaterialRowText(title = title, summary = summary)
+            }
+        }
+        if (trailing != null) {
+            Box(modifier = Modifier.width(16.dp))
+            trailing()
+        }
+    }
+}
+
+@Composable
+private fun MaterialRowText(title: String, summary: String?) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (summary != null) {
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
     }
 }
