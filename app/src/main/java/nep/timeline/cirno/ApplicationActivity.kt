@@ -13,7 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.ui.app.AppTheme
+import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.ApplicationHome
+import nep.timeline.cirno.ui.page.material.MaterialApplicationHome
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 
@@ -34,7 +36,11 @@ class ApplicationActivity : ComponentActivity() {
                 uiStyle = if (configLoaded) GlobalVars.globalSettings?.uiStyle ?: 0 else 0,
                 colorMode = if (configLoaded) GlobalVars.globalSettings?.colorMode ?: 0 else 0,
             ) {
-                ApplicationHome(this)
+                if (GlobalVars.globalSettings?.uiStyle == UI_STYLE_MATERIAL) {
+                    MaterialApplicationHome(this)
+                } else {
+                    ApplicationHome(this)
+                }
             }
         }
     }

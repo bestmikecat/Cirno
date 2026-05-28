@@ -167,6 +167,7 @@ fun MaterialSettingsSectionScope.MaterialSettingsRow(
     title: String,
     modifier: Modifier = Modifier,
     summary: String? = null,
+    enabled: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
     content: (@Composable () -> Unit)? = null,
 ) {
@@ -188,7 +189,7 @@ fun MaterialSettingsSectionScope.MaterialSettingsRow(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         )
         Box(modifier = Modifier.width(16.dp))
         Box(modifier = Modifier.weight(1f)) {
@@ -225,21 +226,47 @@ fun MaterialRowText(title: String, summary: String?) {
 }
 
 @Composable
+fun MaterialRowText(
+    title: String,
+    summary: String?,
+    enabled: Boolean,
+) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        )
+        if (summary != null) {
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+@Composable
 fun MaterialSettingsSectionScope.MaterialSwitchItem(
     icon: ImageVector,
     title: String,
-    summary: String,
+    summary: String?,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     MaterialSettingsRow(
         icon = icon,
         title = title,
-        summary = summary,
+        enabled = enabled,
+        content = { MaterialRowText(title = title, summary = summary, enabled = enabled) },
         trailing = {
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                enabled = enabled,
                 colors = SwitchDefaults.colors(
                     uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant,
                     uncheckedThumbColor = MaterialTheme.colorScheme.outline,

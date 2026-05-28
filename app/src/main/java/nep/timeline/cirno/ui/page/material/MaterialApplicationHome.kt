@@ -1,0 +1,342 @@
+package nep.timeline.cirno.ui.page.material
+
+import java.io.File
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.NetworkCheck
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Task
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import nep.timeline.cirno.ApplicationActivity
+import nep.timeline.cirno.CommonConstants
+import nep.timeline.cirno.R
+import nep.timeline.cirno.configs.checkers.AppConfigs
+import nep.timeline.cirno.provide.ApplicationBinder
+import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.WindowUtils
+import nep.timeline.cirno.ui.utils.shouldShowSplitPane
+import nep.timeline.cirno.utils.PKGUtils
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MaterialApplicationHome(activity: ApplicationActivity) {
+    val isWideScreen = shouldShowSplitPane()
+    val appName = activity.intent.getStringExtra("appName") ?: "App"
+    val packageName = activity.intent.getStringExtra("packageName") ?: return
+    val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
+    val hasReKernel = remember { File("/proc/rekernel").exists() }
+    val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
+    val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
+    val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
+    val isSystemApp = remember(packageName) {
+        try {
+            val packageInfo = activity.packageManager.getPackageInfo(packageName, 0)
+            PKGUtils.isSystemApp(packageInfo.applicationInfo)
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    val processList = remember { mutableStateListOf<String>() }
+    val processExclusions = remember { mutableStateListOf<String>() }
+    val processListLoaded = remember { mutableStateOf(false) }
+    val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
+    val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
+    val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
+    val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
+    val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
+    val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
+    val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
+    val scope = rememberCoroutineScope()
+
+    fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                if (ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                    null
+                } else {
+                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                }
+            }
+            if (error != null) onFailed(error)
+        }
+    }
+
+    LaunchedEffect(packageName, userId) {
+        val (names, excluded) = withContext(Dispatchers.IO) {
+            val processNames = mutableListOf<String>()
+            val appBinder = ApplicationBinder.getInstance()
+            if (appBinder != null) {
+                try {
+                    val json = appBinder.getProcessesForApp(packageName, userId)
+                    val type = object : TypeToken<List<String>>() {}.type
+                    val parsed: List<String> = Gson().fromJson(json, type) ?: emptyList()
+                    processNames.addAll(parsed)
+                } catch (_: Throwable) {
+                }
+            }
+            processNames to AppConfigs.getExcludedProcesses(packageName, userId)
+        }
+        processList.clear()
+        processList.addAll(names)
+        processExclusions.clear()
+        processExclusions.addAll(excluded)
+        processListLoaded.value = true
+    }
+
+    LaunchedEffect(hasReKernel, networkMessage.value) {
+        if (!hasReKernel && networkMessage.value) {
+            networkMessage.value = false
+            AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+            saveApplicationSettingsAsync()
+        }
+    }
+
+    MaterialPageScaffold(
+        title = appName,
+        padding = PaddingValues(bottom = if (isWideScreen) 0.dp else 16.dp),
+        navigationIcon = {
+            IconButton(onClick = { activity.finish() }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        },
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            MaterialSettingsSection(title = stringResource(R.string.app_info)) {
+                if (!isSystemApp) {
+                    MaterialSwitchItem(
+                        icon = Icons.Outlined.Security,
+                        title = stringResource(R.string.white_app),
+                        summary = if (isBuiltinWhitelistApp) builtinWhitelistSummary else null,
+                        checked = isBuiltinWhitelistApp || white.value,
+                        enabled = !isBuiltinWhitelistApp,
+                    ) {
+                        if (isBuiltinWhitelistApp) return@MaterialSwitchItem
+                        val prevWhite = white.value
+                        val prevBackground = backgroundPlay.value
+                        val prevLocation = locationUse.value
+                        val prevNetwork = networkMessage.value
+                        val prevNetworkSpeed = networkSpeed.value
+                        val prevRecording = recording.value
+
+                        white.value = it
+                        AppConfigs.setWhiteApp(packageName, userId, it)
+                        if (it) {
+                            backgroundPlay.value = false
+                            AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                            locationUse.value = false
+                            AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                            networkMessage.value = false
+                            AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                            networkSpeed.value = false
+                            AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
+                            recording.value = false
+                            AppConfigs.setRecordingAllowed(packageName, userId, false)
+                        }
+
+                        saveApplicationSettingsAsync("白名单更新失败") { error ->
+                            white.value = prevWhite
+                            AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                            backgroundPlay.value = prevBackground
+                            AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                            locationUse.value = prevLocation
+                            AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                            networkMessage.value = prevNetwork
+                            AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                            networkSpeed.value = prevNetworkSpeed
+                            AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
+                            recording.value = prevRecording
+                            AppConfigs.setRecordingAllowed(packageName, userId, prevRecording)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                }
+
+                if (!isBuiltinWhitelistApp && !isSystemApp) {
+                    MaterialSwitchItem(Icons.Outlined.MusicNote, stringResource(R.string.background_play), null, backgroundPlay.value, !white.value) {
+                        if (white.value && it) {
+                            WindowUtils.showToast(whitelistExemptionBlocked)
+                            return@MaterialSwitchItem
+                        }
+                        val previous = backgroundPlay.value
+                        backgroundPlay.value = it
+                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
+                        saveApplicationSettingsAsync("后台播放配置更新失败") { error ->
+                            backgroundPlay.value = previous
+                            AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                    MaterialSwitchItem(Icons.Outlined.LocationOn, stringResource(R.string.location_check), null, locationUse.value, !white.value) {
+                        if (white.value && it) {
+                            WindowUtils.showToast(whitelistExemptionBlocked)
+                            return@MaterialSwitchItem
+                        }
+                        val previous = locationUse.value
+                        locationUse.value = it
+                        AppConfigs.setLocationUseAllowed(packageName, userId, it)
+                        saveApplicationSettingsAsync("定位配置更新失败") { error ->
+                            locationUse.value = previous
+                            AppConfigs.setLocationUseAllowed(packageName, userId, previous)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                    MaterialSwitchItem(
+                        icon = Icons.Outlined.NotificationsActive,
+                        title = stringResource(R.string.netreceive_unfreeze),
+                        summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
+                        checked = networkMessage.value,
+                        enabled = hasReKernel && !white.value,
+                    ) {
+                        if (white.value && it) {
+                            WindowUtils.showToast(whitelistExemptionBlocked)
+                            return@MaterialSwitchItem
+                        }
+                        val previous = networkMessage.value
+                        networkMessage.value = it
+                        AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
+                        saveApplicationSettingsAsync("网络消息配置更新失败") { error ->
+                            networkMessage.value = previous
+                            AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                    MaterialSwitchItem(Icons.Outlined.NetworkCheck, stringResource(R.string.network_speed_check), null, networkSpeed.value, !white.value) {
+                        if (white.value && it) {
+                            WindowUtils.showToast(whitelistExemptionBlocked)
+                            return@MaterialSwitchItem
+                        }
+                        val previous = networkSpeed.value
+                        networkSpeed.value = it
+                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, it)
+                        saveApplicationSettingsAsync("网速识别配置更新失败") { error ->
+                            networkSpeed.value = previous
+                            AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                    MaterialSwitchItem(Icons.Outlined.GraphicEq, stringResource(R.string.recording_unfreeze), null, recording.value, !white.value) {
+                        if (white.value && it) {
+                            WindowUtils.showToast(whitelistExemptionBlocked)
+                            return@MaterialSwitchItem
+                        }
+                        val previous = recording.value
+                        recording.value = it
+                        AppConfigs.setRecordingAllowed(packageName, userId, it)
+                        saveApplicationSettingsAsync("录音解冻配置更新失败") { error ->
+                            recording.value = previous
+                            AppConfigs.setRecordingAllowed(packageName, userId, previous)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                }
+
+                if (isSystemApp || isBuiltinWhitelistApp) {
+                    MaterialSwitchItem(
+                        icon = Icons.Outlined.Block,
+                        title = stringResource(R.string.black_app),
+                        summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
+                        checked = black.value,
+                    ) {
+                        val prevBlack = black.value
+                        black.value = it
+                        AppConfigs.setBlackApp(packageName, userId, it)
+
+                        saveApplicationSettingsAsync("黑名单更新失败") { error ->
+                            black.value = prevBlack
+                            AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                            WindowUtils.showToast(error)
+                        }
+                    }
+                }
+            }
+        }
+
+        if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
+            item {
+                MaterialSettingsSection(title = stringResource(R.string.process_freeze_control)) {
+                    if (processList.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.no_process_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.process_freeze_control_summary),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        processList.forEach { processName ->
+                            val isExcluded = remember(processName) { mutableStateOf(processExclusions.contains(processName)) }
+                            MaterialSwitchItem(
+                                icon = Icons.Outlined.Task,
+                                title = processName,
+                                summary = null,
+                                checked = !isExcluded.value,
+                            ) { frozen ->
+                                val previous = isExcluded.value
+                                isExcluded.value = !frozen
+                                AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, !frozen)
+                                if (frozen) {
+                                    processExclusions.remove(processName)
+                                } else {
+                                    processExclusions.add(processName)
+                                }
+                                saveApplicationSettingsAsync("进程冻结配置更新失败") { error ->
+                                    isExcluded.value = previous
+                                    AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, previous)
+                                    if (previous) {
+                                        processExclusions.add(processName)
+                                    } else {
+                                        processExclusions.remove(processName)
+                                    }
+                                    WindowUtils.showToast(error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
