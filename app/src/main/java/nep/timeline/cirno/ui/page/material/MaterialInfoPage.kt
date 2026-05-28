@@ -1,6 +1,8 @@
 package nep.timeline.cirno.ui.page.material
 
+import android.content.Intent
 import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +19,14 @@ import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,7 +50,6 @@ import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
-import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
@@ -107,7 +113,7 @@ fun MaterialInfoPage(
 
     updateResult?.let { result ->
         if (showUpdateDialog) {
-            UpdateDialog(
+            MaterialUpdateDialog(
                 show = true,
                 updateResult = result,
                 onDismissRequest = { showUpdateDialog = false },
@@ -254,4 +260,76 @@ private fun MaterialInfoRow(title: String, content: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun MaterialUpdateDialog(
+    show: Boolean,
+    updateResult: UpdateResult,
+    onDismissRequest: () -> Unit,
+) {
+    if (!show) return
+
+    val context = LocalContext.current
+    var dontRemind by remember(updateResult.versionName) { mutableStateOf(false) }
+
+    fun dismiss() {
+        if (dontRemind) {
+            UpdateChecker.markSkipped(context, updateResult.versionName)
+        }
+        onDismissRequest()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(text = stringResource(R.string.update_available))
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(text = stringResource(R.string.update_new_version, updateResult.versionName))
+                if (!updateResult.changelog.isNullOrBlank()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = stringResource(R.string.update_changelog),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = updateResult.changelog,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { dontRemind = !dontRemind },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Checkbox(
+                        checked = dontRemind,
+                        onCheckedChange = { dontRemind = it },
+                    )
+                    Text(text = stringResource(R.string.update_dont_remind))
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    dismiss()
+                    val intent = Intent(Intent.ACTION_VIEW, updateResult.downloadUrl.toUri())
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                },
+            ) {
+                Text(text = stringResource(R.string.update_now))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = ::dismiss) {
+                Text(text = stringResource(R.string.update_later))
+            }
+        },
+    )
 }
