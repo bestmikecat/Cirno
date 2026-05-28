@@ -147,7 +147,13 @@ fun MaterialLogPage(
             }
         }
 
-        if (uiState.isInitialLoadDone && uiState.loadedLines.isEmpty()) {
+        if (!uiState.isInitialLoadDone && uiState.loadedLines.isEmpty()) {
+            item(key = "loading") {
+                MaterialLoadingIndicator(
+                    modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
+                )
+            }
+        } else if (uiState.isInitialLoadDone && uiState.loadedLines.isEmpty()) {
             item(key = "empty") {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
@@ -163,6 +169,13 @@ fun MaterialLogPage(
         } else {
             items(filteredLines) { line ->
                 MaterialLogLine(line = line)
+            }
+            if (uiState.isLoadingMore) {
+                item(key = "loadingMore") {
+                    MaterialLoadingIndicator(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    )
+                }
             }
         }
     }

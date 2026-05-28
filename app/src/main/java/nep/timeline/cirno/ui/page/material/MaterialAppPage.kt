@@ -170,7 +170,13 @@ fun MaterialAppPage(
             }
         }
 
-        if (type == 2 && hasLoadedMonitorOnce && updatedApps && filterApps.isEmpty()) {
+        if (!updatedApps) {
+            item(key = "loading") {
+                MaterialLoadingIndicator(
+                    modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
+                )
+            }
+        } else if (type == 2 && hasLoadedMonitorOnce && filterApps.isEmpty()) {
             item(key = "empty") {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
