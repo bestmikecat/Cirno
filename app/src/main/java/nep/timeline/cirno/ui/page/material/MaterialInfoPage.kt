@@ -1,34 +1,25 @@
 package nep.timeline.cirno.ui.page.material
 
 import android.os.Build
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.NavigateNext
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.SystemUpdate
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +30,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,7 +66,6 @@ fun MaterialInfoPage(
     var updateAvailable by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var binderState by remember { mutableStateOf(MaterialInfoBinderState()) }
-    val scrollBehavior = rememberMaterialTopAppBarScrollBehavior()
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
@@ -117,155 +106,121 @@ fun MaterialInfoPage(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            CirnoLargeTopAppBar(
-                title = stringResource(R.string.app_name),
-                scrollBehavior = scrollBehavior,
-            )
-        },
-    ) { innerPadding ->
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top = innerPadding.calculateTopPadding() + 16.dp,
-                bottom = padding.calculateBottomPadding() + 20.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            item {
-                val active = GlobalVars.isModuleActive
-                val working = active && !binderState.hasError
-                val moduleVersion = binderState.moduleVersion ?: stringResource(R.string.not_running)
+    MaterialPageScaffold(
+        title = stringResource(R.string.app_name),
+        padding = padding,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            val active = GlobalVars.isModuleActive
+            val working = active && !binderState.hasError
+            val moduleVersion = binderState.moduleVersion ?: stringResource(R.string.not_running)
 
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.errorContainer,
-                    ),
+            MaterialSurfaceCard(
+                containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
+                contentPadding = PaddingValues(20.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    Box(
+                        modifier = Modifier.size(40.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(
-                                modifier = Modifier.size(40.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                )
-                            }
-                            Spacer(modifier = Modifier.size(12.dp))
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text = moduleVersion,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
+                        Icon(
+                            imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = moduleVersion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
+        }
 
-            item {
-                val active = GlobalVars.isModuleActive
-                val hasWarning = !active || binderState.hasError || (
-                    active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
-                )
-                if (hasWarning) {
-                    val warningText = when {
-                        !active -> stringResource(R.string.not_active)
-                        binderState.hasError -> stringResource(R.string.internal_error)
-                        else -> stringResource(R.string.module_version_mismatch)
-                    }
-                    MaterialWarningCard(warningText)
+        item {
+            val active = GlobalVars.isModuleActive
+            val hasWarning = !active || binderState.hasError || (
+                active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
+            )
+            if (hasWarning) {
+                val warningText = when {
+                    !active -> stringResource(R.string.not_active)
+                    binderState.hasError -> stringResource(R.string.internal_error)
+                    else -> stringResource(R.string.module_version_mismatch)
                 }
+                MaterialWarningCard(warningText)
             }
+        }
 
-            item {
-                val working = GlobalVars.isModuleActive && !binderState.hasError
-                MaterialSectionCard {
-                    MaterialInfoRow(stringResource(R.string.manager_version), "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}-${BuildConfig.BUILD_TIME})")
-                    MaterialInfoRow(stringResource(R.string.hook_type), if (working) "Xposed" else stringResource(R.string.unknown))
-                    MaterialInfoRow(stringResource(R.string.android_version), if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")"))
-                    MaterialInfoRow(stringResource(R.string.xposed_version), if (working) GlobalVars.XposedVersion.toString() else stringResource(R.string.unknown))
-                    MaterialInfoRow(stringResource(R.string.system_fingerprint), Build.FINGERPRINT)
-                }
+        item {
+            val working = GlobalVars.isModuleActive && !binderState.hasError
+            MaterialSurfaceCard(
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                MaterialInfoRow(stringResource(R.string.manager_version), "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}-${BuildConfig.BUILD_TIME})")
+                MaterialInfoRow(stringResource(R.string.hook_type), if (working) "Xposed" else stringResource(R.string.unknown))
+                MaterialInfoRow(stringResource(R.string.android_version), if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")"))
+                MaterialInfoRow(stringResource(R.string.xposed_version), if (working) GlobalVars.XposedVersion.toString() else stringResource(R.string.unknown))
+                MaterialInfoRow(stringResource(R.string.system_fingerprint), Build.FINGERPRINT)
             }
+        }
 
-            item {
-                MaterialNavigationCard(
-                    title = if (isCheckingUpdate) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
-                    icon = { Icon(Icons.Outlined.SystemUpdate, contentDescription = null) },
-                    enabled = !isCheckingUpdate,
-                    onClick = { isCheckingUpdate = true },
-                )
-            }
+        item {
+            MaterialNavigationCard(
+                title = if (isCheckingUpdate) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
+                icon = { MaterialIcon(Icons.Outlined.SystemUpdate) },
+                enabled = !isCheckingUpdate,
+                onClick = { isCheckingUpdate = true },
+            )
+        }
 
-            item {
-                MaterialNavigationCard(
-                    title = stringResource(R.string.home_logs),
-                    icon = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
-                    onClick = { navigator.push(Route.Log) },
-                )
-            }
+        item {
+            MaterialNavigationCard(
+                title = stringResource(R.string.home_logs),
+                icon = { MaterialIcon(Icons.Outlined.BugReport) },
+                onClick = { navigator.push(Route.Log) },
+            )
+        }
 
-            item {
-                MaterialNavigationCard(
-                    title = stringResource(R.string.home_about_freezer),
-                    icon = { Icon(Icons.Outlined.Info, contentDescription = null) },
-                    onClick = { navigator.push(Route.About) },
-                )
-            }
+        item {
+            MaterialNavigationCard(
+                title = stringResource(R.string.home_about_freezer),
+                icon = { MaterialIcon(Icons.Outlined.Info) },
+                onClick = { navigator.push(Route.About) },
+            )
+        }
 
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun MaterialSectionCard(content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            content = content,
-        )
-    }
-}
-
-@Composable
 private fun MaterialWarningCard(text: String) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+    MaterialSurfaceCard(
+        containerColor = MaterialTheme.colorScheme.errorContainer,
+        contentPadding = PaddingValues(16.dp),
     ) {
         Text(
             text = text,
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onErrorContainer,
         )
@@ -289,39 +244,5 @@ private fun MaterialInfoRow(title: String, content: String) {
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-@Composable
-private fun MaterialNavigationCard(
-    title: String,
-    icon: @Composable () -> Unit,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            icon()
-            Spacer(modifier = Modifier.size(16.dp))
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.NavigateNext,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.outline,
-            )
-        }
     }
 }
