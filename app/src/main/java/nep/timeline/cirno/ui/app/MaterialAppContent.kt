@@ -63,10 +63,10 @@ import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewMode
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
-import nep.timeline.cirno.ui.page.LogPage
 import nep.timeline.cirno.ui.page.material.MaterialAboutPage
 import nep.timeline.cirno.ui.page.material.MaterialAppPage
 import nep.timeline.cirno.ui.page.material.MaterialInfoPage
+import nep.timeline.cirno.ui.page.material.MaterialLogPage
 import nep.timeline.cirno.ui.page.material.MaterialSettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
@@ -128,7 +128,7 @@ fun MaterialAppContent(
                     MaterialAboutPage(padding = padding)
                 }
                 entry<Route.Log> {
-                    LogPage(padding = padding)
+                    MaterialLogPage(padding = padding)
                 }
             }
         }
