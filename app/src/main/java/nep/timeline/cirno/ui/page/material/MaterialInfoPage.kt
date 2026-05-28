@@ -43,9 +43,11 @@ import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
+import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
+import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.utils.VersionUtils
 
@@ -63,7 +65,8 @@ fun MaterialInfoPage(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var updateAvailable by remember { mutableStateOf(false) }
+    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var binderState by remember { mutableStateOf(MaterialInfoBinderState()) }
 
@@ -83,13 +86,8 @@ fun MaterialInfoPage(
         }
         val result = UpdateChecker.checkForUpdate()
         if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
-            updateAvailable = true
-        }
-    }
-
-    LaunchedEffect(updateAvailable) {
-        if (updateAvailable) {
-            WindowUtils.showToast(context.getString(R.string.update_available))
+            updateResult = result
+            showUpdateDialog = true
         }
     }
 
@@ -101,8 +99,19 @@ fun MaterialInfoPage(
             if (result == null || UpdateChecker.isSkipped(context, result.versionName)) {
                 WindowUtils.showToast(context.getString(R.string.update_already_latest))
             } else {
-                updateAvailable = true
+                updateResult = result
+                showUpdateDialog = true
             }
+        }
+    }
+
+    updateResult?.let { result ->
+        if (showUpdateDialog) {
+            UpdateDialog(
+                show = true,
+                updateResult = result,
+                onDismissRequest = { showUpdateDialog = false },
+            )
         }
     }
 
