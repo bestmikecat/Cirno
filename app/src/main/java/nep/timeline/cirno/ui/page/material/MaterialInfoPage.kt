@@ -39,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +76,7 @@ fun MaterialInfoPage(
     var updateAvailable by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
     var binderState by remember { mutableStateOf(MaterialInfoBinderState()) }
+    val scrollBehavior = rememberMaterialTopAppBarScrollBehavior()
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
@@ -116,26 +118,25 @@ fun MaterialInfoPage(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            CirnoLargeTopAppBar(
+                title = stringResource(R.string.app_name),
+                scrollBehavior = scrollBehavior,
+            )
+        },
     ) { innerPadding ->
         LazyColumn(
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
-                top = innerPadding.calculateTopPadding() + 64.dp,
+                top = innerPadding.calculateTopPadding() + 16.dp,
                 bottom = padding.calculateBottomPadding() + 20.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            item {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
             item {
                 val active = GlobalVars.isModuleActive
                 val working = active && !binderState.hasError
