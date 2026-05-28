@@ -102,6 +102,7 @@ fun MaterialLogPage(
     MaterialPageScaffold(
         title = stringResource(R.string.logs_title),
         padding = padding,
+        lazyListState = lazyListState,
         navigationIcon = {
             IconButton(onClick = { navigator.pop() }) {
                 Icon(

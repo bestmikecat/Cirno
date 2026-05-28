@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NavigateNext
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.dp
 fun MaterialPageScaffold(
     title: String,
     padding: PaddingValues,
+    lazyListState: LazyListState = rememberLazyListState(),
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -70,6 +73,7 @@ fun MaterialPageScaffold(
         },
     ) { innerPadding ->
         LazyColumn(
+            state = lazyListState,
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 20.dp,
