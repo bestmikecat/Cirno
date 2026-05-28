@@ -15,7 +15,6 @@ import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Update
-import androidx.compose.material.icons.outlined.ViewCarousel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -77,10 +76,7 @@ fun MaterialSettingsPage(
         stringResource(R.string.theme_monet_light),
         stringResource(R.string.theme_monet_dark),
     )
-    val navItems = listOf(stringResource(R.string.normal), stringResource(R.string.floating))
-    fun materialNavStyleIndex(value: Int) = value.coerceIn(0, 1)
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
-    val navIndex = remember { mutableIntStateOf(materialNavStyleIndex(globalSettings.navigationStyle)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val outputItems = listOf(stringResource(R.string.log_xposed), stringResource(R.string.log_file))
     val outputIndex = remember { mutableIntStateOf(if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1) }
@@ -111,7 +107,6 @@ fun MaterialSettingsPage(
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
-        navIndex.intValue = materialNavStyleIndex(globalSettings.navigationStyle)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
         outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
         levelIndex.intValue = when (globalSettings.logLevel) {
@@ -259,17 +254,6 @@ fun MaterialSettingsPage(
                             globalSettings.uiStyle = previous
                             uiStyleIndex.intValue = previous.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
                             updateAppState { state -> state.copy(uiStyle = previous) }
-                        }
-                    }
-                    MaterialDropdownItem(Icons.Outlined.ViewCarousel, stringResource(R.string.navigation_style), navItems, navIndex.intValue) {
-                        val previous = globalSettings.navigationStyle
-                        navIndex.intValue = it
-                        globalSettings.navigationStyle = it
-                        updateAppState { state -> state.copy(navigationStyle = it) }
-                        saveGlobalSettingsAsync("导航样式更新失败") {
-                            globalSettings.navigationStyle = previous
-                            navIndex.intValue = materialNavStyleIndex(previous)
-                            updateAppState { state -> state.copy(navigationStyle = previous) }
                         }
                     }
                     MaterialDropdownItem(Icons.Outlined.Palette, stringResource(R.string.theme_mode), themeItems, themeIndex.intValue) {
