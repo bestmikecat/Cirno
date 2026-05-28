@@ -1,5 +1,10 @@
 package nep.timeline.cirno.ui.page.material
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,12 +99,23 @@ fun MaterialPageScaffold(
 fun MaterialLoadingIndicator(
     modifier: Modifier = Modifier,
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "MaterialLoadingIndicator")
+    val progress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1300),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "MaterialLoadingIndicatorProgress",
+    )
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         LoadingIndicator(
-            active = true,
+            progress = { progress },
         )
     }
 }
