@@ -5,15 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
+import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import nep.timeline.cirno.ui.viewModel.LogViewModel
 import nep.timeline.cirno.ui.app.App
 import nep.timeline.cirno.binder.BinderService
@@ -31,16 +29,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
         enableEdgeToEdge()
+        val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {
-            var configLoaded by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
                     BinderService.register(this@MainActivity)
                     ConfigBinderRepository.loadIntoMemory()
                 }
-                configLoaded = true
+                appUiStateViewModel.loadFromGlobalSettings()
             }
-            App(active = true, configLoadKey = configLoaded)
+            App(active = true, appUiStateViewModel = appUiStateViewModel)
         }
     }
 }
