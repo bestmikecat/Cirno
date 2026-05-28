@@ -26,7 +26,6 @@ fun CirnoLargeTopAppBar(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
             )
         },
