@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.BlurOn
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Palette
@@ -42,7 +41,6 @@ import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
-import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,11 +77,11 @@ fun MaterialSettingsPage(
         stringResource(R.string.theme_monet_light),
         stringResource(R.string.theme_monet_dark),
     )
-    val navItems = listOf(stringResource(R.string.normal), stringResource(R.string.floating), stringResource(R.string.apple_floating))
+    val navItems = listOf(stringResource(R.string.normal), stringResource(R.string.floating))
+    fun materialNavStyleIndex(value: Int) = value.coerceIn(0, 1)
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
-    val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
+    val navIndex = remember { mutableIntStateOf(materialNavStyleIndex(globalSettings.navigationStyle)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
-    val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
     val outputItems = listOf(stringResource(R.string.log_xposed), stringResource(R.string.log_file))
     val outputIndex = remember { mutableIntStateOf(if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1) }
     val levelItems = listOf(stringResource(R.string.log_close), stringResource(R.string.log_info), stringResource(R.string.log_debug))
@@ -113,9 +111,8 @@ fun MaterialSettingsPage(
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
-        navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
+        navIndex.intValue = materialNavStyleIndex(globalSettings.navigationStyle)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
-        blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
         outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
         levelIndex.intValue = when (globalSettings.logLevel) {
             GlobalSettings.LOG_LEVEL_NONE -> 0
@@ -271,7 +268,7 @@ fun MaterialSettingsPage(
                         updateAppState { state -> state.copy(navigationStyle = it) }
                         saveGlobalSettingsAsync("导航样式更新失败") {
                             globalSettings.navigationStyle = previous
-                            navIndex.intValue = previous.coerceIn(0, 2)
+                            navIndex.intValue = materialNavStyleIndex(previous)
                             updateAppState { state -> state.copy(navigationStyle = previous) }
                         }
                     }
@@ -284,19 +281,6 @@ fun MaterialSettingsPage(
                             globalSettings.colorMode = previous
                             themeIndex.intValue = previous.coerceIn(0, 5)
                             updateAppState { state -> state.copy(colorMode = previous) }
-                        }
-                    }
-                    if (isRenderEffectSupported()) {
-                        MaterialSwitchItem(Icons.Outlined.BlurOn, stringResource(R.string.blur_ui), stringResource(R.string.blur_ui_desc), blurEnabled.intValue == 1) {
-                            val previous = globalSettings.blurUI
-                            blurEnabled.intValue = if (it) 1 else 0
-                            globalSettings.blurUI = it
-                            updateAppState { state -> state.copy(blur = it) }
-                            saveGlobalSettingsAsync("模糊效果更新失败") {
-                                globalSettings.blurUI = previous
-                                blurEnabled.intValue = if (previous) 1 else 0
-                                updateAppState { state -> state.copy(blur = previous) }
-                            }
                         }
                     }
                 }
