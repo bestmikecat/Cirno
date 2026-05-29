@@ -167,7 +167,7 @@ fun AppContent(
             listOf(
                 NavigationItem(AppContext.context.getString(R.string.main), MiuixIcons.HorizontalSplit),
                 NavigationItem(AppContext.context.getString(R.string.app_list), MiuixIcons.File),
-                NavigationItem(AppContext.context.getString(R.string.running_list), MiuixIcons.Extended.Tasks),
+                NavigationItem(AppContext.context.getString(R.string.running_list), MiuixIcons.Tasks),
                 NavigationItem(AppContext.context.getString(R.string.settings), MiuixIcons.Settings)
             )
         else
