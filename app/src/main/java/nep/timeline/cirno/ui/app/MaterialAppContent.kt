@@ -230,7 +230,7 @@ private fun MaterialHome(
                 }
                 Box(modifier = Modifier.fillMaxSize()) {
                     MaterialAppPager(
-                        active = settingsPageIndex == 2,
+                        active = settingsPageIndex == 3,
                         padding = PaddingValues(top = innerPadding.calculateTopPadding()),
                         pagerState = mainPagerState,
                         modifier = Modifier.fillMaxSize(),
@@ -239,7 +239,7 @@ private fun MaterialHome(
             }
         } else {
             MaterialAppPager(
-                active = settingsPageIndex == 2,
+                active = settingsPageIndex == 3,
                 padding = PaddingValues(
                     top = innerPadding.calculateTopPadding(),
                     bottom = padding.calculateBottomPadding() + innerPadding.calculateBottomPadding(),
