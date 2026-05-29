@@ -13,12 +13,17 @@ import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import nep.timeline.cirno.ui.viewModel.LogViewModel
+import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import nep.timeline.cirno.ui.app.App
 import nep.timeline.cirno.binder.BinderService
 
 class MainActivity : ComponentActivity() {
     object AppListViewModelSingleton {
         val appListViewModel: AppListViewModel by lazy { AppListViewModel() }
+    }
+
+    object MonitorViewModelSingleton {
+        val monitorViewModel: MonitorViewModel by lazy { MonitorViewModel() }
     }
 
     object LogViewModelSingleton {

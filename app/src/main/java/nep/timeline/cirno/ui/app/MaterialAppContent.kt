@@ -19,6 +19,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +61,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
+import nep.timeline.cirno.MainActivity.MonitorViewModelSingleton.monitorViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
@@ -67,6 +69,7 @@ import nep.timeline.cirno.ui.page.material.MaterialAboutPage
 import nep.timeline.cirno.ui.page.material.MaterialAppPage
 import nep.timeline.cirno.ui.page.material.MaterialInfoPage
 import nep.timeline.cirno.ui.page.material.MaterialLogPage
+import nep.timeline.cirno.ui.page.material.MaterialMonitorPage
 import nep.timeline.cirno.ui.page.material.MaterialSettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
@@ -81,8 +84,8 @@ fun MaterialAppContent(
     active: Boolean,
     padding: PaddingValues,
 ) {
-    val pageCount = if (active) 3 else 2
-    val settingsPageIndex = if (active) 2 else 1
+    val pageCount = if (active) 4 else 2
+    val settingsPageIndex = if (active) 3 else 1
     val pagerState = rememberPagerState(pageCount = { pageCount })
     val mainPagerState = rememberMaterialMainPagerState(pagerState)
     LaunchedEffect(mainPagerState.pagerState.currentPage) {
@@ -97,6 +100,7 @@ fun MaterialAppContent(
             listOf(
                 MaterialNavItem(AppContext.context.getString(R.string.main), Icons.Outlined.Home),
                 MaterialNavItem(AppContext.context.getString(R.string.app_list), Icons.Outlined.Apps),
+                MaterialNavItem(AppContext.context.getString(R.string.running_list), Icons.Outlined.Memory),
                 MaterialNavItem(AppContext.context.getString(R.string.settings), Icons.Outlined.Settings),
             )
         } else {
@@ -273,6 +277,17 @@ private fun MaterialAppPager(
             } else {
                 MaterialSettingsPage(
                     active = false,
+                    padding = padding,
+                )
+            }
+            2 -> if (active) {
+                MaterialMonitorPage(
+                    viewModel = monitorViewModel,
+                    padding = padding,
+                )
+            } else {
+                MaterialSettingsPage(
+                    active = true,
                     padding = padding,
                 )
             }

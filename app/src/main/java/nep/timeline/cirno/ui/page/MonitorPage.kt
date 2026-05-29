@@ -27,10 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,10 +36,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,28 +46,21 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
+import kotlinx.coroutines.delay
 import nep.timeline.cirno.R
-
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
-import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
-import nep.timeline.cirno.ui.viewModel.AppItemCompose
-import nep.timeline.cirno.ui.viewModel.AppListViewModel
+import nep.timeline.cirno.ui.viewModel.FrozenAppItemCompose
+import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.InputField
-import top.yukonga.miuix.kmp.basic.ListPopupColumn
-import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.PullToRefresh
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SearchBar
@@ -84,72 +72,16 @@ import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Search
-import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.shapes.SmoothUnevenRoundedCornerShape
-import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
-import top.yukonga.miuix.kmp.window.WindowListPopup
 
-private val AppListTopShape = SmoothUnevenRoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-private val AppListBottomShape = SmoothUnevenRoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-
-@Composable
-fun TopBarActions() {
-    val showTopPopup = remember { mutableStateOf(false) }
-    val topPopupHoldDown = remember { mutableStateOf(false) }
-    val type by appListViewModel.type.collectAsStateWithLifecycle()
-    val hapticFeedback = LocalHapticFeedback.current
-    IconButton(
-        onClick = {
-            showTopPopup.value = true
-            topPopupHoldDown.value = true
-        },
-        holdDownState = topPopupHoldDown.value,
-    ) {
-        Icon(
-            imageVector = MiuixIcons.More,
-            contentDescription = "WindowListPopup",
-            tint = colorScheme.onBackground,
-        )
-    }
-    WindowListPopup(
-        show = showTopPopup.value,
-        popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
-        alignment = PopupPositionProvider.Align.TopEnd,
-        onDismissRequest = {
-            showTopPopup.value = false
-        },
-        onDismissFinished = {
-            topPopupHoldDown.value = false
-        },
-        content = {
-            val state = LocalDismissState.current
-            val items = stringArrayResource(R.array.dropdownOptions)
-            ListPopupColumn {
-                items.forEachIndexed { index, string ->
-                    key(index) {
-                        DropdownImpl(
-                            text = string,
-                            optionSize = items.size,
-                            isSelected = type == index,
-                            onSelectedIndexChange = { selectedIdx ->
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                                appListViewModel.updateByQuery(type = selectedIdx)
-                                state?.invoke()
-                            },
-                            index = index
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
+private val MonitorListTopShape = SmoothUnevenRoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+private val MonitorListBottomShape = SmoothUnevenRoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
 
 @Composable
-fun AppPage(
-    viewModel: AppListViewModel,
+fun MonitorPage(
+    viewModel: MonitorViewModel,
     padding: PaddingValues,
     scrollEndHaptic: Boolean
 ) {
@@ -157,12 +89,12 @@ fun AppPage(
     val isWideScreen = LocalIsWideScreen.current
 
     val filteredApps by viewModel.cacheFilterApps.collectAsStateWithLifecycle()
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     val searchValue by viewModel.search.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val type by viewModel.type.collectAsStateWithLifecycle()
     val updatedApps by viewModel.updatedApps.collectAsStateWithLifecycle()
     val isLoading by viewModel.filterApps.collectAsStateWithLifecycle()
+    val hasLoadedOnce by viewModel.hasLoadedOnce.collectAsStateWithLifecycle()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val isActive = remember { mutableStateOf(false) }
@@ -171,10 +103,8 @@ fun AppPage(
     var isRefreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(isRefreshing) {
-        if (!isRefreshing) {
-            return@LaunchedEffect
-        }
-        viewModel.update().join()
+        if (!isRefreshing) return@LaunchedEffect
+        viewModel.getMonitorApps(showLoading = false)
         isRefreshing = false
     }
 
@@ -185,16 +115,16 @@ fun AppPage(
             else if (event == Lifecycle.Event.ON_STOP)
                 isActive.value = false
         }
-
         lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(isActive.value, type) {
-        viewModel.getFilterApps()
+    LaunchedEffect(isActive.value) {
+        viewModel.getMonitorApps()
+        while (isActive.value) {
+            delay(1500)
+            viewModel.getMonitorApps(showLoading = false)
+        }
     }
 
     val backdrop = rememberBlurBackdrop()
@@ -205,13 +135,10 @@ fun AppPage(
         topBar = {
             BlurredBar(backdrop, blurActive, scrollBehavior) {
                 AdaptiveTopAppBar(
-                    title = stringResource(R.string.app_list),
+                    title = stringResource(R.string.running_list),
                     isWideScreen = isWideScreen,
                     scrollBehavior = scrollBehavior,
                     color = barColor,
-                    actions = {
-                        TopBarActions()
-                    }
                 )
             }
         },
@@ -251,7 +178,7 @@ fun AppPage(
                             ),
                             contentPadding = contentPadding,
                         ) {
-                            item(key = "appSearch") {
+                            item(key = "monitorSearch") {
                                 SearchBar(
                                     modifier = Modifier
                                         .padding(
@@ -259,16 +186,12 @@ fun AppPage(
                                             end = 12.dp,
                                             top = 12.dp,
                                             bottom = 6.dp
-                                    ),
+                                        ),
                                     inputField = {
                                         InputField(
                                             query = searchValue,
-                                            onQueryChange = {
-                                                viewModel.updateByQuery(it, type)
-                                            },
-                                            onSearch = {
-                                                keyboardController?.hide()
-                                            },
+                                            onQueryChange = { viewModel.updateSearch(it) },
+                                            onSearch = { keyboardController?.hide() },
                                             expanded = expanded,
                                             onExpandedChange = { expanded = it },
                                             label = stringResource(R.string.search),
@@ -294,7 +217,7 @@ fun AppPage(
                                                     indication = null,
                                                 ) {
                                                     expanded = false
-                                                    viewModel.updateByQuery("", type)
+                                                    viewModel.updateSearch("")
                                                 },
                                             text = stringResource(R.string.cancel),
                                             style = TextStyle(
@@ -309,12 +232,7 @@ fun AppPage(
                                 ) {
                                 }
 
-                                SmallTitle(
-                                    text = when (type) {
-                                        2 -> stringResource(R.string.frozen_info)
-                                        else -> stringResource(R.string.app_info)
-                                    }
-                                )
+                                SmallTitle(text = stringResource(R.string.frozen_info))
                             }
 
                             val appItems = filteredApps
@@ -325,14 +243,14 @@ fun AppPage(
                             ) { i, item ->
                                 if (appCount == 1) {
                                     Card(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                        AppItemCompose(item)
+                                        FrozenAppItemCompose(item)
                                     }
                                 } else {
                                     val isFirst = i == 0
                                     val isLast = i == appCount - 1
                                     val shape = when {
-                                        isFirst -> AppListTopShape
-                                        isLast -> AppListBottomShape
+                                        isFirst -> MonitorListTopShape
+                                        isLast -> MonitorListBottomShape
                                         else -> RectangleShape
                                     }
                                     Box(
@@ -342,7 +260,7 @@ fun AppPage(
                                             .clip(shape)
                                             .background(colorScheme.surfaceContainer),
                                     ) {
-                                        AppItemCompose(item)
+                                        FrozenAppItemCompose(item)
                                     }
                                 }
                             }
@@ -384,6 +302,26 @@ fun AppPage(
                                 .align(alignment = Alignment.CenterVertically),
                         )
                     }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = hasLoadedOnce && updatedApps && isLoading.isEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(padding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.monitor_empty),
+                        color = colorScheme.onSurfaceVariantSummary
+                    )
                 }
             }
         }

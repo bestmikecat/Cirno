@@ -17,6 +17,7 @@
   <string name="other_config">其他配置</string>
   <string name="not_active">此模块尚未被 Xposed 激活！</string>
   <string name="app_list">应用列表</string>
+  <string name="running_list">运行列表</string>
   <string name="main">主页</string>
   <string name="settings">设置</string>
   <string name="settings_ui_group">界面设置</string>
@@ -127,6 +128,5 @@
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>
-    <item>监视器</item>
   </string-array>
 </resources>
