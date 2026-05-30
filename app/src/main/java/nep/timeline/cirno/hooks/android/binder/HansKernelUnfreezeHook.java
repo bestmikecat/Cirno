@@ -1,8 +1,11 @@
 package nep.timeline.cirno.hooks.android.binder;
 
+import java.util.Arrays;
+
 import de.robv.android.xposed.XC_MethodHook;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
+import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.FreezerService;
 import nep.timeline.cirno.utils.SystemChecker;
@@ -35,6 +38,8 @@ public class HansKernelUnfreezeHook extends MethodHook {
         return new AbstractMethodHook() {
             @Override
             protected void beforeMethod(MethodHookParam param) {
+                Log.d("unfreezeForKernel params: " + Arrays.toString(param.args));
+
                 if (BinderService.received) {
                     unhook();
                     return;

@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import de.robv.android.xposed.XposedBridge;
+import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.GlobalSettings;
 import nep.timeline.cirno.services.ConfigBinderHub;
@@ -20,6 +21,7 @@ public class Log {
     private final static File currentLog = new File(GlobalVars.LOG_DIR, "current.log");
 
     static {
+        i("当前Cirno版本: v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + "-" + BuildConfig.BUILD_TIME + ")");
         i("设备Android SDK: " + Build.VERSION.SDK_INT);
     }
 
@@ -71,6 +73,7 @@ public class Log {
             detail += ": " + message;
         }
         w(msg + " 失败: " + detail);
+        XposedBridge.log(throwable);
     }
 
     public static void e(String msg) {
@@ -90,6 +93,7 @@ public class Log {
             detail += ": " + message;
         }
         e(msg + " 失败: " + detail);
+        XposedBridge.log(throwable);
     }
 
     private static String getLogLevel() {

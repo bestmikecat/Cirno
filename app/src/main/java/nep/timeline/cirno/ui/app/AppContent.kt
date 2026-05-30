@@ -71,6 +71,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
+import nep.timeline.cirno.MainActivity.MonitorViewModelSingleton.monitorViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.custom.FloatingBottomBar
 import nep.timeline.cirno.ui.custom.FloatingBottomBarItem
@@ -79,6 +80,8 @@ import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.AboutPage
 import nep.timeline.cirno.ui.page.AppPage
 import nep.timeline.cirno.ui.page.InfoPage
+import nep.timeline.cirno.ui.page.LogPage
+import nep.timeline.cirno.ui.page.MonitorPage
 import nep.timeline.cirno.ui.page.SettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -110,14 +113,16 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.File
 import top.yukonga.miuix.kmp.icon.extended.HorizontalSplit
 import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.icon.extended.Tasks
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import kotlin.math.abs
 
 private object UIConstants {
     val MAIN_PAGE_INDEX = 0
     var APP_PAGE_INDEX = 1
-    var SETTINGS_PAGE_INDEX = 2
-    var PAGE_COUNT = 3
+    var RUNNING_LIST_PAGE_INDEX = 2
+    var SETTINGS_PAGE_INDEX = 3
+    var PAGE_COUNT = 4
 }
 
 enum class FloatingNavigationBarAlignment(val value: Int) {
@@ -143,6 +148,7 @@ fun AppContent(
     if (!active) {
         UIConstants.PAGE_COUNT = 2
         UIConstants.APP_PAGE_INDEX = 2
+        UIConstants.RUNNING_LIST_PAGE_INDEX = 3
         UIConstants.SETTINGS_PAGE_INDEX = 1
     }
 
@@ -161,6 +167,7 @@ fun AppContent(
             listOf(
                 NavigationItem(AppContext.context.getString(R.string.main), MiuixIcons.HorizontalSplit),
                 NavigationItem(AppContext.context.getString(R.string.app_list), MiuixIcons.File),
+                NavigationItem(AppContext.context.getString(R.string.running_list), MiuixIcons.Tasks),
                 NavigationItem(AppContext.context.getString(R.string.settings), MiuixIcons.Settings)
             )
         else
@@ -190,6 +197,9 @@ fun AppContent(
                 }
                 entry<Route.About> {
                     AboutPage(padding = padding)
+                }
+                entry<Route.Log> {
+                    LogPage(padding = padding)
                 }
             }
         }
@@ -553,8 +563,14 @@ fun AppPager(
                     scrollEndHaptic = appState.enableScrollEndHaptic
                 )
 
+                UIConstants.RUNNING_LIST_PAGE_INDEX -> MonitorPage(
+                    viewModel = monitorViewModel,
+                    padding = padding,
+                    scrollEndHaptic = appState.enableScrollEndHaptic
+                )
+
                 UIConstants.SETTINGS_PAGE_INDEX -> SettingsPage(
-                    active = UIConstants.SETTINGS_PAGE_INDEX == 2,
+                    active = UIConstants.SETTINGS_PAGE_INDEX == 3,
                     padding = padding,
                     scrollEndHaptic = appState.enableScrollEndHaptic
                 )

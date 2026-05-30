@@ -14,23 +14,22 @@ public class FrozenRW {
         cgroupV2SysAppIsolated = !Files.exists(Paths.get(path));
     }
 
-    private static void writeFrozen(int uid, int pid, int frozenState) {
+    private static boolean writeFrozen(int uid, int pid, int frozenState) {
         if (!cgroupV2SysAppIsolated) {
-            RWUtils.writeFrozen(cgroupV2 + "/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
-            return;
+            return RWUtils.writeFrozen(cgroupV2 + "/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
         }
 
         if (uid < Process.FIRST_APPLICATION_UID)
-            RWUtils.writeFrozen(cgroupV2 + "/system/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
+            return RWUtils.writeFrozen(cgroupV2 + "/system/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
         else
-            RWUtils.writeFrozen(cgroupV2 + "/apps/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
+            return RWUtils.writeFrozen(cgroupV2 + "/apps/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
     }
 
-    public static void frozen(int uid, int pid) {
-        writeFrozen(uid, pid, 1);
+    public static boolean frozen(int uid, int pid) {
+        return writeFrozen(uid, pid, 1);
     }
 
-    public static void thaw(int uid, int pid) {
-        writeFrozen(uid, pid, 0);
+    public static boolean thaw(int uid, int pid) {
+        return writeFrozen(uid, pid, 0);
     }
 }

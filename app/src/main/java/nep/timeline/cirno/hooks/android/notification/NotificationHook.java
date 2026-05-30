@@ -9,6 +9,7 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
+import nep.timeline.cirno.threads.FreezerHandler;
 
 public class NotificationHook {
     public NotificationHook(ClassLoader classLoader) {
@@ -39,6 +40,7 @@ public class NotificationHook {
                     AppRecord appRecord = AppService.get(packageName, userId);
                     if (appRecord != null && appRecord.isWaitingNotification()) {
                         appRecord.setWaitingNotification(false);
+                        FreezerHandler.sendFreezeMessageIgnoreMessages(appRecord);
                         Log.d(packageName + " 接收消息通知");
                     }
                     /*

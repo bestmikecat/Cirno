@@ -76,19 +76,17 @@ class AppListViewModel : ViewModel() {
         }
     }
 
-    fun update() {
-        viewModelScope.launch {
-            _updatedApps.value = false
-            val apps = withContext(Dispatchers.IO) {
-                when (_type.value) {
-                    0 -> PackageUtils.filter(3)
-                    1 -> PackageUtils.filter(3)
-                    else -> PackageUtils.getFrozenApplication(AppContext.context)
-                }
+    fun update() = viewModelScope.launch {
+        _updatedApps.value = false
+        val apps = withContext(Dispatchers.IO) {
+            when (_type.value) {
+                0 -> PackageUtils.filter(3)
+                1 -> PackageUtils.filter(3)
+                else -> PackageUtils.getFrozenApplication(AppContext.context)
             }
-            _filterApps.value = apps
-            _updatedApps.value = true
         }
+        _filterApps.value = apps
+        _updatedApps.value = true
     }
 
     init {

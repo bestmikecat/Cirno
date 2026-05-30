@@ -22,20 +22,24 @@ import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
-import nep.timeline.cirno.configs.checkers.AppConfigs;
+import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
-import nep.timeline.cirno.utils.InputMethodData;
-import nep.timeline.cirno.utils.PKGUtils;
+import nep.timeline.cirno.utils.FreezeExemptionChecker;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
     private static volatile long lastPublishedAtMs = 0L;
+    private static volatile boolean bootCompleted = false;
     private static volatile List<String> cachedRunningApps = new ArrayList<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, List<String>> PROCESS_NAME_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private MonitorBinderHub() {
+    }
+
+    public static void setBootCompleted() {
+        bootCompleted = true;
     }
 
     public static void refreshRunningApps() {
@@ -57,6 +61,24 @@ public final class MonitorBinderHub {
             result.add(appRecord.getPackageName() + ":" + appRecord.getUserId() + ":" + appRecord.getUid());
         }
         cachedRunningApps = result;
+        for (String key : PROCESS_NAME_CACHE.keySet()) {
+            int separator = key.lastIndexOf('#');
+            if (separator <= 0) {
+                PROCESS_NAME_CACHE.remove(key);
+                continue;
+            }
+            String packageName = key.substring(0, separator);
+            int userId;
+            try {
+                userId = Integer.parseInt(key.substring(separator + 1));
+            } catch (NumberFormatException e) {
+                PROCESS_NAME_CACHE.remove(key);
+                continue;
+            }
+            if (AppService.get(packageName, userId) == null) {
+                PROCESS_NAME_CACHE.remove(key);
+            }
+        }
     }
 
     private static final ApplicationInterface.Stub applicationBinder = new ApplicationInterface.Stub() {
@@ -69,6 +91,11 @@ public final class MonitorBinderHub {
         public String getProcessesForApp(String packageName, int userId) {
             if (packageName == null || packageName.isEmpty()) {
                 return "[]";
+            }
+            String cacheKey = packageName + "#" + userId;
+            List<String> cached = PROCESS_NAME_CACHE.get(cacheKey);
+            if (cached != null) {
+                return new Gson().toJson(cached);
             }
             LinkedHashSet<String> processNames = new LinkedHashSet<>();
             try {
@@ -113,7 +140,8 @@ public final class MonitorBinderHub {
                         }
                     }
                 }
-            } catch (Throwable ignored) {
+            } catch (Throwable e) {
+                Log.w("MonitorBinder getProcessesForApp failed pkg=" + packageName + " userId=" + userId, e);
             }
             if (processNames.isEmpty()) {
                 processNames.add(packageName);
@@ -126,7 +154,22 @@ public final class MonitorBinderHub {
                     }
                 }
             }
-            return new Gson().toJson(new ArrayList<>(processNames));
+            List<String> result = new ArrayList<>(processNames);
+            PROCESS_NAME_CACHE.put(cacheKey, result);
+            return new Gson().toJson(result);
+        }
+
+        @Override
+        public String getNetworkSpeed(String packageName, int userId) {
+            if (packageName == null || packageName.isEmpty()) {
+                return "{\"rx\":0,\"tx\":0}";
+            }
+            AppRecord appRecord = AppService.get(packageName, userId);
+            if (appRecord == null) {
+                return "{\"rx\":0,\"tx\":0}";
+            }
+            long[] speed = NetworkSpeedMonitor.getSpeed(appRecord.getUid());
+            return "{\"rx\":" + speed[0] + ",\"tx\":" + speed[1] + "}";
         }
     };
 
@@ -160,7 +203,15 @@ public final class MonitorBinderHub {
             if (frozenCount > 0) {
                 return "V2(" + frozenCount + "/" + processCount + "),RSS[" + rss + "]";
             }
-            String reason = resolveNotFrozenReason(appRecord, processCount, frozenCount);
+            FreezeExemption exemption = FreezeExemptionChecker.check(appRecord);
+            String reason;
+            if (exemption != null) {
+                reason = exemption.reason;
+            } else if (frozenCount < processCount) {
+                reason = "WAITING_FROZEN";
+            } else {
+                reason = REASON_UNKNOWN;
+            }
             return "NOT_FROZEN[" + reason + "],PROCESS_COUNT[" + processCount + "],FROZEN_COUNT[" + frozenCount + "],RSS[" + rss + "]";
         }
 
@@ -170,6 +221,7 @@ public final class MonitorBinderHub {
             if (apps == null) {
                 return result;
             }
+            java.util.HashMap<String, String> localCache = new java.util.HashMap<>();
             for (String entry : apps) {
                 if (entry == null || entry.isEmpty()) {
                     result.add("");
@@ -188,7 +240,13 @@ public final class MonitorBinderHub {
                     result.add("");
                     continue;
                 }
-                result.add(isFrozen(packageName, userId));
+                String cacheKey = packageName + "#" + userId;
+                String frozenState = localCache.get(cacheKey);
+                if (frozenState == null) {
+                    frozenState = isFrozen(packageName, userId);
+                    localCache.put(cacheKey, frozenState);
+                }
+                result.add(frozenState);
             }
             return result;
         }
@@ -202,6 +260,9 @@ public final class MonitorBinderHub {
     @SuppressLint("MissingPermission")
     public static void publish(String reason) {
         try {
+            if (!bootCompleted) {
+                return;
+            }
             long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
                 return;
@@ -220,41 +281,4 @@ public final class MonitorBinderHub {
         }
     }
 
-    private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
-        AppState appState = appRecord.getAppState();
-        if (appState != null && appState.isVisible()) {
-            return "VISIBLE";
-        }
-        if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "WHITELIST";
-        }
-        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "BLACKLIST";
-        }
-        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
-            return "INPUT";
-        }
-        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
-            return "SYSTEM";
-        }
-        if (appRecord.isWaitingNotification()) {
-            return "WAITING_PUSH_RESPONSE";
-        }
-        if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
-            return "AUDIO";
-        }
-        if (appState != null && AppConfigs.isLocationUseAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isLocation()) {
-            return "LOCATION";
-        }
-        if (appState != null && appState.isRecording()) {
-            return "RECORDING";
-        }
-        if (appState != null && appState.isVpn()) {
-            return "VPN";
-        }
-        if (frozenProcessCount < processCount) {
-            return "WAITING_FROZEN";
-        }
-        return REASON_UNKNOWN;
-    }
 }

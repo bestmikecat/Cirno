@@ -12,6 +12,14 @@ import java.util.LinkedHashSet
 object ConfigBinderRepository {
     private val gson = Gson()
 
+    data class InfoBinderSnapshot(
+        val binderAvailable: Boolean,
+        val hasError: Boolean = false,
+        val androidReady: Boolean = false,
+        val systemUiReady: Boolean = false,
+        val moduleVersion: String? = null
+    )
+
     fun loadIntoMemory(): Boolean {
         BinderService.register(AppContext.context)
         val config = ConfigBinder.getInstance() ?: return false
@@ -70,6 +78,24 @@ object ConfigBinderRepository {
         }
     }
 
+    fun isAndroidHookReady(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.getSignal("android_hook_ready") == "1"
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun isSystemUIHookReady(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.getSignal("systemui_hook_ready") == "1"
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     fun getManagedAppKeySet(): Set<String> {
         val config = ConfigBinder.getInstance() ?: return emptySet()
         return try {
@@ -115,6 +141,43 @@ object ConfigBinderRepository {
             if (version.isNullOrBlank()) null else version
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    fun loadInfoBinderSnapshot(): InfoBinderSnapshot {
+        BinderService.register(AppContext.context)
+        val config = ConfigBinder.getInstance() ?: return InfoBinderSnapshot(binderAvailable = false)
+        return try {
+            val version = config.moduleVersion
+            InfoBinderSnapshot(
+                binderAvailable = true,
+                hasError = config.getSignal("error") == "1",
+                androidReady = config.getSignal("android_hook_ready") == "1",
+                systemUiReady = config.getSignal("systemui_hook_ready") == "1",
+                moduleVersion = if (version.isNullOrBlank()) null else version
+            )
+        } catch (_: Throwable) {
+            InfoBinderSnapshot(binderAvailable = false)
+        }
+    }
+
+    fun getLogContent(): String? {
+        val config = ConfigBinder.getInstance() ?: return null
+        return try {
+            config.logContent
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    fun getLogContentPage(startLine: Int, lineCount: Int): List<String> {
+        val config = ConfigBinder.getInstance() ?: return emptyList()
+        return try {
+            config.getLogContentPage(startLine, lineCount)
+                .lines()
+                .filter { it.isNotBlank() }
+        } catch (_: Throwable) {
+            emptyList()
         }
     }
 }

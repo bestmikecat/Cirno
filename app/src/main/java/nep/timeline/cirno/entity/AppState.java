@@ -16,6 +16,7 @@ public class AppState {
     private volatile boolean audio = false;
     private volatile boolean recording = false;
     private volatile boolean vpn = false;
+    private volatile boolean networkActive = false;
 
     public AppState(AppRecord appRecord) {
         this.parent = appRecord;
@@ -53,6 +54,13 @@ public class AppState {
         if (vpn == value)
             return false;
         vpn = value;
+        return true;
+    }
+
+    public synchronized boolean setNetworkActive(boolean value) {
+        if (networkActive == value)
+            return false;
+        networkActive = value;
         return true;
     }
 
@@ -130,5 +138,9 @@ public class AppState {
 
     public boolean isVpn() {
         return vpn;
+    }
+
+    public boolean isNetworkActive() {
+        return networkActive;
     }
 }

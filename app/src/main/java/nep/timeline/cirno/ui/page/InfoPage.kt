@@ -25,10 +25,17 @@ import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.PauseCircleOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -44,7 +51,10 @@ import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.UpdateChecker
+import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -63,17 +73,46 @@ import top.yukonga.miuix.kmp.basic.rememberScrollBarAdapter
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 
 var clickNum = 0
 var lastClickTime = 0L
 val fool = SimpleDateFormat("MMdd").format(Date()).equals("0401")
+
+private data class HookScopeStatus(
+    val androidReady: Boolean,
+    val systemUiReady: Boolean
+) {
+    fun missingScopes(): List<String> {
+        val scopes = mutableListOf<String>()
+        if (!androidReady) {
+            scopes += "android"
+        }
+        if (!systemUiReady) {
+            scopes += "systemui"
+        }
+        return scopes
+    }
+}
+
+private data class InfoBinderState(
+    val binderAvailable: Boolean = false,
+    val hasError: Boolean = false,
+    val androidReady: Boolean = false,
+    val systemUiReady: Boolean = false,
+    val moduleVersion: String? = null
+)
 
 @Composable
 fun InfoPage(
@@ -121,8 +160,52 @@ private fun InfoContent(
     callback: (Int) -> Unit
 ) {
     val isWideScreen = LocalIsWideScreen.current
+    val context = LocalContext.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
+    val scope = rememberCoroutineScope()
+
+    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    var binderState by remember { mutableStateOf(InfoBinderState()) }
+
+    LaunchedEffect(Unit) {
+        binderState = withContext(Dispatchers.IO) {
+            var snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            for (attempt in 0 until 5) {
+                if (snapshot.binderAvailable) {
+                    break
+                }
+                delay(300)
+                snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            }
+            snapshot.let {
+                InfoBinderState(
+                    binderAvailable = it.binderAvailable,
+                    hasError = it.hasError,
+                    androidReady = it.androidReady,
+                    systemUiReady = it.systemUiReady,
+                    moduleVersion = it.moduleVersion
+                )
+            }
+        }
+        val result = UpdateChecker.checkForUpdate()
+        if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
+            updateResult = result
+            showUpdateDialog = true
+        }
+    }
+
+    updateResult?.let { result ->
+        if (showUpdateDialog) {
+            UpdateDialog(
+                show = true,
+                updateResult = result,
+                onDismissRequest = { showUpdateDialog = false }
+            )
+        }
+    }
 
     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
         LazyColumn(
@@ -136,7 +219,23 @@ private fun InfoContent(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
-                val hasError = ConfigBinderRepository.hasErrorSignal()
+                val binderAvailable = binderState.binderAvailable
+                val hasError = binderState.hasError
+                val moduleVersion = binderState.moduleVersion
+                val versionMismatch = active && binderAvailable && moduleVersion != null && moduleVersion != BuildConfig.VERSION_NAME
+                val androidScopeLabel = stringResource(R.string.scope_android)
+                val systemUiScopeLabel = stringResource(R.string.scope_systemui)
+                val hookScopeStatus = HookScopeStatus(
+                    androidReady = binderState.androidReady,
+                    systemUiReady = binderState.systemUiReady
+                )
+                val missingScopes = hookScopeStatus.missingScopes()
+                val missingScopeLabels = missingScopes.joinToString(separator = ", ") { scope ->
+                    when (scope) {
+                        "android" -> androidScopeLabel
+                        else -> systemUiScopeLabel
+                    }
+                }
                 Column(
                     modifier = Modifier.padding(vertical = 12.dp, horizontal = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -146,12 +245,18 @@ private fun InfoContent(
                         WarningCard(stringResource(R.string.fools_day))
                     if (!active)
                         WarningCard(stringResource(R.string.not_active))
+                    if (active && binderAvailable && missingScopes.isNotEmpty())
+                        WarningCard(
+                            stringResource(R.string.scope_not_running, missingScopeLabels)
+                        )
                     if (hasError)
                         WarningCard(stringResource(R.string.internal_error))
+                    if (versionMismatch)
+                        WarningCard(stringResource(R.string.module_version_mismatch))
                     StatusCard(
                         active = active,
                         working = active && !hasError,
-                        version = ConfigBinderRepository.getModuleVersion()
+                        version = moduleVersion
                             ?: stringResource(R.string.not_running),
                         onClickStatus = {
 
@@ -166,7 +271,27 @@ private fun InfoContent(
                         }
                     )
                     InfoCard(active)
+                    val alreadyLatestText = stringResource(R.string.update_already_latest)
+                    UpdateCard(
+                        isChecking = isCheckingUpdate,
+                        onClick = {
+                            isCheckingUpdate = true
+                            scope.launch {
+                                val result = UpdateChecker.checkForUpdate()
+                                isCheckingUpdate = false
+                                if (result == null) {
+                                    WindowUtils.showToast(alreadyLatestText)
+                                } else if (UpdateChecker.isSkipped(context, result.versionName)) {
+                                    WindowUtils.showToast(alreadyLatestText)
+                                } else {
+                                    updateResult = result
+                                    showUpdateDialog = true
+                                }
+                            }
+                        }
+                    )
                     LearnMoreCard()
+                    LogCard()
                 }
             }
 
@@ -388,6 +513,47 @@ private fun LearnMoreCard(modifier: Modifier = Modifier, colors: CardColors = Ca
             onClick = {
                 navigator.push(Route.About)
             }
+        )
+    }
+}
+
+@Composable
+private fun LogCard(modifier: Modifier = Modifier, colors: CardColors = CardDefaults.defaultColors()) {
+    val navigator = LocalNavigator.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        colors = colors
+    ) {
+        ArrowPreference(
+            title = stringResource(R.string.home_logs),
+            summary = stringResource(R.string.home_logs_desc),
+            onClick = {
+                navigator.push(Route.Log)
+            }
+        )
+    }
+}
+
+@Composable
+private fun UpdateCard(
+    isChecking: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.defaultColors()
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        colors = colors,
+        onClick = onClick,
+        showIndication = !isChecking,
+        pressFeedbackType = PressFeedbackType.Tilt
+    ) {
+        ArrowPreference(
+            title = if (isChecking) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
+            summary = stringResource(R.string.update_check_summary),
+            onClick = onClick
         )
     }
 }

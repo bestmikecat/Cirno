@@ -8,12 +8,17 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.services.AppService;
 
 public class RWUtils {
     public static String readConfig(SuFile file) {
@@ -51,11 +56,21 @@ public class RWUtils {
     }
 
     public static boolean writeFrozen(String path, int value) {
-        try (PrintWriter writer = new PrintWriter(path)) {
-            writer.write(Integer.toString(value));
+        try (FileOutputStream outputStream = new FileOutputStream(path)) {
+            outputStream.write(Integer.toString(value).getBytes(StandardCharsets.UTF_8));
+            outputStream.flush();
             return true;
-        } catch (FileNotFoundException ignored) {
-            Log.w(path + " | 文件不存在, 此进程可能已死亡, 或者你的设备不支持cgroup v2");
+        } catch (IOException e) {
+            String label = "";
+            Matcher m = Pattern.compile("uid_(\\d+)").matcher(path);
+            if (m.find()) {
+                int uid = Integer.parseInt(m.group(1));
+                List<AppRecord> records = AppService.getByUid(uid);
+                if (!records.isEmpty()) {
+                    label = " [" + records.get(0).getPackageNameWithUser() + "]";
+                }
+            }
+            Log.w(path + " | 写入冻结状态失败" + label + ", 此进程可能已死亡, 或者你的设备不支持cgroup v2", e);
             return false;
         }
     }

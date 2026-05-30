@@ -27,6 +27,10 @@ public class AppConfigs {
                 return getSafeSettings().locationUseApps;
             case ALLOW_NETWORK_MESSAGE:
                 return getSafeSettings().networkMessageApps;
+            case ALLOW_NETWORK_SPEED:
+                return getSafeSettings().networkSpeedApps;
+            case ALLOW_RECORDING:
+                return getSafeSettings().recordingApps;
             default:
                 throw new IllegalArgumentException("Unsupported capability: " + capability);
         }
@@ -43,18 +47,19 @@ public class AppConfigs {
         if (pkg == null || pkg.isEmpty()) {
             return;
         }
-        if (enabled && capability != Capability.BLACK_LIST && isBlackApp(pkg, userId)) {
+        if (enabled && capability.isExemption && isWhiteApp(pkg, userId)) {
             return;
         }
         Set<String> apps = getCapabilityApps(capability);
         String key = PolicyKey.of(pkg, userId);
         if (enabled) {
             apps.add(key);
-            if (capability == Capability.BLACK_LIST) {
-                getCapabilityApps(Capability.WHITE_LIST).remove(key);
-                getCapabilityApps(Capability.ALLOW_BACKGROUND_AUDIO).remove(key);
-                getCapabilityApps(Capability.ALLOW_LOCATION).remove(key);
-                getCapabilityApps(Capability.ALLOW_NETWORK_MESSAGE).remove(key);
+            if (capability == Capability.WHITE_LIST) {
+                for (Capability cap : Capability.values()) {
+                    if (cap.isExemption) {
+                        getCapabilityApps(cap).remove(key);
+                    }
+                }
             }
         } else {
             apps.remove(key);
@@ -142,6 +147,38 @@ public class AppConfigs {
 
     public static void setNetworkMessageAllowed(String pkg, boolean allowed) {
         setNetworkMessageAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isNetworkSpeedAllowed(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.ALLOW_NETWORK_SPEED);
+    }
+
+    public static boolean isNetworkSpeedAllowed(String pkg) {
+        return isNetworkSpeedAllowed(pkg, 0);
+    }
+
+    public static void setNetworkSpeedAllowed(String pkg, int userId, boolean allowed) {
+        setCapability(pkg, userId, Capability.ALLOW_NETWORK_SPEED, allowed);
+    }
+
+    public static void setNetworkSpeedAllowed(String pkg, boolean allowed) {
+        setNetworkSpeedAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isRecordingAllowed(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.ALLOW_RECORDING);
+    }
+
+    public static boolean isRecordingAllowed(String pkg) {
+        return isRecordingAllowed(pkg, 0);
+    }
+
+    public static void setRecordingAllowed(String pkg, int userId, boolean allowed) {
+        setCapability(pkg, userId, Capability.ALLOW_RECORDING, allowed);
+    }
+
+    public static void setRecordingAllowed(String pkg, boolean allowed) {
+        setRecordingAllowed(pkg, 0, allowed);
     }
 
     public static boolean isProcessExcludedFromFreeze(String pkg, int userId, String processName) {

@@ -9,6 +9,7 @@
   <string name="builtin_whitelist_summary">Cirno内置白名单</string>
   <string name="builtin_whitelist_locked">内置白名单不可修改</string>
   <string name="builtin_whitelist_blacklist_blocked">内置白名单应用，开启黑名单将强制冻结</string>
+  <string name="whitelist_exemption_blocked">白名单已开启，无法启用豁免</string>
   <string name="black_app">黑名单</string>
   <string name="direct_app">强制冻结</string>
   <string name="background_play">后台播放</string>
@@ -16,6 +17,7 @@
   <string name="other_config">其他配置</string>
   <string name="not_active">此模块尚未被 Xposed 激活！</string>
   <string name="app_list">应用列表</string>
+  <string name="running_list">运行列表</string>
   <string name="main">主页</string>
   <string name="settings">设置</string>
   <string name="settings_ui_group">界面设置</string>
@@ -33,6 +35,9 @@
   <string name="log_debug">调试</string>
   <string name="foreground_service">前台服务</string>
   <string name="netreceive_unfreeze">网络解冻</string>
+  <string name="network_speed_check">网速识别</string>
+  <string name="recording_unfreeze">录音解冻</string>
+  <string name="network_speed_threshold">网速识别阈值</string>
   <string name="battery_opt">电池优化</string>
   <string name="version">版本</string>
   <string name="xposed_version">Xposed 版本</string>
@@ -51,6 +56,15 @@
   <string name="system_not_flagged_but_frozen">Cirno 已正确执行冻结操作，但系统尚未处理该状态</string>
   <string name="about">关于</string>
   <string name="home_about_freezer">关于 Cirno</string>
+  <string name="about_github_source">在 GitHub 查看源码</string>
+  <string name="about_telegram_channel">加入我们的 Telegram 频道</string>
+  <string name="about_qq_group">加入我们的 QQ 群</string>
+  <string name="home_logs">日志</string>
+  <string name="home_logs_desc">查看模块日志输出</string>
+  <string name="logs_empty">暂无日志数据</string>
+  <string name="logs_title">日志</string>
+  <string name="scroll_to_top">滚动到顶部</string>
+  <string name="scroll_to_bottom">滚动到底部</string>
   <string name="home_click_to_learn_freezer">了解如何使用 Cirno 并开发脚本。</string>
   <string name="system_fingerprint">系统指纹</string>
   <string name="hook_type">Hook 类型</string>
@@ -59,7 +73,21 @@
   <string name="error">错误</string>
   <string name="not_running">未运行</string>
   <string name="internal_error">Cirno 遇到内部错误，请检查日志！</string>
+  <string name="module_version_mismatch">当前运行版本与管理器版本不一致，您似乎已更新过，请重启手机以应用更新。</string>
+  <string name="scope_not_running">以下作用域未运行：%s</string>
+  <string name="scope_android">android</string>
+  <string name="scope_systemui">systemui</string>
   <string name="navigation_style">导航样式</string>
+  <string name="theme_mode">主题模式</string>
+  <string name="ui_style">界面风格</string>
+  <string name="ui_style_miuix">Miuix</string>
+  <string name="ui_style_material">Material 3 Expressive</string>
+  <string name="theme_follow_system">跟随系统</string>
+  <string name="theme_light">浅色</string>
+  <string name="theme_dark">深色</string>
+  <string name="theme_monet_system">莫奈跟随系统</string>
+  <string name="theme_monet_light">莫奈浅色</string>
+  <string name="theme_monet_dark">莫奈深色</string>
   <string name="blur_ui">模糊</string>
   <string name="blur_ui_desc">为顶部栏和导航栏启用模糊效果</string>
   <string name="normal">默认</string>
@@ -86,9 +114,19 @@
   <string name="process_freeze_control">进程冻结控制</string>
   <string name="process_freeze_control_summary">开启后该进程将被冻结，关闭后该进程将不会被冻结</string>
   <string name="no_process_hint">进程将在启动后出现</string>
+  <string name="check_update">检查更新</string>
+  <string name="update_check_summary">检查是否有新版本可用</string>
+  <string name="update_available">发现新版本</string>
+  <string name="update_new_version">新版本：%s</string>
+  <string name="update_now">立即更新</string>
+  <string name="update_later">稍后</string>
+  <string name="update_checking">检查中…</string>
+  <string name="update_check_failed">检查更新失败</string>
+  <string name="update_already_latest">已是最新版本</string>
+  <string name="update_changelog">更新日志</string>
+  <string name="update_dont_remind">不再提示</string>
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>
-    <item>监视器</item>
   </string-array>
 </resources>

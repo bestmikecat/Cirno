@@ -32,6 +32,10 @@ public class ActivityManagerServiceHook extends MethodHook {
             @Override
             protected void beforeMethod(MethodHookParam param) {
                 ActivityManagerService.setInstance(param.thisObject);
+            }
+
+            @Override
+            protected void afterMethod(MethodHookParam param) {
                 MonitorBinderHub.publish("ActivityManagerService.setSystemProcess");
             }
         };

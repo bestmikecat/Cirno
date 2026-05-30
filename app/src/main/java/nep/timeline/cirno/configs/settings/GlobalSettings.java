@@ -10,9 +10,12 @@ public class GlobalSettings {
     public int netlinkUnit;
     public int freezeDelay = 5;
     public int wakeFreezeDelay = 30;
+    public int networkSpeedThreshold = 102400;
     public String logLevel = LOG_LEVEL_INFO;
     public String logOutputMode = LOG_OUTPUT_FILE;
 
+    public int uiStyle;
     public int navigationStyle;
+    public int colorMode;
     public boolean blurUI = true;
 }

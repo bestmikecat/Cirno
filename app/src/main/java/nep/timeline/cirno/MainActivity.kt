@@ -4,38 +4,46 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
+import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
+import nep.timeline.cirno.ui.viewModel.LogViewModel
+import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import nep.timeline.cirno.ui.app.App
 import nep.timeline.cirno.binder.BinderService
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.darkColorScheme
-import top.yukonga.miuix.kmp.theme.lightColorScheme
 
 class MainActivity : ComponentActivity() {
     object AppListViewModelSingleton {
         val appListViewModel: AppListViewModel by lazy { AppListViewModel() }
     }
 
+    object MonitorViewModelSingleton {
+        val monitorViewModel: MonitorViewModel by lazy { MonitorViewModel() }
+    }
+
+    object LogViewModelSingleton {
+        val logViewModel: LogViewModel by lazy { LogViewModel() }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
         enableEdgeToEdge()
-        lifecycleScope.launch(Dispatchers.IO) {
-            BinderService.register(this@MainActivity)
-            ConfigBinderRepository.loadIntoMemory()
-        }
+        val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {
-            MiuixTheme(
-                colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-            ) {
-                App(active = true)
+            LaunchedEffect(Unit) {
+                withContext(Dispatchers.IO) {
+                    BinderService.register(this@MainActivity)
+                    ConfigBinderRepository.loadIntoMemory()
+                }
+                appUiStateViewModel.loadFromGlobalSettings()
             }
+            App(active = true, appUiStateViewModel = appUiStateViewModel)
         }
     }
 }

@@ -9,6 +9,7 @@
   <string name="builtin_whitelist_summary">Cirno built-in whitelist</string>
   <string name="builtin_whitelist_locked">Built-in whitelist cannot be modified</string>
   <string name="builtin_whitelist_blacklist_blocked">Built-in whitelist app, enabling blacklist will force freeze</string>
+  <string name="whitelist_exemption_blocked">Whitelist is enabled, cannot enable exemption</string>
   <string name="black_app">Blacklist</string>
   <string name="direct_app">Force freeze</string>
   <string name="background_play">Background play</string>
@@ -16,6 +17,7 @@
   <string name="other_config">Other Config</string>
   <string name="not_active">This module has not been activated by Xposed!</string>
   <string name="app_list">App list</string>
+  <string name="running_list">Running list</string>
   <string name="main">Main</string>
   <string name="settings">Settings</string>
   <string name="settings_ui_group">UI Settings</string>
@@ -33,6 +35,9 @@
   <string name="log_debug">Debug</string>
   <string name="foreground_service">Foreground service</string>
   <string name="netreceive_unfreeze">NetReceive unfreeze</string>
+  <string name="network_speed_check">Network speed detection</string>
+  <string name="recording_unfreeze">Recording unfreeze</string>
+  <string name="network_speed_threshold">Network speed threshold</string>
   <string name="battery_opt">Battery Opt</string>
   <string name="version">Version</string>
   <string name="xposed_version">Xposed Version</string>
@@ -51,6 +56,15 @@
   <string name="system_not_flagged_but_frozen">Cirno has executed the freeze operation correctly, but the system has not processed it</string>
   <string name="about">About</string>
   <string name="home_about_freezer">About Cirno</string>
+  <string name="about_github_source">View source on GitHub</string>
+  <string name="about_telegram_channel">Join our Telegram channel</string>
+  <string name="about_qq_group">Join our QQ group</string>
+  <string name="home_logs">Logs</string>
+  <string name="home_logs_desc">View module log output</string>
+  <string name="logs_empty">No log data</string>
+  <string name="logs_title">Logs</string>
+  <string name="scroll_to_top">Scroll to top</string>
+  <string name="scroll_to_bottom">Scroll to bottom</string>
   <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
   <string name="system_fingerprint">System Fingerprint</string>
   <string name="hook_type">Hook Type</string>
@@ -59,7 +73,21 @@
   <string name="error">Error</string>
   <string name="not_running">Not running</string>
   <string name="internal_error">Cirno encountered an internal error. Please check the logs!</string>
+  <string name="module_version_mismatch">The running version does not match the manager version. It looks like you have updated Cirno; please restart your phone to apply the update.</string>
+  <string name="scope_not_running">These scopes are not running: %s</string>
+  <string name="scope_android">android</string>
+  <string name="scope_systemui">systemui</string>
   <string name="navigation_style">Navigation style</string>
+  <string name="theme_mode">Theme mode</string>
+  <string name="ui_style">UI style</string>
+  <string name="ui_style_miuix">Miuix</string>
+  <string name="ui_style_material">Material 3 Expressive</string>
+  <string name="theme_follow_system">Follow system</string>
+  <string name="theme_light">Light</string>
+  <string name="theme_dark">Dark</string>
+  <string name="theme_monet_system">Monet follow system</string>
+  <string name="theme_monet_light">Monet light</string>
+  <string name="theme_monet_dark">Monet dark</string>
   <string name="blur_ui">Blur</string>
   <string name="blur_ui_desc">Enable the blur effect for the top and navigation bars</string>
   <string name="normal">Default</string>
@@ -86,9 +114,19 @@
   <string name="process_freeze_control">Process freeze control</string>
   <string name="process_freeze_control_summary">When ON the process will be frozen, when OFF the process will not be frozen</string>
   <string name="no_process_hint">Processes will appear after app starts</string>
+  <string name="check_update">Check for updates</string>
+  <string name="update_check_summary">Check if a new version is available</string>
+  <string name="update_available">Update available</string>
+  <string name="update_new_version">New version: %s</string>
+  <string name="update_now">Update now</string>
+  <string name="update_later">Later</string>
+  <string name="update_checking">Checking…</string>
+  <string name="update_check_failed">Failed to check for updates</string>
+  <string name="update_already_latest">Already up to date</string>
+  <string name="update_changelog">Changelog</string>
+  <string name="update_dont_remind">Don\'t remind me again</string>
   <string-array name="dropdownOptions">
     <item>User Apps</item>
     <item>System Apps</item>
-    <item>Monitor</item>
   </string-array>
 </resources>

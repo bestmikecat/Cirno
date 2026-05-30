@@ -6,6 +6,9 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 
 ## Quick Rules
 
+- Communicate in the user's language.
+- Write only the minimum code needed to solve the problem. No premature abstraction. No designing flexibility nobody asked for.
+- Only change what the task requires. Do not optimize nearby code. Do not refactor things that aren't broken.
 - For significant changes/refactors, provide a short implementation plan before coding.
 - After each feature, run `./gradlew :app:assembleDebug`.
 - Use **hook side** and **ui side** consistently.
@@ -16,28 +19,6 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - `./gradlew :app:assembleDebug` (debug APK)
 - `./gradlew :app:assembleRelease` (release APK, minified)
 - `./gradlew :app:lint` (lint)
-
-## Repository Structure
-
-- Root module: `:app`
-- Build config: `build.gradle.kts`, `settings.gradle.kts`, `gradle/wrapper/`
-- Hook entry/orchestration:
-  - `app/src/main/java/nep/timeline/cirno/HookInit.java`
-  - `app/src/main/java/nep/timeline/cirno/master/AndroidHooks.java`
-- Hook framework:
-  - `app/src/main/java/nep/timeline/cirno/framework/MethodHook.java`
-  - `app/src/main/java/nep/timeline/cirno/framework/AbstractMethodHook.java`
-- Freezer:
-  - `app/src/main/java/nep/timeline/cirno/services/FreezerService.java`
-  - `app/src/main/java/nep/timeline/cirno/utils/FrozenRW.java`
-- Config manager:
-  - `app/src/main/java/nep/timeline/cirno/configs/ConfigManagerJson.java`
-- Xposed declarations:
-  - `app/src/main/assets/xposed_init`
-  - `app/src/main/res/values/array.xml`
-- CI:
-  - `.github/workflows/android.yml`
-  - `.github/workflows/release.yml`
 
 ## Architecture & Data Flow
 
@@ -61,12 +42,6 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - Hook side publishes binders via sticky broadcast `"Cirno-Binder"` through `MonitorBinderHub.publish()`.
 - UI side receives via `binder.BinderService.register(context)`, caches IBinders, wraps them via `provide.ConfigBinder/ApplicationBinder/FrozenStateBinder`.
 
-### Binder Interfaces
-
-- `ApplicationInterface`: `getRunningApplication()` returns running apps as `"packageName:userId:uid"`.
-- `FrozenStateInterface`: `isFrozen(packageName, userId)` returns diagnostic string (e.g. `V2(N/M),RSS[rss]`).
-- `ConfigInterface` (9 methods): settings JSON get/set, error/signal, managed app keys, module version.
-
 ### cgroup v2 Path Layout
 
 - `FrozenRW` supports two cgroup v2 layouts detected at class-load time:
@@ -83,10 +58,6 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - ReKernel communicates via netlink socket (protocol unit 22-26, configurable via `GlobalSettings.netlinkUnit`).
 - `services.BinderService` (netlink client) listens for kernel-level binder/network events and triggers temporary unfreeze.
 - `utils.SystemChecker` detects device vendor by probing for vendor-specific classes (Xiaomi/OPPO/Samsung/Huawei/Vivo/Nubia).
-
-### Hardcoded Whitelist
-
-- `CommonConstants.whiteApps` contains ~75 package names that must never be frozen (module self, system core, root tools, vendor system apps, push services).
 
 ## Critical Constraints
 
@@ -119,17 +90,6 @@ Cirno is an Xposed module for Android 12+ that freezes background apps through c
 - Prefer coalesced/batched Binder reads over chatty repeated calls.
 - Avoid high-frequency polling in **ui side**; prefer event-driven updates when available.
 - Keep Binder payloads limited to required fields.
-
-## Toolchain
-
-- JDK 25 (Temurin), AGP 9.1.0, Kotlin 2.3.20, Gradle 9.4.1
-- compileSdk = 37, targetSdk = 36, minSdk = 31
-- Java source/target compatibility = 25
-
-## CI & Release Responsibilities
-
-- `android.yml`: runs on `legacy` push/PR (path-filtered) and manual dispatch; executes `./gradlew build`, signs release APK, and publishes CI artifacts.
-- `release.yml`: runs on GitHub Release published; executes `./gradlew build`, signs release APK, and uploads Release assets.
 
 ## Testing
 

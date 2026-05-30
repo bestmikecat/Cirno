@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +27,7 @@ import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.provide.ApplicationBinder
+import nep.timeline.cirno.utils.PKGUtils
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -42,6 +44,9 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ApplicationHome(activity: ApplicationActivity) {
@@ -53,26 +58,55 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val hasReKernel = remember { File("/proc/rekernel").exists() }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
+    val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
+    val isSystemApp = remember {
+        try {
+            val packageInfo = activity.packageManager.getPackageInfo(packageName, 0)
+            PKGUtils.isSystemApp(packageInfo.applicationInfo)
+        } catch (_: Throwable) {
+            false
+        }
+    }
 
     val processList = remember { mutableStateListOf<String>() }
     val processExclusions = remember { mutableStateListOf<String>() }
     val processListLoaded = remember { mutableStateOf(false) }
+    val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
+    val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(packageName, userId) {
-        val appBinder = ApplicationBinder.getInstance()
-        if (appBinder != null) {
-            try {
-                val json = appBinder.getProcessesForApp(packageName, userId)
-                if (json != null) {
-                    val type = object : TypeToken<List<String>>() {}.type
-                    val names: List<String> = Gson().fromJson(json, type) ?: emptyList()
-                    processList.clear()
-                    processList.addAll(names)
+    fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                if (ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                    null
+                } else {
+                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
                 }
-            } catch (_: Throwable) {
+            }
+            if (error != null) {
+                onFailed(error)
             }
         }
-        val excluded = AppConfigs.getExcludedProcesses(packageName, userId)
+    }
+
+    LaunchedEffect(packageName, userId) {
+        val (names, excluded) = withContext(Dispatchers.IO) {
+            val processNames = mutableListOf<String>()
+            val appBinder = ApplicationBinder.getInstance()
+            if (appBinder != null) {
+                try {
+                    val json = appBinder.getProcessesForApp(packageName, userId)
+                    val type = object : TypeToken<List<String>>() {}.type
+                    val parsed: List<String> = Gson().fromJson(json, type) ?: emptyList()
+                    processNames.addAll(parsed)
+                } catch (_: Throwable) {
+                }
+            }
+            processNames to AppConfigs.getExcludedProcesses(packageName, userId)
+        }
+        processList.clear()
+        processList.addAll(names)
         processExclusions.clear()
         processExclusions.addAll(excluded)
         processListLoaded.value = true
@@ -103,56 +137,84 @@ fun ApplicationHome(activity: ApplicationActivity) {
             ) {
                 item {
                     Card(modifier = Modifier.padding(12.dp)) {
-                        val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
-                        val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
                         val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
+                        val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
+                        val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
 
                         if (!hasReKernel && networkMessage.value) {
                             networkMessage.value = false
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                            ConfigBinderRepository.saveApplicationSettingsFromMemory()
+                            saveApplicationSettingsAsync()
                         }
 
-                        SwitchPreference(
-                            title = stringResource(R.string.white_app),
-                            summary = if (isBuiltinWhitelistApp) builtinWhitelistSummary else null,
-                            checked = isBuiltinWhitelistApp || white.value,
-                            enabled = !isBuiltinWhitelistApp,
-                            onCheckedChange = {
-                                if (isBuiltinWhitelistApp) return@SwitchPreference
-                                if (black.value && it) {
-                                    WindowUtils.showToast("黑名单已开启，无法启用白名单")
-                                    return@SwitchPreference
-                                }
-                                val previous = white.value
-                                white.value = it
-                                AppConfigs.setWhiteApp(packageName, userId, it)
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    white.value = previous
-                                    AppConfigs.setWhiteApp(packageName, userId, previous)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("白名单更新失败"))
-                                }
-                            }
-                        )
+                        if (!isSystemApp) {
+                            SwitchPreference(
+                                title = stringResource(R.string.white_app),
+                                summary = if (isBuiltinWhitelistApp) builtinWhitelistSummary else null,
+                                checked = isBuiltinWhitelistApp || white.value,
+                                enabled = !isBuiltinWhitelistApp,
+                                onCheckedChange = {
+                                    if (isBuiltinWhitelistApp) return@SwitchPreference
+                                    val prevWhite = white.value
+                                    val prevBackground = backgroundPlay.value
+                                    val prevLocation = locationUse.value
+                                    val prevNetwork = networkMessage.value
+                                    val prevNetworkSpeed = networkSpeed.value
+                                    val prevRecording = recording.value
 
-                        if (!isBuiltinWhitelistApp) {
+                                    white.value = it
+                                    AppConfigs.setWhiteApp(packageName, userId, it)
+                                    if (it) {
+                                        backgroundPlay.value = false
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
+                                        locationUse.value = false
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, false)
+                                        networkMessage.value = false
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
+                                        networkSpeed.value = false
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
+                                        recording.value = false
+                                        AppConfigs.setRecordingAllowed(packageName, userId, false)
+                                    }
+
+                                    saveApplicationSettingsAsync("白名单更新失败") { error ->
+                                        white.value = prevWhite
+                                        AppConfigs.setWhiteApp(packageName, userId, prevWhite)
+                                        backgroundPlay.value = prevBackground
+                                        AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
+                                        locationUse.value = prevLocation
+                                        AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
+                                        networkMessage.value = prevNetwork
+                                        AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
+                                        networkSpeed.value = prevNetworkSpeed
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
+                                        recording.value = prevRecording
+                                        AppConfigs.setRecordingAllowed(packageName, userId, prevRecording)
+                                        WindowUtils.showToast(error)
+                                    }
+                                }
+                            )
+                        }
+
+                        if (!isBuiltinWhitelistApp && !isSystemApp) {
                             SwitchPreference(
                                 title = stringResource(R.string.background_play),
                                 checked = backgroundPlay.value,
+                                enabled = !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = backgroundPlay.value
                                     backgroundPlay.value = it
                                     AppConfigs.setBackgroundPlayAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("后台播放配置更新失败") { error ->
                                         backgroundPlay.value = previous
                                         AppConfigs.setBackgroundPlayAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("后台播放配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -160,18 +222,19 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.location_check),
                                 checked = locationUse.value,
+                                enabled = !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = locationUse.value
                                     locationUse.value = it
                                     AppConfigs.setLocationUseAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("定位配置更新失败") { error ->
                                         locationUse.value = previous
                                         AppConfigs.setLocationUseAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("定位配置更新失败"))
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
@@ -180,68 +243,88 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 title = stringResource(R.string.netreceive_unfreeze),
                                 summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
                                 checked = networkMessage.value,
-                                enabled = hasReKernel,
+                                enabled = hasReKernel && !white.value,
                                 onCheckedChange = {
-                                    if (black.value && it) {
-                                        WindowUtils.showToast("黑名单已开启，无法启用豁免")
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
                                     val previous = networkMessage.value
                                     networkMessage.value = it
                                     AppConfigs.setNetworkMessageAllowed(packageName, userId, it)
-                                    if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                    saveApplicationSettingsAsync("网络消息配置更新失败") { error ->
                                         networkMessage.value = previous
                                         AppConfigs.setNetworkMessageAllowed(packageName, userId, previous)
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("网络消息配置更新失败"))
+                                        WindowUtils.showToast(error)
+                                    }
+                                }
+                            )
+
+                            SwitchPreference(
+                                title = stringResource(R.string.network_speed_check),
+                                checked = networkSpeed.value,
+                                enabled = !white.value,
+                                onCheckedChange = {
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
+                                        return@SwitchPreference
+                                    }
+                                    val previous = networkSpeed.value
+                                    networkSpeed.value = it
+                                    AppConfigs.setNetworkSpeedAllowed(packageName, userId, it)
+                                    saveApplicationSettingsAsync("网速识别配置更新失败") { error ->
+                                        networkSpeed.value = previous
+                                        AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(error)
+                                    }
+                                }
+                            )
+
+                            SwitchPreference(
+                                title = stringResource(R.string.recording_unfreeze),
+                                checked = recording.value,
+                                enabled = !white.value,
+                                onCheckedChange = {
+                                    if (white.value && it) {
+                                        WindowUtils.showToast(whitelistExemptionBlocked)
+                                        return@SwitchPreference
+                                    }
+                                    val previous = recording.value
+                                    recording.value = it
+                                    AppConfigs.setRecordingAllowed(packageName, userId, it)
+                                    saveApplicationSettingsAsync("录音解冻配置更新失败") { error ->
+                                        recording.value = previous
+                                        AppConfigs.setRecordingAllowed(packageName, userId, previous)
+                                        WindowUtils.showToast(error)
                                     }
                                 }
                             )
                         }
 
-                        SwitchPreference(
-                            title = stringResource(R.string.black_app),
-                            summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
-                            checked = black.value,
-                            onCheckedChange = {
-                                val prevBlack = black.value
-                                val prevWhite = white.value
-                                val prevBackground = backgroundPlay.value
-                                val prevLocation = locationUse.value
-                                val prevNetwork = networkMessage.value
+                        if (isSystemApp || isBuiltinWhitelistApp) {
+                            SwitchPreference(
+                                title = stringResource(R.string.black_app),
+                                summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
+                                checked = black.value,
+                                onCheckedChange = {
+                                    val prevBlack = black.value
 
-                                black.value = it
-                                AppConfigs.setBlackApp(packageName, userId, it)
-                                if (it) {
-                                    white.value = false
-                                    backgroundPlay.value = false
-                                    locationUse.value = false
-                                    networkMessage.value = false
-                                    AppConfigs.setWhiteApp(packageName, userId, false)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, false)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, false)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
-                                }
+                                    black.value = it
+                                    AppConfigs.setBlackApp(packageName, userId, it)
 
-                                if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
-                                    black.value = prevBlack
-                                    white.value = prevWhite
-                                    backgroundPlay.value = prevBackground
-                                    locationUse.value = prevLocation
-                                    networkMessage.value = prevNetwork
-                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                    AppConfigs.setWhiteApp(packageName, userId, prevWhite)
-                                    AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
-                                    AppConfigs.setLocationUseAllowed(packageName, userId, prevLocation)
-                                    AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("黑名单更新失败"))
+                                    saveApplicationSettingsAsync("黑名单更新失败") { error ->
+                                        black.value = prevBlack
+                                        AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                                        WindowUtils.showToast(error)
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
 
                     }
                 }
 
-                if (processListLoaded.value) {
+                if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
                     item {
                         SmallTitle(text = stringResource(R.string.process_freeze_control))
                         Card(modifier = Modifier.padding(12.dp)) {
@@ -264,7 +347,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     color = Color.Gray
                                 )
                                 processList.forEach { processName ->
-                                    val isExcluded = remember { mutableStateOf(processExclusions.contains(processName)) }
+                                    val isExcluded = remember(processName) { mutableStateOf(processExclusions.contains(processName)) }
                                     SwitchPreference(
                                         title = processName,
                                         checked = !isExcluded.value,
@@ -277,7 +360,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                             } else {
                                                 processExclusions.add(processName)
                                             }
-                                            if (!ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                                            saveApplicationSettingsAsync("进程冻结配置更新失败") { error ->
                                                 isExcluded.value = previous
                                                 AppConfigs.setProcessExcludedFromFreeze(packageName, userId, processName, previous)
                                                 if (previous) {
@@ -285,7 +368,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                                 } else {
                                                     processExclusions.remove(processName)
                                                 }
-                                                WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("进程冻结配置更新失败"))
+                                                WindowUtils.showToast(error)
                                             }
                                         }
                                     )

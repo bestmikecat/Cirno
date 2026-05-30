@@ -33,8 +33,6 @@ import nep.timeline.cirno.binders.ApplicationInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
-import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.entity.AppState;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinder;
 import nep.timeline.cirno.provide.FrozenStateBinder;
@@ -119,6 +117,8 @@ public class PackageUtils {
                 item.backgroundPlay = AppConfigs.isBackgroundPlayAllowed(pkg, item.userId);
                 item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
                 item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
+                item.networkSpeedEnabled = AppConfigs.isNetworkSpeedAllowed(pkg, item.userId);
+                item.recordingAllowed = AppConfigs.isRecordingAllowed(pkg, item.userId);
             item.processConfig = !AppConfigs.getExcludedProcesses(pkg, item.userId).isEmpty();
             item.socket = item.networkCheck;
             item.netReceive = item.networkCheck;
@@ -138,7 +138,8 @@ public class PackageUtils {
         if (item.white) {
             return 0;
         }
-        if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck) {
+        if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck
+                || item.networkSpeedEnabled || item.processConfig || item.recordingAllowed) {
             return 1;
         }
         if (item.black) {
@@ -325,6 +326,7 @@ public class PackageUtils {
             item.rss = snapshot.rss;
             item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
             item.processConfig = !AppConfigs.getExcludedProcesses(runningApp.packageName, runningApp.userId).isEmpty();
+            item.networkSpeedEnabled = AppConfigs.isNetworkSpeedAllowed(runningApp.packageName, runningApp.userId);
             result.add(item);
             index++;
         }
@@ -354,44 +356,6 @@ public class PackageUtils {
             return base;
         }
         return base + "#" + userId;
-    }
-
-    private static String resolveNotFrozenReason(AppRecord appRecord, int processCount, int frozenProcessCount) {
-        AppState appState = appRecord.getAppState();
-        if (appState != null && appState.isVisible()) {
-            return "VISIBLE";
-        }
-        if (AppConfigs.isWhiteApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "WHITELIST";
-        }
-        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            return "BLACKLIST";
-        }
-        if (appRecord.equals(InputMethodData.currentInputMethodApp)) {
-            return "INPUT";
-        }
-        if (PKGUtils.isSystemApp(appRecord.getApplicationInfo())) {
-            return "SYSTEM";
-        }
-        if (appRecord.isWaitingNotification()) {
-            return "WAITING_PUSH_RESPONSE";
-        }
-        if (appState != null && AppConfigs.isBackgroundPlayAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isAudio()) {
-            return "AUDIO";
-        }
-        if (appState != null && AppConfigs.isLocationUseAllowed(appRecord.getPackageName(), appRecord.getUserId()) && appState.isLocation()) {
-            return "LOCATION";
-        }
-        if (appState != null && appState.isRecording()) {
-            return "RECORDING";
-        }
-        if (appState != null && appState.isVpn()) {
-            return "VPN";
-        }
-        if (frozenProcessCount < processCount) {
-            return "WAITING_FROZEN";
-        }
-        return "UNKNOWN";
     }
 
     private static long readProcessRssKb(int pid) {

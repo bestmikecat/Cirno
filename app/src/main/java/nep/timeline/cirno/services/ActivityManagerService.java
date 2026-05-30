@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 
 import de.robv.android.xposed.XposedHelpers;
 import lombok.Setter;
+import nep.timeline.cirno.log.Log;
 
 public class ActivityManagerService {
     @Setter
@@ -24,10 +25,21 @@ public class ActivityManagerService {
             if (packageManager == null)
                 return null;
             return (ApplicationInfo) XposedHelpers.callMethod(packageManager, "getApplicationInfoAsUser", packageName, PackageManager.GET_META_DATA | PackageManager.GET_SIGNING_CERTIFICATES, userId);
-        } catch (Throwable ignored) {
-
+        } catch (Throwable e) {
+            if (isNameNotFound(e))
+                return null;
+            Log.d("ActivityManagerService getApplicationInfo package=" + packageName + " userId=" + userId, e);
         }
         return null;
+    }
+
+    private static boolean isNameNotFound(Throwable throwable) {
+        while (throwable != null) {
+            if (throwable instanceof PackageManager.NameNotFoundException)
+                return true;
+            throwable = throwable.getCause();
+        }
+        return false;
     }
 
     public static int getCurrentOrTargetUserId() {

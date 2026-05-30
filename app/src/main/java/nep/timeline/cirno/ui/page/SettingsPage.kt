@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,8 @@ import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.settings.GlobalSettings
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalUpdateAppState
+import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
+import nep.timeline.cirno.ui.app.UI_STYLE_MIUIX
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
@@ -50,6 +53,9 @@ import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -104,7 +110,8 @@ private fun SettingsContent(
     val updateAppState = LocalUpdateAppState.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
-    val globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+    val scope = rememberCoroutineScope()
+    var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
     val backupSuccessText = stringResource(R.string.backup_success)
     val backupFailedText = stringResource(R.string.backup_failed)
     val restoreSuccessText = stringResource(R.string.restore_success)
@@ -122,12 +129,27 @@ private fun SettingsContent(
     }
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
+    val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
     val navItems = listOf(
         stringResource(R.string.normal),
         stringResource(R.string.floating),
         stringResource(R.string.apple_floating),
     )
+    val uiStyleItems = listOf(
+        stringResource(R.string.ui_style_miuix),
+        stringResource(R.string.ui_style_material),
+    )
+    val themeItems = listOf(
+        stringResource(R.string.theme_follow_system),
+        stringResource(R.string.theme_light),
+        stringResource(R.string.theme_dark),
+        stringResource(R.string.theme_monet_system),
+        stringResource(R.string.theme_monet_light),
+        stringResource(R.string.theme_monet_dark),
+    )
+    val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
+    val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
     val outputItems = listOf(
         stringResource(R.string.log_xposed),
@@ -153,23 +175,59 @@ private fun SettingsContent(
         )
     }
 
+    fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
+        scope.launch {
+            val error = withContext(Dispatchers.IO) {
+                if (ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                    null
+                } else {
+                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                }
+            }
+            if (error != null) {
+                onFailed()
+                WindowUtils.showToast(error)
+            }
+        }
+    }
+
+    fun syncLocalStateFromSettings() {
+        freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
+        wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
+        networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
+        navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
+        themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
+        blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
+        outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
+        levelIndex.intValue = when (globalSettings.logLevel) {
+            GlobalSettings.LOG_LEVEL_NONE -> 0
+            GlobalSettings.LOG_LEVEL_DEBUG -> 2
+            else -> 1
+        }
+    }
+
     val backupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
     ) { uri: Uri? ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
-        val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
-        val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
-        if (globalJson == null || applicationJson == null) {
-            AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(backupFailedText))
-            return@rememberLauncherForActivityResult
-        }
-        try {
-            ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
-            AppContext.showToast(backupSuccessText)
-        } catch (_: Throwable) {
-            AppContext.showToast(backupFailedText)
+        scope.launch {
+            val message = withContext(Dispatchers.IO) {
+                val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
+                val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+                if (globalJson == null || applicationJson == null) {
+                    return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
+                }
+                try {
+                    ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
+                    backupSuccessText
+                } catch (_: Throwable) {
+                    backupFailedText
+                }
+            }
+            AppContext.showToast(message)
         }
     }
 
@@ -179,29 +237,43 @@ private fun SettingsContent(
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
-        try {
-            val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
-            val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
-            if (!applied) {
-                AppContext.showToast(ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText))
-                return@rememberLauncherForActivityResult
+        scope.launch {
+            val (message, restored) = withContext(Dispatchers.IO) {
+                try {
+                    val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
+                    val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
+                    if (!applied) {
+                        return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
+                    }
+                    if (!ConfigBinderRepository.loadIntoMemory()) {
+                        return@withContext restoreSuccessReloadFailedText to false
+                    }
+                    restoreSuccessText to true
+                } catch (e: ConfigBackupZipUtils.RestoreException) {
+                    when (e.error) {
+                        ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
+                        ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> restoreFailedStructureText
+                        ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
+                        ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
+                        ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
+                    } to false
+                } catch (_: Throwable) {
+                    restoreFailedUnknownText to false
+                }
             }
-            if (!ConfigBinderRepository.loadIntoMemory()) {
-                AppContext.showToast(restoreSuccessReloadFailedText)
-                return@rememberLauncherForActivityResult
-            }
-            AppContext.showToast(restoreSuccessText)
-        } catch (e: ConfigBackupZipUtils.RestoreException) {
-            val message = when (e.error) {
-                ConfigBackupZipUtils.RestoreError.OPEN_INPUT_FAILED -> restoreFailedOpenText
-                ConfigBackupZipUtils.RestoreError.INVALID_ZIP_STRUCTURE -> restoreFailedStructureText
-                ConfigBackupZipUtils.RestoreError.MISSING_REQUIRED_FILES -> restoreFailedRequiredFilesText
-                ConfigBackupZipUtils.RestoreError.INVALID_JSON -> restoreFailedJsonText
-                ConfigBackupZipUtils.RestoreError.IO_ERROR -> restoreFailedIoText
+            if (restored) {
+                globalSettings = GlobalVars.globalSettings ?: globalSettings
+                syncLocalStateFromSettings()
+                updateAppState { state ->
+                    state.copy(
+                        uiStyle = globalSettings.uiStyle,
+                        navigationStyle = globalSettings.navigationStyle,
+                        colorMode = globalSettings.colorMode,
+                        blur = globalSettings.blurUI,
+                    )
+                }
             }
             AppContext.showToast(message)
-        } catch (_: Throwable) {
-            AppContext.showToast(restoreFailedUnknownText)
         }
     }
 
@@ -223,14 +295,13 @@ private fun SettingsContent(
                             value = freezeDelay.floatValue,
                             onValueChange = {
                                 freezeDelay.floatValue = it
-                                globalSettings.freezeDelay = it.toInt().coerceAtLeast(1)
                             },
                             onValueChangeFinished = {
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    val previous = globalSettings.freezeDelay
+                                val previous = globalSettings.freezeDelay
+                                globalSettings.freezeDelay = freezeDelay.floatValue.toInt().coerceAtLeast(1)
+                                saveGlobalSettingsAsync("冻结延迟更新失败") {
                                     globalSettings.freezeDelay = previous
                                     freezeDelay.floatValue = previous.toFloat()
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("冻结延迟更新失败"))
                                 }
                             },
                             valueRange = 1f..30f,
@@ -247,13 +318,36 @@ private fun SettingsContent(
                                 wakeFreezeDelay.floatValue = it
                             },
                             onValueChangeFinished = {
+                                val previous = globalSettings.wakeFreezeDelay
                                 globalSettings.wakeFreezeDelay = wakeFreezeDelay.floatValue.toInt().coerceIn(1,120)
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("唤醒冻结延迟更新失败"))
+                                saveGlobalSettingsAsync("唤醒冻结延迟更新失败") {
+                                    globalSettings.wakeFreezeDelay = previous
+                                    wakeFreezeDelay.floatValue = previous.toFloat()
                                 }
                             },
                             valueRange = 1f..120f,
                             steps = 118,
+                            modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.network_speed_threshold) + " | " + formatSpeedThreshold(networkSpeedThreshold.floatValue.toInt()),
+                            modifier = Modifier.padding(17.dp),
+                        )
+                        Slider(
+                            value = networkSpeedThreshold.floatValue,
+                            onValueChange = {
+                                networkSpeedThreshold.floatValue = it
+                            },
+                            onValueChangeFinished = {
+                                val previous = globalSettings.networkSpeedThreshold
+                                globalSettings.networkSpeedThreshold = networkSpeedThreshold.floatValue.toInt().coerceIn(102400, 2097152)
+                                saveGlobalSettingsAsync("网速识别阈值更新失败") {
+                                    globalSettings.networkSpeedThreshold = previous
+                                    networkSpeedThreshold.floatValue = previous.toFloat()
+                                }
+                            },
+                            valueRange = 102400f..2097152f,
+                            steps = 99,
                             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
                         )
                     }
@@ -263,6 +357,23 @@ private fun SettingsContent(
                     SmallTitle(text = stringResource(R.string.settings_ui_group))
                     Card(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
+                            title = stringResource(R.string.ui_style),
+                            items = uiStyleItems,
+                            selectedIndex = uiStyleIndex.intValue,
+                            onSelectedIndexChange = {
+                                val previous = globalSettings.uiStyle
+                                uiStyleIndex.intValue = it
+                                globalSettings.uiStyle = it
+                                updateAppState { state -> state.copy(uiStyle = it) }
+                                saveGlobalSettingsAsync("界面风格更新失败") {
+                                    globalSettings.uiStyle = previous
+                                    uiStyleIndex.intValue = previous.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
+                                    updateAppState { state -> state.copy(uiStyle = previous) }
+                                }
+                            }
+                        )
+
+                        OverlayDropdownPreference(
                             title = stringResource(R.string.navigation_style),
                             items = navItems,
                             selectedIndex = navIndex.intValue,
@@ -271,11 +382,27 @@ private fun SettingsContent(
                                 navIndex.intValue = it
                                 globalSettings.navigationStyle = it
                                 updateAppState { state -> state.copy(navigationStyle = it) }
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("导航样式更新失败") {
                                     globalSettings.navigationStyle = previous
                                     navIndex.intValue = previous.coerceIn(0, 2)
                                     updateAppState { state -> state.copy(navigationStyle = previous) }
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("导航样式更新失败"))
+                                }
+                            }
+                        )
+
+                        OverlayDropdownPreference(
+                            title = stringResource(R.string.theme_mode),
+                            items = themeItems,
+                            selectedIndex = themeIndex.intValue,
+                            onSelectedIndexChange = {
+                                val previous = globalSettings.colorMode
+                                themeIndex.intValue = it
+                                globalSettings.colorMode = it
+                                updateAppState { state -> state.copy(colorMode = it) }
+                                saveGlobalSettingsAsync("主题模式更新失败") {
+                                    globalSettings.colorMode = previous
+                                    themeIndex.intValue = previous.coerceIn(0, 5)
+                                    updateAppState { state -> state.copy(colorMode = previous) }
                                 }
                             }
                         )
@@ -290,11 +417,10 @@ private fun SettingsContent(
                                     blurEnabled.intValue = if (it) 1 else 0
                                     globalSettings.blurUI = it
                                     updateAppState { state -> state.copy(blur = it) }
-                                    if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                    saveGlobalSettingsAsync("模糊效果更新失败") {
                                         globalSettings.blurUI = previous
                                         blurEnabled.intValue = if (previous) 1 else 0
                                         updateAppState { state -> state.copy(blur = previous) }
-                                        WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("模糊效果更新失败"))
                                     }
                                 }
                             )
@@ -313,10 +439,9 @@ private fun SettingsContent(
                                 val previous = globalSettings.logOutputMode
                                 outputIndex.intValue = it
                                 globalSettings.logOutputMode = if (it == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("日志输出更新失败") {
                                     globalSettings.logOutputMode = previous
                                     outputIndex.intValue = if (previous == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("日志输出更新失败"))
                                 }
                             }
                         )
@@ -332,14 +457,13 @@ private fun SettingsContent(
                                     2 -> GlobalSettings.LOG_LEVEL_DEBUG
                                     else -> GlobalSettings.LOG_LEVEL_INFO
                                 }
-                                if (!ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                                saveGlobalSettingsAsync("日志级别更新失败") {
                                     globalSettings.logLevel = previous
                                     levelIndex.intValue = when (previous) {
                                         GlobalSettings.LOG_LEVEL_NONE -> 0
                                         GlobalSettings.LOG_LEVEL_DEBUG -> 2
                                         else -> 1
                                     }
-                                    WindowUtils.showToast(ConfigBinderRepository.getLastErrorOrDefault("日志级别更新失败"))
                                 }
                             }
                         )
@@ -375,4 +499,9 @@ private fun SettingsContent(
             trackPadding = contentPadding,
         )
     }
+}
+
+private fun formatSpeedThreshold(bytesPerSec: Int): String {
+    if (bytesPerSec < 1048576) return "${bytesPerSec / 1024} KB/s"
+    return String.format("%.2f MB/s", bytesPerSec / 1048576.0)
 }

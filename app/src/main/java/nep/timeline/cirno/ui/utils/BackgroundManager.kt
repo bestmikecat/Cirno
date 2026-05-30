@@ -33,8 +33,7 @@ object BackgroundManager {
     }
 
     fun remove() {
-        if (currentUri != null)
-            File(currentUri?.path!!).delete()
+        currentUri?.path?.let { File(it).delete() }
         currentUri = null
     }
 }

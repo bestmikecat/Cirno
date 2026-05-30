@@ -28,4 +28,9 @@ public class ApplicationBinder extends ApplicationInterface.Stub {
     public String getProcessesForApp(String packageName, int userId) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public String getNetworkSpeed(String packageName, int userId) {
+        throw new UnsupportedOperationException();
+    }
 }
