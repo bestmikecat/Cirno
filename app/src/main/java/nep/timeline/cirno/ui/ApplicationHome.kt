@@ -113,6 +113,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             BlurredBar(null, false, scrollBehavior) {
                 AdaptiveTopAppBar(

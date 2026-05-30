@@ -84,7 +84,9 @@ import nep.timeline.cirno.ui.page.LogPage
 import nep.timeline.cirno.ui.page.MonitorPage
 import nep.timeline.cirno.ui.page.SettingsPage
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.MiuixBackground
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
 import nep.timeline.cirno.ui.utils.textureBlur
@@ -224,11 +226,13 @@ fun AppContent(
             )
         }
 
-        NavDisplay(
-            entries = entries,
-            onBack = { navigator.pop() },
-            transitionEffects = transitionEffects,
-        )
+        MiuixBackground {
+            NavDisplay(
+                entries = entries,
+                onBack = { navigator.pop() },
+                transitionEffects = transitionEffects,
+            )
+        }
     }
 }
 
@@ -242,6 +246,7 @@ private fun Home(
     val layoutDirection = LocalLayoutDirection.current
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
+        containerColor = Color.Transparent,
         snackbarHost = {
             if (isWideScreen) {
                 SnackbarHost(state = snackbarHostState)
@@ -297,6 +302,7 @@ private fun WideScreenContent(
         Scaffold(
             modifier = Modifier
                 .fillMaxSize(),
+            containerColor = Color.Transparent,
             contentWindowInsets =
                 WindowInsets.systemBars.union(
                     WindowInsets.displayCutout.exclude(
@@ -327,16 +333,18 @@ private fun CompactScreenLayout(
 ) {
     val appState = LocalAppState.current
     val surfaceColor = colorScheme.surface
+    val hasBackground = BackgroundManager.currentUri != null
     val backdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
+        if (!hasBackground) drawRect(surfaceColor)
         drawContent()
     }
     val kyantBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop {
-        drawRect(surfaceColor)
+        if (!hasBackground) drawRect(surfaceColor)
         drawContent()
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
                 navigationItems = navigationItems,

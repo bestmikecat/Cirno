@@ -31,6 +31,7 @@ import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.app.UI_STYLE_MIUIX
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
@@ -73,6 +74,7 @@ fun SettingsPage(
     val scrollBehavior = MiuixScrollBehavior()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             BlurredBar(backdrop, blurActive, scrollBehavior) {
                 AdaptiveTopAppBar(
@@ -114,6 +116,9 @@ private fun SettingsContent(
     var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
     val backupSuccessText = stringResource(R.string.backup_success)
     val backupFailedText = stringResource(R.string.backup_failed)
+    val customBackgroundUpdatedText = stringResource(R.string.custom_background_updated)
+    val customBackgroundUpdateFailedText = stringResource(R.string.custom_background_update_failed)
+    val customBackgroundRemovedText = stringResource(R.string.custom_background_removed)
     val restoreSuccessText = stringResource(R.string.restore_success)
     val restoreSuccessReloadFailedText = stringResource(R.string.restore_success_reload_failed)
     val restoreFailedApplyText = stringResource(R.string.restore_failed_apply)
@@ -277,6 +282,20 @@ private fun SettingsContent(
         }
     }
 
+    val backgroundLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val success = withContext(Dispatchers.IO) {
+                BackgroundManager.set(context, uri)
+            }
+            AppContext.showToast(if (success) customBackgroundUpdatedText else customBackgroundUpdateFailedText)
+        }
+    }
+
     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
         LazyColumn(
             state = lazyListState,
@@ -425,6 +444,22 @@ private fun SettingsContent(
                                 }
                             )
                         }
+
+                        ArrowPreference(
+                            title = stringResource(R.string.custom_background),
+                            summary = stringResource(R.string.custom_background_desc),
+                            onClick = {
+                                backgroundLauncher.launch(arrayOf("image/*"))
+                            }
+                        )
+
+                        ArrowPreference(
+                            title = stringResource(R.string.remove_custom_background),
+                            onClick = {
+                                BackgroundManager.remove(context)
+                                AppContext.showToast(customBackgroundRemovedText)
+                            }
+                        )
                     }
                 }
 

@@ -90,6 +90,12 @@
   <string name="theme_monet_dark">Monet dark</string>
   <string name="blur_ui">Blur</string>
   <string name="blur_ui_desc">Enable the blur effect for the top and navigation bars</string>
+  <string name="custom_background">Custom background</string>
+  <string name="custom_background_desc">Choose an image as the Miuix page background</string>
+  <string name="remove_custom_background">Remove custom background</string>
+  <string name="custom_background_updated">Background updated</string>
+  <string name="custom_background_update_failed">Failed to update background</string>
+  <string name="custom_background_removed">Background removed</string>
   <string name="normal">Default</string>
   <string name="floating">Floating</string>
   <string name="apple_floating">Apple-style floating</string>

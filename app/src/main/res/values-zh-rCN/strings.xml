@@ -90,6 +90,12 @@
   <string name="theme_monet_dark">莫奈深色</string>
   <string name="blur_ui">模糊</string>
   <string name="blur_ui_desc">为顶部栏和导航栏启用模糊效果</string>
+  <string name="custom_background">自定义背景图</string>
+  <string name="custom_background_desc">选择一张图片作为 Miuix 页面背景</string>
+  <string name="remove_custom_background">移除自定义背景图</string>
+  <string name="custom_background_updated">背景图已更新</string>
+  <string name="custom_background_update_failed">背景图更新失败</string>
+  <string name="custom_background_removed">背景图已移除</string>
   <string name="normal">默认</string>
   <string name="floating">悬浮</string>
   <string name="apple_floating">iOS风格悬浮</string>

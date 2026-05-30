@@ -119,6 +119,7 @@ fun AboutPage(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             SmallTopAppBar(
                 title = stringResource(R.string.about),

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
+        BackgroundManager.init(this)
         enableEdgeToEdge()
         val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {

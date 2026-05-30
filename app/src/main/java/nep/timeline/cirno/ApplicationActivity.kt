@@ -17,12 +17,15 @@ import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.ApplicationHome
 import nep.timeline.cirno.ui.page.material.MaterialApplicationHome
 import nep.timeline.cirno.ui.utils.AppContext
+import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.MiuixBackground
 
 class ApplicationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
+        BackgroundManager.init(this)
         enableEdgeToEdge()
         setContent {
             var configLoaded by remember { mutableStateOf(false) }
@@ -39,7 +42,9 @@ class ApplicationActivity : ComponentActivity() {
                 if (GlobalVars.globalSettings?.uiStyle == UI_STYLE_MATERIAL) {
                     MaterialApplicationHome(this)
                 } else {
-                    ApplicationHome(this)
+                    MiuixBackground {
+                        ApplicationHome(this)
+                    }
                 }
             }
         }

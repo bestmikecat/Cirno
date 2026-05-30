@@ -127,6 +127,7 @@ fun InfoPage(
     val topAppBarScrollBehavior = MiuixScrollBehavior()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             BlurredBar(backdrop, blurActive, topAppBarScrollBehavior) {
                 AdaptiveTopAppBar(
