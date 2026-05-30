@@ -73,4 +73,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public String getLogContentPage(int startLine, int lineCount) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isReKernelAvailable() {
+        throw new UnsupportedOperationException();
+    }
 }

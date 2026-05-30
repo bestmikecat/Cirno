@@ -1,6 +1,5 @@
 package nep.timeline.cirno.ui.page.material
 
-import java.io.File
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,7 +51,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
-    val hasReKernel = remember { File("/proc/rekernel").exists() }
+    val hasReKernel = remember { mutableStateOf<Boolean?>(null) }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
     val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
@@ -112,11 +111,17 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
         processListLoaded.value = true
     }
 
-    LaunchedEffect(hasReKernel, networkMessage.value) {
-        if (!hasReKernel && networkMessage.value) {
+    LaunchedEffect(hasReKernel.value, networkMessage.value) {
+        if (hasReKernel.value == false && networkMessage.value) {
             networkMessage.value = false
             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
             saveApplicationSettingsAsync()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        hasReKernel.value = withContext(Dispatchers.IO) {
+            ConfigBinderRepository.isReKernelAvailable()
         }
     }
 
@@ -217,9 +222,9 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                     MaterialSwitchItem(
                         icon = Icons.Outlined.NotificationsActive,
                         title = stringResource(R.string.netreceive_unfreeze),
-                        summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
+                        summary = if (hasReKernel.value == true) null else stringResource(R.string.rekernel_required_summary),
                         checked = networkMessage.value,
-                        enabled = hasReKernel && !white.value,
+                        enabled = hasReKernel.value == true && !white.value,
                     ) {
                         if (white.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)

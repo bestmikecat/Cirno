@@ -212,6 +212,17 @@ public final class ConfigBinderHub {
                 return "";
             }
         }
+
+        @Override
+        public boolean isReKernelAvailable() {
+            if (!isTrustedCaller()) {
+                return false;
+            }
+            if (BinderService.received) {
+                return true;
+            }
+            return new File("/proc/rekernel").exists();
+        }
     };
 
     public static void signalError() {

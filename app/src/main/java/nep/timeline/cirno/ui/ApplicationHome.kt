@@ -2,7 +2,6 @@
 
 package nep.timeline.cirno.ui
 
-import java.io.File
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -55,7 +54,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
-    val hasReKernel = remember { File("/proc/rekernel").exists() }
+    val hasReKernel = remember { mutableStateOf<Boolean?>(null) }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
     val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
@@ -112,6 +111,12 @@ fun ApplicationHome(activity: ApplicationActivity) {
         processListLoaded.value = true
     }
 
+    LaunchedEffect(Unit) {
+        hasReKernel.value = withContext(Dispatchers.IO) {
+            ConfigBinderRepository.isReKernelAvailable()
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -144,7 +149,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
                         val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
 
-                        if (!hasReKernel && networkMessage.value) {
+                        if (hasReKernel.value == false && networkMessage.value) {
                             networkMessage.value = false
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
                             saveApplicationSettingsAsync()
@@ -242,9 +247,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
                             SwitchPreference(
                                 title = stringResource(R.string.netreceive_unfreeze),
-                                summary = if (hasReKernel) null else stringResource(R.string.rekernel_required_summary),
+                                summary = if (hasReKernel.value == true) null else stringResource(R.string.rekernel_required_summary),
                                 checked = networkMessage.value,
-                                enabled = hasReKernel && !white.value,
+                                enabled = hasReKernel.value == true && !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)

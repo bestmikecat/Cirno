@@ -58,6 +58,11 @@ public interface ConfigInterface extends android.os.IInterface {
         }
 
         @Override
+        public boolean isReKernelAvailable() throws android.os.RemoteException {
+            return false;
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -166,6 +171,12 @@ public interface ConfigInterface extends android.os.IInterface {
                     String result = this.getLogContentPage(startLine, lineCount);
                     reply.writeNoException();
                     reply.writeString(result);
+                    return true;
+                }
+                case TRANSACTION_isReKernelAvailable: {
+                    boolean result = this.isReKernelAvailable();
+                    reply.writeNoException();
+                    reply.writeInt(result ? 1 : 0);
                     return true;
                 }
             }
@@ -355,6 +366,21 @@ public interface ConfigInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public boolean isReKernelAvailable() throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_isReKernelAvailable, data, reply, 0);
+                    reply.readException();
+                    return reply.readInt() != 0;
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_getGlobalSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION;
@@ -368,6 +394,7 @@ public interface ConfigInterface extends android.os.IInterface {
         static final int TRANSACTION_getModuleVersion = android.os.IBinder.FIRST_CALL_TRANSACTION + 8;
         static final int TRANSACTION_getLogContent = android.os.IBinder.FIRST_CALL_TRANSACTION + 9;
         static final int TRANSACTION_getLogContentPage = android.os.IBinder.FIRST_CALL_TRANSACTION + 10;
+        static final int TRANSACTION_isReKernelAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 11;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.ConfigInterface";
@@ -393,4 +420,6 @@ public interface ConfigInterface extends android.os.IInterface {
     String getLogContent() throws android.os.RemoteException;
 
     String getLogContentPage(int startLine, int lineCount) throws android.os.RemoteException;
+
+    boolean isReKernelAvailable() throws android.os.RemoteException;
 }

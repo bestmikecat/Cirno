@@ -144,6 +144,15 @@ object ConfigBinderRepository {
         }
     }
 
+    fun isReKernelAvailable(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.isReKernelAvailable
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     fun loadInfoBinderSnapshot(): InfoBinderSnapshot {
         BinderService.register(AppContext.context)
         val config = ConfigBinder.getInstance() ?: return InfoBinderSnapshot(binderAvailable = false)
