@@ -145,8 +145,6 @@ public class BinderService {
                                             if (appRecord == null)
                                                 return;
                                             FreezerHandler.removeAppMessage(appRecord);
-                                            if (processRecord.isFrozen())
-                                                FrozenRW.thaw(processRecord.getRunningUid(), dstPid);
                                             Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除待冻结任务");
                                         }
                                         case "Network" -> {
