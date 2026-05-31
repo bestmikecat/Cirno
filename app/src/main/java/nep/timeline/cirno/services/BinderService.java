@@ -47,6 +47,18 @@ public class BinderService {
         return map;
     }
 
+    private static int getIntParam(Map<String, String> params, String key) {
+        String value = params.get(key);
+        if (value == null)
+            return 0;
+
+        try {
+            return StringUtils.StringToInteger(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     public static void start(ClassLoader classLoader) {
         if (!isRunning.compareAndSet(false, true))
             return;
@@ -102,7 +114,12 @@ public class BinderService {
                             ByteBuffer byteBuffer = netlinkClient.recvMessage();
                             String data = new String(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit(), StandardCharsets.UTF_8);
                             if (!data.isEmpty()) {
-                                Map<String, String> params = parseParams(data.substring(data.indexOf("type"), data.lastIndexOf(";")));
+                                int typeIndex = data.indexOf("type");
+                                int endIndex = data.lastIndexOf(";");
+                                if (typeIndex < 0 || endIndex <= typeIndex)
+                                    continue;
+
+                                Map<String, String> params = parseParams(data.substring(typeIndex, endIndex));
                                 if (params.containsKey("type") && !received) {
                                     Log.i("成功接收到来自ReKernel的消息");
                                     received = true;
@@ -115,12 +132,12 @@ public class BinderService {
                                     switch (type) {
                                         case "Binder" -> {
                                             String bindertype = params.get("bindertype");
-                                            int oneway = StringUtils.StringToInteger(params.get("oneway"));
-                                            int targetUid = StringUtils.StringToInteger(params.get("target"));
-                                            int fromPid = StringUtils.StringToInteger(params.get("from_pid"));
+                                            int oneway = getIntParam(params, "oneway");
+                                            int targetUid = getIntParam(params, "target");
+                                            int fromPid = getIntParam(params, "from_pid");
                                             String rpcName = params.get("rpc_name");
-                                            int code = StringUtils.StringToInteger(params.get("code"));
-                                            if (oneway == 1 && !bindertype.equals("free_buffer_full"))
+                                            int code = getIntParam(params, "code");
+                                            if (oneway == 1 && !"free_buffer_full".equals(bindertype))
                                                 return;
 
                                             List<AppRecord> appRecords = AppService.getByUid(targetUid);
@@ -134,8 +151,8 @@ public class BinderService {
                                             }
                                         }
                                         case "Signal" -> {
-                                            int dstPid = StringUtils.StringToInteger(params.get("dst_pid"));
-                                            int signal = StringUtils.StringToInteger(params.get("signal"));
+                                            int dstPid = getIntParam(params, "dst_pid");
+                                            int signal = getIntParam(params, "signal");
                                             if (dstPid <= 0)
                                                 return;
                                             ProcessRecord processRecord = ProcessService.getProcessRecordByPid(dstPid);
@@ -148,7 +165,7 @@ public class BinderService {
                                             Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除待冻结任务");
                                         }
                                         case "Network" -> {
-                                            int targetUid = StringUtils.StringToInteger(params.get("target"));
+                                            int targetUid = getIntParam(params, "target");
                                             String proto = params.get("proto");
                                             List<AppRecord> appRecords = AppService.getByUid(targetUid);
                                             if (appRecords.isEmpty())
