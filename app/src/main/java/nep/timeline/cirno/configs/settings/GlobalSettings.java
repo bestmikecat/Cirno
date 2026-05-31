@@ -6,8 +6,11 @@ public class GlobalSettings {
     public static final String LOG_LEVEL_NONE = "none";
     public static final String LOG_LEVEL_INFO = "info";
     public static final String LOG_LEVEL_DEBUG = "debug";
+    public static final String FREEZER_MODE_UID = "uid";
+    public static final String FREEZER_MODE_FROZEN = "frozen";
 
     public int netlinkUnit;
+    public String freezerMode = FREEZER_MODE_UID;
     public int freezeDelay = 5;
     public int wakeFreezeDelay = 30;
     public int networkSpeedThreshold = 102400;
@@ -18,4 +21,14 @@ public class GlobalSettings {
     public int navigationStyle;
     public int colorMode;
     public boolean blurUI = true;
+
+    public static GlobalSettings ensureInitialized(GlobalSettings settings) {
+        if (settings == null) {
+            return new GlobalSettings();
+        }
+        if (!FREEZER_MODE_FROZEN.equals(settings.freezerMode) && !FREEZER_MODE_UID.equals(settings.freezerMode)) {
+            settings.freezerMode = FREEZER_MODE_UID;
+        }
+        return settings;
+    }
 }

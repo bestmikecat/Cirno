@@ -54,11 +54,7 @@ public class ConfigManagerJson {
                 saveConfig();
             } else {
                 String globalData = RWUtils.readConfig(GlobalVars.CONFIG_DIR + "/" + globalSettingsName);
-                GlobalVars.globalSettings = gson.fromJson(globalData, GlobalSettings.class);
-                if (GlobalVars.globalSettings == null) {
-                    GlobalVars.globalSettings = new GlobalSettings();
-                    saveConfig();
-                }
+                GlobalVars.globalSettings = GlobalSettings.ensureInitialized(gson.fromJson(globalData, GlobalSettings.class));
             }
             File applicationFile = new File(GlobalVars.CONFIG_DIR, applicationSettingsName);
             if (!applicationFile.exists()) {
@@ -84,7 +80,8 @@ public class ConfigManagerJson {
     }
 
     public String dumpGlobalSettingsJson() {
-        GlobalSettings settings = GlobalVars.globalSettings == null ? new GlobalSettings() : GlobalVars.globalSettings;
+        GlobalSettings settings = GlobalSettings.ensureInitialized(GlobalVars.globalSettings);
+        GlobalVars.globalSettings = settings;
         return gson.toJson(settings);
     }
 
@@ -98,7 +95,7 @@ public class ConfigManagerJson {
         GlobalSettings oldSettings = GlobalVars.globalSettings;
         try {
             GlobalSettings settings = gson.fromJson(json, GlobalSettings.class);
-            GlobalVars.globalSettings = settings == null ? new GlobalSettings() : settings;
+            GlobalVars.globalSettings = GlobalSettings.ensureInitialized(settings);
             saveConfig();
             return true;
         } catch (Throwable e) {

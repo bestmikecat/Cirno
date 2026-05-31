@@ -26,7 +26,7 @@ object ConfigBinderRepository {
         return try {
             val globalJson = config.getGlobalSettingsJson()
             val appJson = config.getApplicationSettingsJson()
-            val global = gson.fromJson(globalJson, GlobalSettings::class.java) ?: GlobalSettings()
+            val global = GlobalSettings.ensureInitialized(gson.fromJson(globalJson, GlobalSettings::class.java))
             val app = ApplicationSettings.ensureInitialized(gson.fromJson(appJson, ApplicationSettings::class.java))
             GlobalVars.globalSettings = global
             GlobalVars.applicationSettings = app
@@ -148,6 +148,15 @@ object ConfigBinderRepository {
         val config = ConfigBinder.getInstance() ?: return false
         return try {
             config.isReKernelAvailable
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun isFrozenFreezerAvailable(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.isFrozenFreezerAvailable
         } catch (_: Throwable) {
             false
         }

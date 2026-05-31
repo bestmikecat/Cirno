@@ -24,6 +24,10 @@
   <string name="settings_freeze_group">冻结设置</string>
   <string name="settings_log_group">日志设置</string>
   <string name="settings_backup_group">备份与恢复</string>
+  <string name="freezer_mode">冻结模式</string>
+  <string name="freezer_mode_uid">UID</string>
+  <string name="freezer_mode_frozen">Frozen</string>
+  <string name="freezer_mode_frozen_unavailable">此设备不支持 Frozen 模式，已切回 UID。</string>
   <string name="interval_freeze_delay">冻结延迟</string>
   <string name="wake_freeze_delay">唤醒冻结延迟</string>
   <string name="log_print">日志输出</string>

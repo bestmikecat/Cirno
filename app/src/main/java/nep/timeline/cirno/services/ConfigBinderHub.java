@@ -27,6 +27,7 @@ import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.ConfigManager;
 import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.utils.FrozenRW;
 import nep.timeline.cirno.utils.RWUtils;
 
 public final class ConfigBinderHub {
@@ -222,6 +223,14 @@ public final class ConfigBinderHub {
                 return true;
             }
             return new File("/proc/rekernel").exists();
+        }
+
+        @Override
+        public boolean isFrozenFreezerAvailable() {
+            if (!isTrustedCaller()) {
+                return false;
+            }
+            return FrozenRW.isFrozenFreezerAvailable();
         }
     };
 

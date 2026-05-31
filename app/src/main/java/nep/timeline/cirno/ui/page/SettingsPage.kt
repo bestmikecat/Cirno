@@ -135,6 +135,10 @@ private fun SettingsContent(
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
+    val freezerModeItems = listOf(
+        stringResource(R.string.freezer_mode_uid),
+        stringResource(R.string.freezer_mode_frozen),
+    )
     val navItems = listOf(
         stringResource(R.string.normal),
         stringResource(R.string.floating),
@@ -153,6 +157,9 @@ private fun SettingsContent(
         stringResource(R.string.theme_monet_dark),
     )
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
+    val freezerModeIndex = remember {
+        mutableIntStateOf(if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0)
+    }
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
@@ -200,6 +207,7 @@ private fun SettingsContent(
         freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        freezerModeIndex.intValue = if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
@@ -306,6 +314,45 @@ private fun SettingsContent(
                 item {
                     SmallTitle(text = stringResource(R.string.settings_freeze_group))
                     Card(modifier = Modifier.padding(12.dp)) {
+                        OverlayDropdownPreference(
+                            title = stringResource(R.string.freezer_mode),
+                            items = freezerModeItems,
+                            selectedIndex = freezerModeIndex.intValue,
+                            onSelectedIndexChange = {
+                                val previousMode = globalSettings.freezerMode
+                                val previousIndex = freezerModeIndex.intValue
+                                if (it == 1) {
+                                    scope.launch {
+                                        val available = withContext(Dispatchers.IO) {
+                                            ConfigBinderRepository.isFrozenFreezerAvailable()
+                                        }
+                                        if (available) {
+                                            freezerModeIndex.intValue = 1
+                                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
+                                            saveGlobalSettingsAsync("冻结模式更新失败") {
+                                                globalSettings.freezerMode = previousMode
+                                                freezerModeIndex.intValue = previousIndex
+                                            }
+                                        } else {
+                                            freezerModeIndex.intValue = 0
+                                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
+                                            saveGlobalSettingsAsync("冻结模式更新失败") {
+                                                globalSettings.freezerMode = previousMode
+                                                freezerModeIndex.intValue = previousIndex
+                                            }
+                                            WindowUtils.showToast(context.getString(R.string.freezer_mode_frozen_unavailable))
+                                        }
+                                    }
+                                } else {
+                                    freezerModeIndex.intValue = 0
+                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
+                                    saveGlobalSettingsAsync("冻结模式更新失败") {
+                                        globalSettings.freezerMode = previousMode
+                                        freezerModeIndex.intValue = previousIndex
+                                    }
+                                }
+                            }
+                        )
                         Text(
                             text = stringResource(R.string.interval_freeze_delay) + " | " + freezeDelay.floatValue.toInt() + " s",
                             modifier = Modifier.padding(17.dp),

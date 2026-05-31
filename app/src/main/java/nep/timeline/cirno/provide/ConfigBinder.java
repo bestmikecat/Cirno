@@ -78,4 +78,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public boolean isReKernelAvailable() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isFrozenFreezerAvailable() {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -1,6 +1,7 @@
 package nep.timeline.cirno.ui.page.material
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -67,6 +68,7 @@ fun MaterialSettingsPage(
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
+    val freezerModeItems = listOf(stringResource(R.string.freezer_mode_uid), stringResource(R.string.freezer_mode_frozen))
     val uiStyleItems = listOf(stringResource(R.string.ui_style_miuix), stringResource(R.string.ui_style_material))
     val themeItems = listOf(
         stringResource(R.string.theme_follow_system),
@@ -77,6 +79,7 @@ fun MaterialSettingsPage(
         stringResource(R.string.theme_monet_dark),
     )
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
+    val freezerModeIndex = remember { mutableIntStateOf(if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val outputItems = listOf(stringResource(R.string.log_xposed), stringResource(R.string.log_file))
     val outputIndex = remember { mutableIntStateOf(if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1) }
@@ -106,6 +109,7 @@ fun MaterialSettingsPage(
         freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        freezerModeIndex.intValue = if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
         outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
@@ -190,6 +194,40 @@ fun MaterialSettingsPage(
         if (active) {
             item {
                 MaterialSettingsSection(title = stringResource(R.string.settings_freeze_group)) {
+                    MaterialDropdownItem(Icons.Outlined.Update, stringResource(R.string.freezer_mode), freezerModeItems, freezerModeIndex.intValue) {
+                        val previousMode = globalSettings.freezerMode
+                        val previousIndex = freezerModeIndex.intValue
+                        if (it == 1) {
+                            scope.launch {
+                                val available = withContext(Dispatchers.IO) {
+                                    ConfigBinderRepository.isFrozenFreezerAvailable()
+                                }
+                                if (available) {
+                                    freezerModeIndex.intValue = 1
+                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
+                                    saveGlobalSettingsAsync("冻结模式更新失败") {
+                                        globalSettings.freezerMode = previousMode
+                                        freezerModeIndex.intValue = previousIndex
+                                    }
+                                } else {
+                                    freezerModeIndex.intValue = 0
+                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
+                                    saveGlobalSettingsAsync("冻结模式更新失败") {
+                                        globalSettings.freezerMode = previousMode
+                                        freezerModeIndex.intValue = previousIndex
+                                    }
+                                    Toast.makeText(context, context.getString(R.string.freezer_mode_frozen_unavailable), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            freezerModeIndex.intValue = 0
+                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
+                            saveGlobalSettingsAsync("冻结模式更新失败") {
+                                globalSettings.freezerMode = previousMode
+                                freezerModeIndex.intValue = previousIndex
+                            }
+                        }
+                    }
                     MaterialSliderItem(
                         icon = Icons.Outlined.Timer,
                         title = stringResource(R.string.interval_freeze_delay),
