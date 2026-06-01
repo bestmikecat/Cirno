@@ -173,17 +173,18 @@ fun MaterialInfoPage(
             val active = GlobalVars.isModuleActive
             val versionMismatch = active && binderState.binderAvailable &&
                 binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
-            val hasWarning = versionMismatch || !active || binderState.hasError ||
-                (active && binderState.binderAvailable && !binderState.freezerAvailable)
-            if (hasWarning) {
-                val warningText = when {
-                    versionMismatch -> stringResource(R.string.module_version_mismatch)
-                    !active -> stringResource(R.string.not_active)
-                    binderState.hasError -> stringResource(R.string.internal_error)
-                    active && binderState.binderAvailable && !binderState.freezerAvailable -> stringResource(R.string.freezer_v2_unavailable)
-                    else -> stringResource(R.string.module_version_mismatch)
+            if (versionMismatch) {
+                MaterialWarningCard(stringResource(R.string.module_version_mismatch))
+            } else {
+                if (!active) {
+                    MaterialWarningCard(stringResource(R.string.not_active))
                 }
-                MaterialWarningCard(warningText)
+                if (binderState.hasError) {
+                    MaterialWarningCard(stringResource(R.string.internal_error))
+                }
+                if (active && binderState.binderAvailable && !binderState.freezerAvailable) {
+                    MaterialWarningCard(stringResource(R.string.freezer_v2_unavailable))
+                }
             }
         }
 
