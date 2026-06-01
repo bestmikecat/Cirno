@@ -244,20 +244,22 @@ private fun InfoContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (fool)
-                        WarningCard(stringResource(R.string.fools_day))
-                    if (!active)
-                        WarningCard(stringResource(R.string.not_active))
-                    if (active && binderAvailable && missingScopes.isNotEmpty())
-                        WarningCard(
-                            stringResource(R.string.scope_not_running, missingScopeLabels)
-                        )
-                    if (hasError)
-                        WarningCard(stringResource(R.string.internal_error))
-                    if (versionMismatch)
+                    if (versionMismatch) {
                         WarningCard(stringResource(R.string.module_version_mismatch))
-                    if (active && binderAvailable && !binderState.freezerAvailable)
-                        WarningCard(stringResource(R.string.freezer_v2_unavailable))
+                    } else {
+                        if (fool)
+                            WarningCard(stringResource(R.string.fools_day))
+                        if (!active)
+                            WarningCard(stringResource(R.string.not_active))
+                        if (active && binderAvailable && missingScopes.isNotEmpty())
+                            WarningCard(
+                                stringResource(R.string.scope_not_running, missingScopeLabels)
+                            )
+                        if (hasError)
+                            WarningCard(stringResource(R.string.internal_error))
+                        if (active && binderAvailable && !binderState.freezerAvailable)
+                            WarningCard(stringResource(R.string.freezer_v2_unavailable))
+                    }
                     StatusCard(
                         active = active,
                         working = active && !hasError,
