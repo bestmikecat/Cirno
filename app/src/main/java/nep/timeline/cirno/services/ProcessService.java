@@ -28,10 +28,18 @@ public class ProcessService {
     }
 
     public static void removeProcessRecord(ProcessRecord processRecord) {
-        removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid());
+        removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), true);
+    }
+
+    public static void removeProcessRecordWithoutThaw(ProcessRecord processRecord) {
+        removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), false);
     }
 
     public static void removeProcessRecord(String name, int uid) {
+        removeProcessRecord(name, uid, true);
+    }
+
+    private static void removeProcessRecord(String name, int uid, boolean thawOnRemove) {
         ProcessRecord processRecord;
         AppRecord appRecord;
         boolean shouldThaw;
@@ -53,7 +61,7 @@ public class ProcessService {
             if (appRecord.getProcessRecords().isEmpty())
                 appRecord.reset();
         }
-        if (shouldThaw)
+        if (thawOnRemove && shouldThaw)
             FrozenRW.thaw(thawUid, thawPid);
     }
 

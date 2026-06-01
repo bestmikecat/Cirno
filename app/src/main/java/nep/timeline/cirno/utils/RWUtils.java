@@ -70,7 +70,12 @@ public class RWUtils {
                     label = " [" + records.get(0).getPackageNameWithUser() + "]";
                 }
             }
-            Log.w(path + " | 写入冻结状态失败" + label + ", 此进程可能已死亡, 或者你的设备不支持cgroup v2", e);
+            String message = e.getMessage();
+            if (message != null && (message.contains("ESRCH") || message.contains("No such process"))) {
+                Log.w(path + " | 进程已不存在，跳过冻结状态写入" + label + ", value=" + value, e);
+                return false;
+            }
+            Log.w(path + " | 写入冻结状态失败" + label + ", 请检查cgroup v2支持、路径或权限", e);
             return false;
         }
     }

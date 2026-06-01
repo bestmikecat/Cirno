@@ -96,11 +96,7 @@ public class FrozenRW {
                 return false;
             }
             String path = frozenState == 1 ? cgroupV2FrozenProcs : cgroupV2UnfrozenProcs;
-            if (!RWUtils.writeFrozen(path, pid)) {
-                Log.w("Frozen 模式写入 cgroup.procs 失败: " + path + ", pid=" + pid);
-                return false;
-            }
-            return true;
+            return RWUtils.writeFrozen(path, pid);
         }
 
         if (!cgroupV2SysAppIsolated) {

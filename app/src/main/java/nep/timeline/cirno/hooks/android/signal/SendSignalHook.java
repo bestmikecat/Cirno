@@ -42,7 +42,7 @@ public class SendSignalHook extends MethodHook {
                 if (processRecord == null || processRecord.isDeathProcess())
                     return;
 
-                ProcessService.removeProcessRecord(processRecord);
+                ProcessService.removeProcessRecordWithoutThaw(processRecord);
             }
         };
     }
