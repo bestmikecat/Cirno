@@ -21,11 +21,20 @@ public class FrozenRW {
     private static final String cgroupV2UnfrozenFreeze = cgroupV2UnfrozenDir + "/cgroup.freeze";
     private static final String cgroupV2FrozenProcs = cgroupV2FrozenDir + "/cgroup.procs";
     private static final String cgroupV2UnfrozenProcs = cgroupV2UnfrozenDir + "/cgroup.procs";
+    private static final String cgroupV2UidStandardCheck = cgroupV2 + "/uid_0/cgroup.freeze";
+    private static final String cgroupV2UidIsolatedCheck = cgroupV2 + "/system/uid_0/cgroup.freeze";
     private static final boolean cgroupV2SysAppIsolated;
 
     static {
         String path = "/sys/fs/cgroup/uid_1000/cgroup.freeze";
         cgroupV2SysAppIsolated = !Files.exists(Paths.get(path));
+    }
+
+    public static boolean isUidFreezerAvailable() {
+        if (cgroupV2SysAppIsolated) {
+            return Files.exists(Paths.get(cgroupV2UidIsolatedCheck));
+        }
+        return Files.exists(Paths.get(cgroupV2UidStandardCheck));
     }
 
     public static boolean isFrozenFreezerAvailable() {
@@ -48,6 +57,16 @@ public class FrozenRW {
         boolean frozenReady = writeRaw(cgroupV2FrozenFreeze, "1");
         boolean unfrozenReady = writeRaw(cgroupV2UnfrozenFreeze, "0");
         return frozenReady && unfrozenReady;
+    }
+
+    public static String selectAvailableFreezerMode() {
+        if (isUidFreezerAvailable()) {
+            return GlobalSettings.FREEZER_MODE_UID;
+        }
+        if (isFrozenFreezerAvailable()) {
+            return GlobalSettings.FREEZER_MODE_FROZEN;
+        }
+        return null;
     }
 
     private static boolean hasFrozenFreezerFiles() {

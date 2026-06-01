@@ -162,6 +162,24 @@ object ConfigBinderRepository {
         }
     }
 
+    fun isUidFreezerAvailable(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.isUidFreezerAvailable
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    fun isAnyFreezerAvailable(): Boolean {
+        val config = ConfigBinder.getInstance() ?: return false
+        return try {
+            config.isUidFreezerAvailable || config.isFrozenFreezerAvailable
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     fun loadInfoBinderSnapshot(): InfoBinderSnapshot {
         BinderService.register(AppContext.context)
         val config = ConfigBinder.getInstance() ?: return InfoBinderSnapshot(binderAvailable = false)

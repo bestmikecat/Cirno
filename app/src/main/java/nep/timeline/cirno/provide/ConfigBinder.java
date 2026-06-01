@@ -83,4 +83,9 @@ public class ConfigBinder extends ConfigInterface.Stub {
     public boolean isFrozenFreezerAvailable() {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isUidFreezerAvailable() {
+        throw new UnsupportedOperationException();
+    }
 }

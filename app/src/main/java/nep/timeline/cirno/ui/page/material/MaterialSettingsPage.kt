@@ -1,7 +1,6 @@
 package nep.timeline.cirno.ui.page.material
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -197,31 +196,24 @@ fun MaterialSettingsPage(
                     MaterialDropdownItem(Icons.Outlined.Update, stringResource(R.string.freezer_mode), freezerModeItems, freezerModeIndex.intValue) {
                         val previousMode = globalSettings.freezerMode
                         val previousIndex = freezerModeIndex.intValue
-                        if (it == 1) {
-                            scope.launch {
-                                val available = withContext(Dispatchers.IO) {
-                                    ConfigBinderRepository.isFrozenFreezerAvailable()
-                                }
-                                if (available) {
-                                    freezerModeIndex.intValue = 1
-                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
-                                    saveGlobalSettingsAsync("冻结模式更新失败") {
-                                        globalSettings.freezerMode = previousMode
-                                        freezerModeIndex.intValue = previousIndex
-                                    }
-                                } else {
+                        scope.launch {
+                            val (uidAvailable, frozenAvailable) = withContext(Dispatchers.IO) {
+                                ConfigBinderRepository.isUidFreezerAvailable() to ConfigBinderRepository.isFrozenFreezerAvailable()
+                            }
+                            when {
+                                uidAvailable -> {
                                     freezerModeIndex.intValue = 0
                                     globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
-                                    saveGlobalSettingsAsync("冻结模式更新失败") {
-                                        globalSettings.freezerMode = previousMode
-                                        freezerModeIndex.intValue = previousIndex
-                                    }
-                                    Toast.makeText(context, context.getString(R.string.freezer_mode_frozen_unavailable), Toast.LENGTH_SHORT).show()
+                                }
+                                frozenAvailable -> {
+                                    freezerModeIndex.intValue = 1
+                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
+                                }
+                                else -> {
+                                    WindowUtils.showToast(context.getString(R.string.freezer_v2_unavailable))
+                                    return@launch
                                 }
                             }
-                        } else {
-                            freezerModeIndex.intValue = 0
-                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
                             saveGlobalSettingsAsync("冻结模式更新失败") {
                                 globalSettings.freezerMode = previousMode
                                 freezerModeIndex.intValue = previousIndex

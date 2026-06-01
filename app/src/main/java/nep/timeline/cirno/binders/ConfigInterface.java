@@ -68,6 +68,11 @@ public interface ConfigInterface extends android.os.IInterface {
         }
 
         @Override
+        public boolean isUidFreezerAvailable() throws android.os.RemoteException {
+            return false;
+        }
+
+        @Override
         public android.os.IBinder asBinder() {
             return null;
         }
@@ -186,6 +191,12 @@ public interface ConfigInterface extends android.os.IInterface {
                 }
                 case TRANSACTION_isFrozenFreezerAvailable: {
                     boolean result = this.isFrozenFreezerAvailable();
+                    reply.writeNoException();
+                    reply.writeInt(result ? 1 : 0);
+                    return true;
+                }
+                case TRANSACTION_isUidFreezerAvailable: {
+                    boolean result = this.isUidFreezerAvailable();
                     reply.writeNoException();
                     reply.writeInt(result ? 1 : 0);
                     return true;
@@ -407,6 +418,21 @@ public interface ConfigInterface extends android.os.IInterface {
                     data.recycle();
                 }
             }
+
+            @Override
+            public boolean isUidFreezerAvailable() throws android.os.RemoteException {
+                android.os.Parcel data = android.os.Parcel.obtain();
+                android.os.Parcel reply = android.os.Parcel.obtain();
+                try {
+                    data.writeInterfaceToken(DESCRIPTOR);
+                    mRemote.transact(Stub.TRANSACTION_isUidFreezerAvailable, data, reply, 0);
+                    reply.readException();
+                    return reply.readInt() != 0;
+                } finally {
+                    reply.recycle();
+                    data.recycle();
+                }
+            }
         }
 
         static final int TRANSACTION_getGlobalSettingsJson = android.os.IBinder.FIRST_CALL_TRANSACTION;
@@ -422,6 +448,7 @@ public interface ConfigInterface extends android.os.IInterface {
         static final int TRANSACTION_getLogContentPage = android.os.IBinder.FIRST_CALL_TRANSACTION + 10;
         static final int TRANSACTION_isReKernelAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 11;
         static final int TRANSACTION_isFrozenFreezerAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 12;
+        static final int TRANSACTION_isUidFreezerAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 13;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.ConfigInterface";
@@ -451,4 +478,6 @@ public interface ConfigInterface extends android.os.IInterface {
     boolean isReKernelAvailable() throws android.os.RemoteException;
 
     boolean isFrozenFreezerAvailable() throws android.os.RemoteException;
+
+    boolean isUidFreezerAvailable() throws android.os.RemoteException;
 }

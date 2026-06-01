@@ -321,31 +321,24 @@ private fun SettingsContent(
                             onSelectedIndexChange = {
                                 val previousMode = globalSettings.freezerMode
                                 val previousIndex = freezerModeIndex.intValue
-                                if (it == 1) {
-                                    scope.launch {
-                                        val available = withContext(Dispatchers.IO) {
-                                            ConfigBinderRepository.isFrozenFreezerAvailable()
-                                        }
-                                        if (available) {
-                                            freezerModeIndex.intValue = 1
-                                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
-                                            saveGlobalSettingsAsync("冻结模式更新失败") {
-                                                globalSettings.freezerMode = previousMode
-                                                freezerModeIndex.intValue = previousIndex
-                                            }
-                                        } else {
+                                scope.launch {
+                                    val (uidAvailable, frozenAvailable) = withContext(Dispatchers.IO) {
+                                        ConfigBinderRepository.isUidFreezerAvailable() to ConfigBinderRepository.isFrozenFreezerAvailable()
+                                    }
+                                    when {
+                                        uidAvailable -> {
                                             freezerModeIndex.intValue = 0
                                             globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
-                                            saveGlobalSettingsAsync("冻结模式更新失败") {
-                                                globalSettings.freezerMode = previousMode
-                                                freezerModeIndex.intValue = previousIndex
-                                            }
-                                            WindowUtils.showToast(context.getString(R.string.freezer_mode_frozen_unavailable))
+                                        }
+                                        frozenAvailable -> {
+                                            freezerModeIndex.intValue = 1
+                                            globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
+                                        }
+                                        else -> {
+                                            WindowUtils.showToast(context.getString(R.string.freezer_v2_unavailable))
+                                            return@launch
                                         }
                                     }
-                                } else {
-                                    freezerModeIndex.intValue = 0
-                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
                                     saveGlobalSettingsAsync("冻结模式更新失败") {
                                         globalSettings.freezerMode = previousMode
                                         freezerModeIndex.intValue = previousIndex

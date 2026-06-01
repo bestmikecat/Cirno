@@ -232,6 +232,14 @@ public final class ConfigBinderHub {
             }
             return FrozenRW.isFrozenFreezerAvailable();
         }
+
+        @Override
+        public boolean isUidFreezerAvailable() {
+            if (!isTrustedCaller()) {
+                return false;
+            }
+            return FrozenRW.isUidFreezerAvailable();
+        }
     };
 
     public static void signalError() {

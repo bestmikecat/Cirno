@@ -111,6 +111,7 @@ private data class InfoBinderState(
     val hasError: Boolean = false,
     val androidReady: Boolean = false,
     val systemUiReady: Boolean = false,
+    val freezerAvailable: Boolean = true,
     val moduleVersion: String? = null
 )
 
@@ -187,6 +188,7 @@ private fun InfoContent(
                     hasError = it.hasError,
                     androidReady = it.androidReady,
                     systemUiReady = it.systemUiReady,
+                    freezerAvailable = !it.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
                     moduleVersion = it.moduleVersion
                 )
             }
@@ -254,6 +256,8 @@ private fun InfoContent(
                         WarningCard(stringResource(R.string.internal_error))
                     if (versionMismatch)
                         WarningCard(stringResource(R.string.module_version_mismatch))
+                    if (active && binderAvailable && !binderState.freezerAvailable)
+                        WarningCard(stringResource(R.string.freezer_v2_unavailable))
                     StatusCard(
                         active = active,
                         working = active && !hasError,

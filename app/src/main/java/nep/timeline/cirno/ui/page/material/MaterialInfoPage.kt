@@ -60,6 +60,7 @@ import nep.timeline.cirno.utils.VersionUtils
 private data class MaterialInfoBinderState(
     val binderAvailable: Boolean = false,
     val hasError: Boolean = false,
+    val freezerAvailable: Boolean = true,
     val moduleVersion: String? = null,
 )
 
@@ -87,6 +88,7 @@ fun MaterialInfoPage(
             MaterialInfoBinderState(
                 binderAvailable = snapshot.binderAvailable,
                 hasError = snapshot.hasError,
+                freezerAvailable = !snapshot.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
                 moduleVersion = snapshot.moduleVersion,
             )
         }
@@ -171,11 +173,12 @@ fun MaterialInfoPage(
             val active = GlobalVars.isModuleActive
             val hasWarning = !active || binderState.hasError || (
                 active && binderState.binderAvailable && binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
-            )
+            ) || (active && binderState.binderAvailable && !binderState.freezerAvailable)
             if (hasWarning) {
                 val warningText = when {
                     !active -> stringResource(R.string.not_active)
                     binderState.hasError -> stringResource(R.string.internal_error)
+                    active && binderState.binderAvailable && !binderState.freezerAvailable -> stringResource(R.string.freezer_v2_unavailable)
                     else -> stringResource(R.string.module_version_mismatch)
                 }
                 MaterialWarningCard(warningText)
