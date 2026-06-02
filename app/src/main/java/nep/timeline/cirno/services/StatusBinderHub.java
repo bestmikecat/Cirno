@@ -17,11 +17,6 @@ public final class StatusBinderHub {
 
     public static final StatusInterface.Stub statusBinder = new StatusInterface.Stub() {
         @Override
-        public boolean setSignal(String key, String value) {
-            return StatusBinderHub.setSignal(key, value);
-        }
-
-        @Override
         public String getSignal(String key) {
             return StatusBinderHub.getSignal(key);
         }

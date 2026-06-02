@@ -30,7 +30,8 @@ import nep.timeline.cirno.utils.PKGUtils
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.HookStatusRepository
+import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -77,10 +78,10 @@ fun ApplicationHome(activity: ApplicationActivity) {
     fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
         scope.launch {
             val error = withContext(Dispatchers.IO) {
-                if (ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                if (RootConfigRepository.saveApplicationSettingsFromMemory()) {
                     null
                 } else {
-                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                    RootConfigRepository.getLastErrorOrDefault(defaultError)
                 }
             }
             if (error != null) {
@@ -113,7 +114,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
     LaunchedEffect(Unit) {
         hasReKernel.value = withContext(Dispatchers.IO) {
-            ConfigBinderRepository.isReKernelAvailable()
+            HookStatusRepository.isReKernelAvailable()
         }
     }
 

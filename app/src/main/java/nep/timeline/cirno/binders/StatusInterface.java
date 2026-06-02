@@ -3,11 +3,6 @@ package nep.timeline.cirno.binders;
 public interface StatusInterface extends android.os.IInterface {
     class Default implements StatusInterface {
         @Override
-        public boolean setSignal(String key, String value) throws android.os.RemoteException {
-            return false;
-        }
-
-        @Override
         public String getSignal(String key) throws android.os.RemoteException {
             return "";
         }
@@ -60,14 +55,6 @@ public interface StatusInterface extends android.os.IInterface {
                 return true;
             }
             switch (code) {
-                case TRANSACTION_setSignal: {
-                    String key = data.readString();
-                    String value = data.readString();
-                    boolean result = this.setSignal(key, value);
-                    reply.writeNoException();
-                    reply.writeInt(result ? 1 : 0);
-                    return true;
-                }
                 case TRANSACTION_getSignal: {
                     String key = data.readString();
                     String result = this.getSignal(key);
@@ -101,23 +88,6 @@ public interface StatusInterface extends android.os.IInterface {
             @Override
             public android.os.IBinder asBinder() {
                 return mRemote;
-            }
-
-            @Override
-            public boolean setSignal(String key, String value) throws android.os.RemoteException {
-                android.os.Parcel data = android.os.Parcel.obtain();
-                android.os.Parcel reply = android.os.Parcel.obtain();
-                try {
-                    data.writeInterfaceToken(DESCRIPTOR);
-                    data.writeString(key);
-                    data.writeString(value);
-                    mRemote.transact(Stub.TRANSACTION_setSignal, data, reply, 0);
-                    reply.readException();
-                    return reply.readInt() != 0;
-                } finally {
-                    reply.recycle();
-                    data.recycle();
-                }
             }
 
             @Override
@@ -167,15 +137,12 @@ public interface StatusInterface extends android.os.IInterface {
             }
         }
 
-        static final int TRANSACTION_setSignal = android.os.IBinder.FIRST_CALL_TRANSACTION;
-        static final int TRANSACTION_getSignal = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
-        static final int TRANSACTION_isReKernelAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 2;
-        static final int TRANSACTION_getHookVersion = android.os.IBinder.FIRST_CALL_TRANSACTION + 3;
+        static final int TRANSACTION_getSignal = android.os.IBinder.FIRST_CALL_TRANSACTION;
+        static final int TRANSACTION_isReKernelAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
+        static final int TRANSACTION_getHookVersion = android.os.IBinder.FIRST_CALL_TRANSACTION + 2;
     }
 
     String DESCRIPTOR = "nep.timeline.cirno.binders.StatusInterface";
-
-    boolean setSignal(String key, String value) throws android.os.RemoteException;
 
     String getSignal(String key) throws android.os.RemoteException;
 

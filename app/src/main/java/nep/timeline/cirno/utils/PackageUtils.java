@@ -37,7 +37,7 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinder;
 import nep.timeline.cirno.provide.FrozenStateBinder;
 import nep.timeline.cirno.services.AppService;
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository;
+import nep.timeline.cirno.ui.utils.RootPackageRepository;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public class PackageUtils {
@@ -61,7 +61,7 @@ public class PackageUtils {
         Context context = nep.timeline.cirno.ui.utils.AppContext.INSTANCE.getContext();
         PackageManager pm = context.getPackageManager();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
-        LinkedHashSet<String> managedKeys = new LinkedHashSet<>(ConfigBinderRepository.INSTANCE.getManagedAppKeySet());
+        LinkedHashSet<String> managedKeys = new LinkedHashSet<>(RootPackageRepository.INSTANCE.getManagedAppKeySet());
         if (managedKeys.isEmpty()) {
             List<Integer> userIds = getInstalledUserIdsByPm();
             for (int userId : userIds) {

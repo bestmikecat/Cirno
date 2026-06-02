@@ -51,14 +51,15 @@ import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.navigation3.Route
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.HookStatusRepository
+import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.utils.VersionUtils
 
-private data class MaterialInfoBinderState(
-    val binderAvailable: Boolean = false,
+private data class MaterialHookStatusState(
+    val statusBinderAvailable: Boolean = false,
     val hasError: Boolean = false,
     val freezerAvailable: Boolean = true,
     val hookVersion: String? = null,
@@ -75,20 +76,20 @@ fun MaterialInfoPage(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
-    var binderState by remember { mutableStateOf(MaterialInfoBinderState()) }
+    var binderState by remember { mutableStateOf(MaterialHookStatusState()) }
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
-            var snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            var snapshot = HookStatusRepository.loadHookStatusSnapshot()
             for (attempt in 0 until 5) {
-                if (snapshot.binderAvailable) break
+                if (snapshot.statusBinderAvailable) break
                 delay(300)
-                snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+                snapshot = HookStatusRepository.loadHookStatusSnapshot()
             }
-            MaterialInfoBinderState(
-                binderAvailable = snapshot.binderAvailable,
+            MaterialHookStatusState(
+                statusBinderAvailable = snapshot.statusBinderAvailable,
                 hasError = snapshot.hasError,
-                freezerAvailable = !snapshot.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
+                freezerAvailable = !snapshot.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                 hookVersion = snapshot.hookVersion,
             )
         }
@@ -171,7 +172,7 @@ fun MaterialInfoPage(
 
         item {
             val active = GlobalVars.isModuleActive
-            val versionMismatch = active && binderState.binderAvailable &&
+            val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             if (versionMismatch) {
                 MaterialWarningCard(stringResource(R.string.module_version_mismatch))
@@ -182,7 +183,7 @@ fun MaterialInfoPage(
                 if (binderState.hasError) {
                     MaterialWarningCard(stringResource(R.string.internal_error))
                 }
-                if (active && binderState.binderAvailable && !binderState.freezerAvailable) {
+                if (active && binderState.statusBinderAvailable && !binderState.freezerAvailable) {
                     MaterialWarningCard(stringResource(R.string.freezer_v2_unavailable))
                 }
             }

@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Dashboard
@@ -38,7 +37,8 @@ import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.app.UI_STYLE_MIUIX
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.RootConfigRepository
+import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,7 +93,7 @@ fun MaterialSettingsPage(
     fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
         scope.launch {
             val error = withContext(Dispatchers.IO) {
-                if (ConfigBinderRepository.saveGlobalSettingsFromMemory()) null else ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                if (RootConfigRepository.saveGlobalSettingsFromMemory()) null else RootConfigRepository.getLastErrorOrDefault(defaultError)
             }
             if (error != null) {
                 onFailed()
@@ -120,10 +120,10 @@ fun MaterialSettingsPage(
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
             val message = withContext(Dispatchers.IO) {
-                val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
-                val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+                val globalJson = RootConfigRepository.getGlobalSettingsJsonOrNull()
+                val applicationJson = RootConfigRepository.getApplicationSettingsJsonOrNull()
                 if (globalJson == null || applicationJson == null) {
-                    return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
+                    return@withContext RootConfigRepository.getLastErrorOrDefault(backupFailedText)
                 }
                 try {
                     ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
@@ -142,9 +142,9 @@ fun MaterialSettingsPage(
             val (message, restored) = withContext(Dispatchers.IO) {
                 try {
                     val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
-                    val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
-                    if (!applied) return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
-                    if (!ConfigBinderRepository.loadIntoMemory()) return@withContext restoreSuccessReloadFailedText to false
+                    val applied = RootConfigRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
+                    if (!applied) return@withContext RootConfigRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
+                    if (!RootConfigRepository.loadIntoMemory()) return@withContext restoreSuccessReloadFailedText to false
                     restoreSuccessText to true
                 } catch (e: ConfigBackupZipUtils.RestoreException) {
                     when (e.error) {
@@ -195,7 +195,7 @@ fun MaterialSettingsPage(
                         val previousIndex = freezerModeIndex.intValue
                         scope.launch {
                             val (uidAvailable, frozenAvailable) = withContext(Dispatchers.IO) {
-                                ConfigBinderRepository.isUidFreezerAvailable() to ConfigBinderRepository.isFrozenFreezerAvailable()
+                                RootFreezerRepository.isUidFreezerAvailable() to RootFreezerRepository.isFrozenFreezerAvailable()
                             }
                             when {
                                 uidAvailable -> {

@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.RootLogRepository
 
 data class LogUiState(
     val loadedLines: List<String> = emptyList(),
@@ -40,7 +40,7 @@ class LogViewModel : ViewModel() {
         _uiState.update { it.copy(isLoadingMore = true) }
         viewModelScope.launch(Dispatchers.IO) {
             val currentState = _uiState.value
-            val page = ConfigBinderRepository.getLogContentPage(currentState.nextStartLine, LOG_PAGE_SIZE)
+            val page = RootLogRepository.getLogContentPage(currentState.nextStartLine, LOG_PAGE_SIZE)
             _uiState.update {
                 val mergedLines = if (page.isEmpty()) it.loadedLines else it.loadedLines + page
                 it.copy(

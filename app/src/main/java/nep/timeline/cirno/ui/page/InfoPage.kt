@@ -52,7 +52,8 @@ import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.dialog.UpdateDialog
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.HookStatusRepository
+import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
@@ -106,8 +107,8 @@ private data class HookScopeStatus(
     }
 }
 
-private data class InfoBinderState(
-    val binderAvailable: Boolean = false,
+private data class HookStatusState(
+    val statusBinderAvailable: Boolean = false,
     val hasError: Boolean = false,
     val androidReady: Boolean = false,
     val systemUiReady: Boolean = false,
@@ -170,25 +171,25 @@ private fun InfoContent(
     var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var isCheckingUpdate by remember { mutableStateOf(false) }
-    var binderState by remember { mutableStateOf(InfoBinderState()) }
+    var binderState by remember { mutableStateOf(HookStatusState()) }
 
     LaunchedEffect(Unit) {
         binderState = withContext(Dispatchers.IO) {
-            var snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+            var snapshot = HookStatusRepository.loadHookStatusSnapshot()
             for (attempt in 0 until 5) {
-                if (snapshot.binderAvailable) {
+                if (snapshot.statusBinderAvailable) {
                     break
                 }
                 delay(300)
-                snapshot = ConfigBinderRepository.loadInfoBinderSnapshot()
+                snapshot = HookStatusRepository.loadHookStatusSnapshot()
             }
             snapshot.let {
-                InfoBinderState(
-                    binderAvailable = it.binderAvailable,
+                HookStatusState(
+                    statusBinderAvailable = it.statusBinderAvailable,
                     hasError = it.hasError,
                     androidReady = it.androidReady,
                     systemUiReady = it.systemUiReady,
-                    freezerAvailable = !it.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
+                    freezerAvailable = !it.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                     hookVersion = it.hookVersion
                 )
             }
@@ -222,10 +223,10 @@ private fun InfoContent(
         ) {
             item {
                 val active = GlobalVars.isModuleActive
-                val binderAvailable = binderState.binderAvailable
+                val statusBinderAvailable = binderState.statusBinderAvailable
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
-                val versionMismatch = active && binderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
+                val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
@@ -251,13 +252,13 @@ private fun InfoContent(
                             WarningCard(stringResource(R.string.fools_day))
                         if (!active)
                             WarningCard(stringResource(R.string.not_active))
-                        if (active && binderAvailable && missingScopes.isNotEmpty())
+                        if (active && statusBinderAvailable && missingScopes.isNotEmpty())
                             WarningCard(
                                 stringResource(R.string.scope_not_running, missingScopeLabels)
                             )
                         if (hasError)
                             WarningCard(stringResource(R.string.internal_error))
-                        if (active && binderAvailable && !binderState.freezerAvailable)
+                        if (active && statusBinderAvailable && !binderState.freezerAvailable)
                             WarningCard(stringResource(R.string.freezer_v2_unavailable))
                     }
                     StatusCard(

@@ -34,7 +34,8 @@ import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.RootConfigRepository
+import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
@@ -181,10 +182,10 @@ private fun SettingsContent(
     fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
         scope.launch {
             val error = withContext(Dispatchers.IO) {
-                if (ConfigBinderRepository.saveGlobalSettingsFromMemory()) {
+                if (RootConfigRepository.saveGlobalSettingsFromMemory()) {
                     null
                 } else {
-                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                    RootConfigRepository.getLastErrorOrDefault(defaultError)
                 }
             }
             if (error != null) {
@@ -218,10 +219,10 @@ private fun SettingsContent(
         }
         scope.launch {
             val message = withContext(Dispatchers.IO) {
-                val globalJson = ConfigBinderRepository.getGlobalSettingsJsonOrNull()
-                val applicationJson = ConfigBinderRepository.getApplicationSettingsJsonOrNull()
+                val globalJson = RootConfigRepository.getGlobalSettingsJsonOrNull()
+                val applicationJson = RootConfigRepository.getApplicationSettingsJsonOrNull()
                 if (globalJson == null || applicationJson == null) {
-                    return@withContext ConfigBinderRepository.getLastErrorOrDefault(backupFailedText)
+                    return@withContext RootConfigRepository.getLastErrorOrDefault(backupFailedText)
                 }
                 try {
                     ConfigBackupZipUtils.writeBackupZip(context.contentResolver, uri, globalJson, applicationJson)
@@ -244,11 +245,11 @@ private fun SettingsContent(
             val (message, restored) = withContext(Dispatchers.IO) {
                 try {
                     val restored = ConfigBackupZipUtils.readAndValidateBackupZip(context.contentResolver, uri)
-                    val applied = ConfigBinderRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
+                    val applied = RootConfigRepository.applySettingsJson(restored.globalJson, restored.applicationJson)
                     if (!applied) {
-                        return@withContext ConfigBinderRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
+                        return@withContext RootConfigRepository.getLastErrorOrDefault(restoreFailedApplyText) to false
                     }
-                    if (!ConfigBinderRepository.loadIntoMemory()) {
+                    if (!RootConfigRepository.loadIntoMemory()) {
                         return@withContext restoreSuccessReloadFailedText to false
                     }
                     restoreSuccessText to true
@@ -313,7 +314,7 @@ private fun SettingsContent(
                                 val previousIndex = freezerModeIndex.intValue
                                 scope.launch {
                                     val (uidAvailable, frozenAvailable) = withContext(Dispatchers.IO) {
-                                        ConfigBinderRepository.isUidFreezerAvailable() to ConfigBinderRepository.isFrozenFreezerAvailable()
+                                        RootFreezerRepository.isUidFreezerAvailable() to RootFreezerRepository.isFrozenFreezerAvailable()
                                     }
                                     when {
                                         uidAvailable -> {

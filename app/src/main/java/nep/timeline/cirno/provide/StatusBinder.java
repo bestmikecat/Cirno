@@ -20,11 +20,6 @@ public class StatusBinder extends StatusInterface.Stub {
     }
 
     @Override
-    public boolean setSignal(String key, String value) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String getSignal(String key) {
         throw new UnsupportedOperationException();
     }

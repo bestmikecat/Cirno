@@ -39,7 +39,8 @@ import nep.timeline.cirno.CommonConstants
 import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.checkers.AppConfigs
 import nep.timeline.cirno.provide.ApplicationBinder
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
+import nep.timeline.cirno.ui.utils.HookStatusRepository
+import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
 import nep.timeline.cirno.utils.PKGUtils
@@ -79,10 +80,10 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
         scope.launch {
             val error = withContext(Dispatchers.IO) {
-                if (ConfigBinderRepository.saveApplicationSettingsFromMemory()) {
+                if (RootConfigRepository.saveApplicationSettingsFromMemory()) {
                     null
                 } else {
-                    ConfigBinderRepository.getLastErrorOrDefault(defaultError)
+                    RootConfigRepository.getLastErrorOrDefault(defaultError)
                 }
             }
             if (error != null) onFailed(error)
@@ -121,7 +122,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
 
     LaunchedEffect(Unit) {
         hasReKernel.value = withContext(Dispatchers.IO) {
-            ConfigBinderRepository.isReKernelAvailable()
+            HookStatusRepository.isReKernelAvailable()
         }
     }
 
