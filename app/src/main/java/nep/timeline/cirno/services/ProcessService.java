@@ -27,42 +27,56 @@ public class ProcessService {
         FreezerHandler.sendFreezeMessage(appRecord);
     }
 
-    public static void removeProcessRecord(ProcessRecord processRecord) {
-        removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), true);
+    public static AppRecord removeProcessRecord(ProcessRecord processRecord) {
+        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), true);
     }
 
-    public static void removeProcessRecordWithoutThaw(ProcessRecord processRecord) {
-        removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), false);
+    public static AppRecord removeProcessRecordWithoutThaw(ProcessRecord processRecord) {
+        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), false);
     }
 
-    public static void removeProcessRecord(String name, int uid) {
-        removeProcessRecord(name, uid, true);
+    public static AppRecord removeProcessRecord(String name, int uid) {
+        return removeProcessRecord(name, uid, true);
     }
 
-    private static void removeProcessRecord(String name, int uid, boolean thawOnRemove) {
+    private static AppRecord removeProcessRecord(String name, int uid, boolean thawOnRemove) {
         ProcessRecord processRecord;
         AppRecord appRecord;
         boolean shouldThaw;
         int thawUid;
         int thawPid;
         synchronized (lock) {
-            if (!PROCESS_NAME_MAP.containsKey(name))
-                return;
-            processRecord = PROCESS_NAME_MAP.computeIfAbsent(name, k -> new ConcurrentHashMap<>()).remove(uid);
+            Map<Integer, ProcessRecord> records = PROCESS_NAME_MAP.get(name);
+            if (records == null)
+                return null;
+            processRecord = records.remove(uid);
             if (processRecord == null)
-                return;
+                return null;
+            if (records.isEmpty())
+                PROCESS_NAME_MAP.remove(name, records);
             shouldThaw = processRecord.isFrozen();
             thawUid = processRecord.getRunningUid();
             thawPid = processRecord.getPid();
             appRecord = processRecord.getAppRecord();
-            if (appRecord == null)
-                return;
-            appRecord.getProcessRecords().remove(processRecord);
-            if (appRecord.getProcessRecords().isEmpty())
-                appRecord.reset();
+            if (appRecord != null) {
+                appRecord.getProcessRecords().remove(processRecord);
+                if (appRecord.getProcessRecords().isEmpty())
+                    appRecord.reset();
+                else
+                    appRecord.setFrozen(hasFrozenProcess(appRecord));
+            }
         }
         if (thawOnRemove && shouldThaw)
             FrozenRW.thaw(thawUid, thawPid);
+        return appRecord;
+    }
+
+    private static boolean hasFrozenProcess(AppRecord appRecord) {
+        for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
+            if (processRecord != null && !processRecord.isDeathProcess() && processRecord.isFrozen())
+                return true;
+        }
+        return false;
     }
 
     public static ProcessRecord getProcessRecord(Object record) {
