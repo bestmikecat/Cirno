@@ -3,8 +3,10 @@ package nep.timeline.cirno.hooks.android.signal;
 import android.os.Process;
 
 import de.robv.android.xposed.XC_MethodHook;
+import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
+import nep.timeline.cirno.services.MonitorBinderHub;
 import nep.timeline.cirno.services.ProcessService;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
@@ -42,7 +44,9 @@ public class SendSignalQuietHook extends MethodHook {
                 if (processRecord == null || processRecord.isDeathProcess())
                     return;
 
-                ProcessService.removeProcessRecordWithoutThaw(processRecord);
+                AppRecord appRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord);
+                if (appRecord != null)
+                    MonitorBinderHub.refreshRunningApps();
             }
         };
     }

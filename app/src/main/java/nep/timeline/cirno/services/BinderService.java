@@ -161,7 +161,9 @@ public class BinderService {
                                             AppRecord appRecord = processRecord.getAppRecord();
                                             if (appRecord == null)
                                                 return;
-                                            ProcessService.removeProcessRecordWithoutThaw(processRecord);
+                                            AppRecord removedAppRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord);
+                                            if (removedAppRecord != null)
+                                                MonitorBinderHub.refreshRunningApps();
                                             Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除进程记录并跳过解冻");
                                         }
                                         case "Network" -> {
