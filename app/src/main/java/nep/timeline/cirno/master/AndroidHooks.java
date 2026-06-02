@@ -33,6 +33,7 @@ import nep.timeline.cirno.hooks.android.signal.SendSignalHook;
 import nep.timeline.cirno.hooks.android.signal.SendSignalQuietHook;
 import nep.timeline.cirno.hooks.android.vpn.VpnStateHook;
 import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
+import nep.timeline.cirno.hooks.android.xiaomi.ReportSignalHook;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
 
@@ -50,6 +51,7 @@ public class AndroidHooks {
         // Signal
         new SendSignalHook(classLoader);
         new SendSignalQuietHook(classLoader);
+        new ReportSignalHook(classLoader);
         // Audio
         new AudioStateHook(classLoader);
         new PlayerBanHook(classLoader);
