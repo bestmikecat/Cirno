@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.configs.ConfigManager
@@ -19,7 +18,6 @@ import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import nep.timeline.cirno.ui.viewModel.LogViewModel
 import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import nep.timeline.cirno.ui.app.App
-import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.utils.EnvUtils
 
@@ -44,7 +42,6 @@ class MainActivity : ComponentActivity() {
         val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {
             val showRootDialog = rememberSaveable { mutableStateOf(false) }
-            val appState = appUiStateViewModel.state.collectAsStateWithLifecycle().value
             LaunchedEffect(Unit) {
                 val lacksRoot = withContext(kotlinx.coroutines.Dispatchers.IO) {
                     BinderService.register(this@MainActivity)
@@ -62,7 +59,7 @@ class MainActivity : ComponentActivity() {
                 appUiStateViewModel.loadFromGlobalSettings()
             }
             App(active = true, appUiStateViewModel = appUiStateViewModel)
-            RootDialog(showDialog = showRootDialog, useMaterial = appState.uiStyle == UI_STYLE_MATERIAL)
+            RootDialog(showDialog = showRootDialog)
         }
     }
 }
