@@ -20,7 +20,6 @@ import com.google.gson.Gson;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.binders.ApplicationInterface;
-import nep.timeline.cirno.binders.ConfigInterface;
 import nep.timeline.cirno.binders.FrozenStateInterface;
 import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
@@ -271,7 +270,7 @@ public final class MonitorBinderHub {
             Bundle extras = new Bundle();
             extras.putBinder("Application", applicationBinder);
             extras.putBinder("FrozenState", frozenStateBinder);
-            extras.putBinder("Config", (ConfigInterface.Stub) ConfigBinderHub.configBinder);
+            extras.putBinder("Status", StatusBinderHub.statusBinder);
             intent.putExtras(extras);
             ActivityManagerService.getContext().sendStickyBroadcast(intent);
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);

@@ -112,7 +112,7 @@ private data class InfoBinderState(
     val androidReady: Boolean = false,
     val systemUiReady: Boolean = false,
     val freezerAvailable: Boolean = true,
-    val moduleVersion: String? = null
+    val hookVersion: String? = null
 )
 
 @Composable
@@ -189,7 +189,7 @@ private fun InfoContent(
                     androidReady = it.androidReady,
                     systemUiReady = it.systemUiReady,
                     freezerAvailable = !it.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
-                    moduleVersion = it.moduleVersion
+                    hookVersion = it.hookVersion
                 )
             }
         }
@@ -224,8 +224,8 @@ private fun InfoContent(
                 val active = GlobalVars.isModuleActive
                 val binderAvailable = binderState.binderAvailable
                 val hasError = binderState.hasError
-                val moduleVersion = binderState.moduleVersion
-                val versionMismatch = active && binderAvailable && moduleVersion != null && moduleVersion != BuildConfig.VERSION_NAME
+                val hookVersion = binderState.hookVersion
+                val versionMismatch = active && binderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
@@ -263,7 +263,7 @@ private fun InfoContent(
                     StatusCard(
                         active = active,
                         working = active && !hasError,
-                        version = moduleVersion
+                        version = hookVersion
                             ?: stringResource(R.string.not_running),
                         onClickStatus = {
 

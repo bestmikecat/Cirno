@@ -5,18 +5,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import nep.timeline.cirno.configs.ConfigManager
+import nep.timeline.cirno.ui.dialog.RootDialog
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BackgroundManager
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import nep.timeline.cirno.ui.viewModel.LogViewModel
 import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import nep.timeline.cirno.ui.app.App
 import nep.timeline.cirno.binder.BinderService
+import nep.timeline.cirno.utils.EnvUtils
 
 class MainActivity : ComponentActivity() {
     object AppListViewModelSingleton {
@@ -35,17 +39,25 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
         BackgroundManager.init(this)
+        if (!ConfigManager.manager.readConfigSU()) {
+            ConfigManager.manager.saveConfigSU()
+        }
         enableEdgeToEdge()
         val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {
+            val showRootDialog = rememberSaveable { mutableStateOf(false) }
             LaunchedEffect(Unit) {
-                withContext(Dispatchers.IO) {
+                val lacksRoot = withContext(Dispatchers.IO) {
                     BinderService.register(this@MainActivity)
-                    ConfigBinderRepository.loadIntoMemory()
+                    !EnvUtils.checkRoot()
+                }
+                if (lacksRoot) {
+                    showRootDialog.value = true
                 }
                 appUiStateViewModel.loadFromGlobalSettings()
             }
             App(active = true, appUiStateViewModel = appUiStateViewModel)
+            RootDialog(showDialog = showRootDialog)
         }
     }
 }

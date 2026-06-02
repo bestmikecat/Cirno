@@ -12,7 +12,7 @@ import de.robv.android.xposed.XposedBridge;
 import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.GlobalSettings;
-import nep.timeline.cirno.services.ConfigBinderHub;
+import nep.timeline.cirno.services.StatusBinderHub;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.RWUtils;
 
@@ -125,7 +125,7 @@ public class Log {
         String formatted = simpleDateFormat.format(new Date()) + " " + level.toUpperCase() + " -> " + msg;
         Handlers.log.post(() -> {
             if ("错误".equals(level)) {
-                ConfigBinderHub.signalError();
+                StatusBinderHub.signalError();
                 fileLog(formatted);
                 xposedLog(formatted);
                 return;

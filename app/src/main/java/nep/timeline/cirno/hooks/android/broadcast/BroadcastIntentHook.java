@@ -12,8 +12,8 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
-import nep.timeline.cirno.services.ConfigBinderHub;
 import nep.timeline.cirno.services.FreezerService;
+import nep.timeline.cirno.services.StatusBinderHub;
 
 public class BroadcastIntentHook {
     private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
@@ -62,7 +62,7 @@ public class BroadcastIntentHook {
                         if (ACTION_HOOK_READY.equals(action)) {
                             String scope = intent.getStringExtra("scope");
                             if ("systemui".equals(scope)) {
-                                ConfigBinderHub.setSignal(ConfigBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
+                                StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
                                 Log.i("SystemUI hook ready");
                             }
                             return;

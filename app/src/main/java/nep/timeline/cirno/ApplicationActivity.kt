@@ -12,13 +12,13 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.GlobalVars
+import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.ui.app.AppTheme
 import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.ApplicationHome
 import nep.timeline.cirno.ui.page.material.MaterialApplicationHome
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BackgroundManager
-import nep.timeline.cirno.ui.utils.ConfigBinderRepository
 import nep.timeline.cirno.ui.utils.MiuixBackground
 
 class ApplicationActivity : ComponentActivity() {
@@ -31,7 +31,9 @@ class ApplicationActivity : ComponentActivity() {
             var configLoaded by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
-                    ConfigBinderRepository.loadIntoMemory()
+                    if (!ConfigManager.manager.readConfigSU()) {
+                        ConfigManager.manager.saveConfigSU()
+                    }
                 }
                 configLoaded = true
             }

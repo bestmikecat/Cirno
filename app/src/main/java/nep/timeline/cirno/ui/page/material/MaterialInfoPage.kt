@@ -61,7 +61,7 @@ private data class MaterialInfoBinderState(
     val binderAvailable: Boolean = false,
     val hasError: Boolean = false,
     val freezerAvailable: Boolean = true,
-    val moduleVersion: String? = null,
+    val hookVersion: String? = null,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +89,7 @@ fun MaterialInfoPage(
                 binderAvailable = snapshot.binderAvailable,
                 hasError = snapshot.hasError,
                 freezerAvailable = !snapshot.binderAvailable || ConfigBinderRepository.isAnyFreezerAvailable(),
-                moduleVersion = snapshot.moduleVersion,
+                hookVersion = snapshot.hookVersion,
             )
         }
         val result = UpdateChecker.checkForUpdate()
@@ -131,7 +131,7 @@ fun MaterialInfoPage(
         item {
             val active = GlobalVars.isModuleActive
             val working = active && !binderState.hasError
-            val moduleVersion = binderState.moduleVersion ?: stringResource(R.string.not_running)
+            val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
 
             MaterialSurfaceCard(
                 containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
@@ -160,7 +160,7 @@ fun MaterialInfoPage(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = moduleVersion,
+                            text = hookVersion,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -172,7 +172,7 @@ fun MaterialInfoPage(
         item {
             val active = GlobalVars.isModuleActive
             val versionMismatch = active && binderState.binderAvailable &&
-                binderState.moduleVersion != null && binderState.moduleVersion != BuildConfig.VERSION_NAME
+                binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             if (versionMismatch) {
                 MaterialWarningCard(stringResource(R.string.module_version_mismatch))
             } else {
