@@ -12,6 +12,10 @@ public class EnvUtils {
     }
 
     public static boolean checkRoot() {
-        return Shell.getShell().isRoot();
+        try {
+            return Shell.getShell().isRoot();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }

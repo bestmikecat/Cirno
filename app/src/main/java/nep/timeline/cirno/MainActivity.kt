@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModelProvider
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.ui.dialog.RootDialog
@@ -19,6 +19,7 @@ import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import nep.timeline.cirno.ui.viewModel.LogViewModel
 import nep.timeline.cirno.ui.viewModel.MonitorViewModel
 import nep.timeline.cirno.ui.app.App
+import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.utils.EnvUtils
 
@@ -39,25 +40,29 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppContext.init(this)
         BackgroundManager.init(this)
-        if (!ConfigManager.manager.readConfigSU()) {
-            ConfigManager.manager.saveConfigSU()
-        }
         enableEdgeToEdge()
         val appUiStateViewModel = ViewModelProvider(this)[AppUiStateViewModel::class.java]
         setContent {
             val showRootDialog = rememberSaveable { mutableStateOf(false) }
+            val appState = appUiStateViewModel.state.collectAsStateWithLifecycle().value
             LaunchedEffect(Unit) {
-                val lacksRoot = withContext(Dispatchers.IO) {
+                val lacksRoot = withContext(kotlinx.coroutines.Dispatchers.IO) {
                     BinderService.register(this@MainActivity)
                     !EnvUtils.checkRoot()
                 }
                 if (lacksRoot) {
                     showRootDialog.value = true
+                    return@LaunchedEffect
+                }
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    if (!ConfigManager.manager.readConfigSU()) {
+                        ConfigManager.manager.saveConfigSU()
+                    }
                 }
                 appUiStateViewModel.loadFromGlobalSettings()
             }
             App(active = true, appUiStateViewModel = appUiStateViewModel)
-            RootDialog(showDialog = showRootDialog)
+            RootDialog(showDialog = showRootDialog, useMaterial = appState.uiStyle == UI_STYLE_MATERIAL)
         }
     }
 }
