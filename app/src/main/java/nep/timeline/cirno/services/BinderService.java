@@ -161,9 +161,8 @@ public class BinderService {
                                             AppRecord appRecord = processRecord.getAppRecord();
                                             if (appRecord == null)
                                                 return;
-                                            FreezerHandler.removeAppMessage(appRecord);
                                             ProcessService.removeProcessRecordWithoutThaw(processRecord);
-                                            Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除待冻结任务并跳过解冻");
+                                            Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除进程记录并跳过解冻");
                                         }
                                         case "Network" -> {
                                             int targetUid = getIntParam(params, "target");
