@@ -20,8 +20,7 @@ public class HookInit implements IXposedHookLoadPackage {
             try {
                 SystemUIHooks.start(classLoader);
             } catch (Throwable throwable) {
-                XposedBridge.log("Cirno (" + packageName + ") -> Hook failed:");
-                XposedBridge.log(throwable);
+                nep.timeline.cirno.log.Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
             }
             return;
         }
@@ -30,7 +29,7 @@ public class HookInit implements IXposedHookLoadPackage {
             Class<?> globalVars = XposedHelpers.findClassIfExists(GlobalVars.class.getTypeName(), classLoader);
 
             if (globalVars == null) {
-                XposedBridge.log(GlobalVars.TAG + " -> Failed to set module active.");
+                nep.timeline.cirno.log.Log.e(GlobalVars.TAG + " -> Failed to set module active");
                 return;
             }
 
@@ -50,8 +49,7 @@ public class HookInit implements IXposedHookLoadPackage {
             AndroidHooks.start(classLoader);
             StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_ANDROID_HOOK_READY, "1");
         } catch (Throwable throwable) {
-            XposedBridge.log("Cirno (" + packageName + ") -> Hook failed:");
-            XposedBridge.log(throwable);
+            nep.timeline.cirno.log.Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
         }
     }
 }

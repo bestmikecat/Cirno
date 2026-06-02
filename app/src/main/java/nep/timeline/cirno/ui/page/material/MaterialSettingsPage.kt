@@ -80,8 +80,6 @@ fun MaterialSettingsPage(
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
     val freezerModeIndex = remember { mutableIntStateOf(if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
-    val outputItems = listOf(stringResource(R.string.log_xposed), stringResource(R.string.log_file))
-    val outputIndex = remember { mutableIntStateOf(if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1) }
     val levelItems = listOf(stringResource(R.string.log_close), stringResource(R.string.log_info), stringResource(R.string.log_debug))
     val levelIndex = remember {
         mutableIntStateOf(
@@ -111,7 +109,6 @@ fun MaterialSettingsPage(
         freezerModeIndex.intValue = if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
-        outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
         levelIndex.intValue = when (globalSettings.logLevel) {
             GlobalSettings.LOG_LEVEL_NONE -> 0
             GlobalSettings.LOG_LEVEL_DEBUG -> 2
@@ -303,15 +300,6 @@ fun MaterialSettingsPage(
 
         item {
             MaterialSettingsSection(title = stringResource(R.string.settings_log_group)) {
-                MaterialDropdownItem(Icons.Outlined.Article, stringResource(R.string.log_print), outputItems, outputIndex.intValue) {
-                    val previous = globalSettings.logOutputMode
-                    outputIndex.intValue = it
-                    globalSettings.logOutputMode = if (it == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
-                    saveGlobalSettingsAsync("日志输出更新失败") {
-                        globalSettings.logOutputMode = previous
-                        outputIndex.intValue = if (previous == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-                    }
-                }
                 MaterialDropdownItem(Icons.Outlined.BugReport, stringResource(R.string.log_level), levelItems, levelIndex.intValue) {
                     val previous = globalSettings.logLevel
                     levelIndex.intValue = it

@@ -163,15 +163,6 @@ private fun SettingsContent(
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
-    val outputItems = listOf(
-        stringResource(R.string.log_xposed),
-        stringResource(R.string.log_file),
-    )
-    val outputIndex = remember {
-        mutableIntStateOf(
-            if (GlobalVars.globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-        )
-    }
     val levelItems = listOf(
         stringResource(R.string.log_close),
         stringResource(R.string.log_info),
@@ -212,7 +203,6 @@ private fun SettingsContent(
         navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
         blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
-        outputIndex.intValue = if (globalSettings.logOutputMode == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
         levelIndex.intValue = when (globalSettings.logLevel) {
             GlobalSettings.LOG_LEVEL_NONE -> 0
             GlobalSettings.LOG_LEVEL_DEBUG -> 2
@@ -506,20 +496,6 @@ private fun SettingsContent(
                 item {
                     SmallTitle(text = stringResource(R.string.settings_log_group))
                     Card(modifier = Modifier.padding(12.dp)) {
-                        OverlayDropdownPreference(
-                            title = stringResource(R.string.log_print),
-                            items = outputItems,
-                            selectedIndex = outputIndex.intValue,
-                            onSelectedIndexChange = {
-                                val previous = globalSettings.logOutputMode
-                                outputIndex.intValue = it
-                                globalSettings.logOutputMode = if (it == 0) GlobalSettings.LOG_OUTPUT_FRAMEWORK else GlobalSettings.LOG_OUTPUT_FILE
-                                saveGlobalSettingsAsync("日志输出更新失败") {
-                                    globalSettings.logOutputMode = previous
-                                    outputIndex.intValue = if (previous == GlobalSettings.LOG_OUTPUT_FRAMEWORK) 0 else 1
-                                }
-                            }
-                        )
                         OverlayDropdownPreference(
                             title = stringResource(R.string.log_level),
                             items = levelItems,

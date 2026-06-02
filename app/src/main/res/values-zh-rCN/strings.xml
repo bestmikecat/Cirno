@@ -31,9 +31,6 @@
   <string name="freezer_v2_unavailable">此设备不支持 cgroup v2 冻结：UID 模式与 Frozen 模式均不可用。</string>
   <string name="interval_freeze_delay">冻结延迟</string>
   <string name="wake_freeze_delay">唤醒冻结延迟</string>
-  <string name="log_print">日志输出</string>
-  <string name="log_file">文件</string>
-  <string name="log_xposed">Xposed</string>
   <string name="log_level">日志级别</string>
   <string name="log_close">关闭</string>
   <string name="log_info">信息</string>

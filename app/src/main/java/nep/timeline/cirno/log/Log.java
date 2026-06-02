@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import de.robv.android.xposed.XposedBridge;
 import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.GlobalSettings;
@@ -73,7 +72,6 @@ public class Log {
             detail += ": " + message;
         }
         w(msg + " 失败: " + detail);
-        XposedBridge.log(throwable);
     }
 
     public static void e(String msg) {
@@ -93,7 +91,6 @@ public class Log {
             detail += ": " + message;
         }
         e(msg + " 失败: " + detail);
-        XposedBridge.log(throwable);
     }
 
     private static String getLogLevel() {
@@ -101,13 +98,6 @@ public class Log {
             return GlobalSettings.LOG_LEVEL_INFO;
         }
         return GlobalVars.globalSettings.logLevel;
-    }
-
-    private static String getLogOutputMode() {
-        if (GlobalVars.globalSettings == null || GlobalVars.globalSettings.logOutputMode == null) {
-            return GlobalSettings.LOG_OUTPUT_FILE;
-        }
-        return GlobalVars.globalSettings.logOutputMode;
     }
 
     private static boolean shouldLog(String level) {
@@ -127,13 +117,11 @@ public class Log {
             if ("错误".equals(level)) {
                 StatusBinderHub.signalError();
                 fileLog(formatted);
-                xposedLog(formatted);
                 return;
             }
 
             if ("警告".equals(level)) {
                 fileLog(formatted);
-                xposedLog(formatted);
                 return;
             }
 
@@ -141,23 +129,14 @@ public class Log {
                 return;
             }
 
-            if (GlobalSettings.LOG_OUTPUT_FRAMEWORK.equals(getLogOutputMode())) {
-                xposedLog(formatted);
-            } else {
-                fileLog(formatted);
-            }
+            fileLog(formatted);
         });
-    }
-
-    public static void xposedLog(String msg) {
-        XposedBridge.log(msg);
     }
 
     public static void fileLog(String msg) {
         try {
             RWUtils.writeStringToFile(currentLog, msg, true);
-        } catch (IOException e) {
-            xposedLog("Log write failed: " + e.getMessage() + " msg: " + msg);
+        } catch (IOException ignored) {
         }
     }
 

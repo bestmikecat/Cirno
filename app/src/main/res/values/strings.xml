@@ -31,9 +31,6 @@
   <string name="freezer_v2_unavailable">Cgroup v2 freezer is unavailable: neither UID mode nor Frozen mode is supported on this device.</string>
   <string name="interval_freeze_delay">Interval freeze delay</string>
   <string name="wake_freeze_delay">Wake freeze delay</string>
-  <string name="log_print">Log Print</string>
-  <string name="log_file">File</string>
-  <string name="log_xposed">Xposed</string>
   <string name="log_level">Log Level</string>
   <string name="log_close">Close</string>
   <string name="log_info">Info</string>

@@ -59,8 +59,7 @@ public class NotificationHook {
 
             Log.i("监听通知意图");
         } catch (Throwable throwable) {
-            XposedBridge.log(GlobalVars.TAG + " -> 无法通知广播意图, 异常:");
-            XposedBridge.log(throwable);
+            Log.e(GlobalVars.TAG + " -> 无法通知广播意图, 异常", throwable);
             Log.e("监听通知意图失败", throwable);
         }
     }
