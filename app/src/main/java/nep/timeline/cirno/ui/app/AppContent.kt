@@ -42,8 +42,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -67,14 +72,19 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kyant.backdrop.backdrops.layerBackdrop
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.MainActivity.MonitorViewModelSingleton.monitorViewModel
 import nep.timeline.cirno.R
+import nep.timeline.cirno.binder.BinderService
+import nep.timeline.cirno.configs.ConfigManager
 import nep.timeline.cirno.ui.custom.FloatingBottomBar
 import nep.timeline.cirno.ui.custom.FloatingBottomBarItem
+import nep.timeline.cirno.ui.dialog.RootDialog
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.AboutPage
@@ -90,6 +100,8 @@ import nep.timeline.cirno.ui.utils.MiuixBackground
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
 import nep.timeline.cirno.ui.utils.textureBlur
+import nep.timeline.cirno.utils.EnvUtils
+import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBarDisplayMode
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
@@ -154,6 +166,26 @@ fun AppContent(
         UIConstants.SETTINGS_PAGE_INDEX = 1
     }
 
+    val showRootDialog = rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val appUiStateViewModel = ViewModelProvider(context as ComponentActivity)[AppUiStateViewModel::class.java]
+    LaunchedEffect(Unit) {
+        val lacksRoot = withContext(Dispatchers.IO) {
+            BinderService.register(context)
+            !EnvUtils.checkRoot()
+        }
+        if (lacksRoot) {
+            showRootDialog.value = true
+            return@LaunchedEffect
+        }
+        withContext(Dispatchers.IO) {
+            if (!ConfigManager.manager.readConfigSU()) {
+                ConfigManager.manager.saveConfigSU()
+            }
+        }
+        appUiStateViewModel.loadFromGlobalSettings()
+    }
+
     val appState = LocalAppState.current
     val pagerState = rememberPagerState(pageCount = { UIConstants.PAGE_COUNT })
     val mainPagerState = rememberMainPagerState(pagerState)
@@ -194,7 +226,8 @@ fun AppContent(
                     Home(
                         padding = padding,
                         navigationItems = navigationItems,
-                        mainPagerState = mainPagerState
+                        mainPagerState = mainPagerState,
+                        showRootDialog = showRootDialog
                     )
                 }
                 entry<Route.About> {
@@ -240,7 +273,8 @@ fun AppContent(
 private fun Home(
     padding: PaddingValues,
     navigationItems: List<NavigationItem>,
-    mainPagerState: MainPagerState
+    mainPagerState: MainPagerState,
+    showRootDialog: MutableState<Boolean>,
 ) {
     val isWideScreen = LocalIsWideScreen.current
     val layoutDirection = LocalLayoutDirection.current
@@ -268,6 +302,7 @@ private fun Home(
                 mainPagerState = mainPagerState
             )
         }
+        RootDialog(showDialog = showRootDialog)
     }
 }
 
