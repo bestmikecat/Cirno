@@ -197,20 +197,22 @@ fun MaterialSettingsPage(
                             val (uidAvailable, frozenAvailable) = withContext(Dispatchers.IO) {
                                 RootFreezerRepository.isUidFreezerAvailable() to RootFreezerRepository.isFrozenFreezerAvailable()
                             }
-                            when {
-                                uidAvailable -> {
-                                    freezerModeIndex.intValue = 0
-                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_UID
-                                }
-                                frozenAvailable -> {
-                                    freezerModeIndex.intValue = 1
-                                    globalSettings.freezerMode = GlobalSettings.FREEZER_MODE_FROZEN
-                                }
-                                else -> {
-                                    WindowUtils.showToast(context.getString(R.string.freezer_v2_unavailable))
-                                    return@launch
-                                }
+                            val (mode, available) = when (it) {
+                                0 -> GlobalSettings.FREEZER_MODE_UID to uidAvailable
+                                1 -> GlobalSettings.FREEZER_MODE_FROZEN to frozenAvailable
+                                else -> return@launch
                             }
+
+                            if (!available) {
+                                AppContext.showToast(context.getString(
+                                    if (it == 1) R.string.freezer_mode_frozen_unavailable
+                                    else R.string.freezer_mode_uid_unavailable
+                                ))
+                                return@launch
+                            }
+
+                            freezerModeIndex.intValue = it
+                            globalSettings.freezerMode = mode
                             saveGlobalSettingsAsync("冻结模式更新失败") {
                                 globalSettings.freezerMode = previousMode
                                 freezerModeIndex.intValue = previousIndex
