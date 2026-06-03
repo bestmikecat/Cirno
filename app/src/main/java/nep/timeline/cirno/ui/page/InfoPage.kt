@@ -52,6 +52,7 @@ import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.dialog.UpdateDialog
+import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
@@ -61,7 +62,6 @@ import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
 import nep.timeline.cirno.utils.VersionUtils
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -246,20 +246,21 @@ private fun InfoContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (versionMismatch) {
-                        WarningCard(stringResource(R.string.module_version_mismatch))
+                        WarningCard(stringResource(R.string.module_version_mismatch), backdrop = backdrop)
                     } else {
                         if (fool)
-                            WarningCard(stringResource(R.string.fools_day))
+                            WarningCard(stringResource(R.string.fools_day), backdrop = backdrop)
                         if (!active)
-                            WarningCard(stringResource(R.string.not_active))
+                            WarningCard(stringResource(R.string.not_active), backdrop = backdrop)
                         if (active && statusBinderAvailable && missingScopes.isNotEmpty())
                             WarningCard(
-                                stringResource(R.string.scope_not_running, missingScopeLabels)
+                                stringResource(R.string.scope_not_running, missingScopeLabels),
+                                backdrop = backdrop,
                             )
                         if (hasError)
-                            WarningCard(stringResource(R.string.internal_error))
+                            WarningCard(stringResource(R.string.internal_error), backdrop = backdrop)
                         if (active && statusBinderAvailable && !binderState.freezerAvailable)
-                            WarningCard(stringResource(R.string.freezer_v2_unavailable))
+                            WarningCard(stringResource(R.string.freezer_v2_unavailable), backdrop = backdrop)
                     }
                     StatusCard(
                         active = active,
@@ -276,9 +277,10 @@ private fun InfoContent(
                         onClickBlacklist = {
                             appListViewModel.updateByQuery(type = 1)
                             callback(1)
-                        }
+                        },
+                        backdrop = backdrop,
                     )
-                    InfoCard(active)
+                    InfoCard(active, backdrop = backdrop)
                     val alreadyLatestText = stringResource(R.string.update_already_latest)
                     UpdateCard(
                         isChecking = isCheckingUpdate,
@@ -296,10 +298,11 @@ private fun InfoContent(
                                     showUpdateDialog = true
                                 }
                             }
-                        }
+                        },
+                        backdrop = backdrop,
                     )
-                    LearnMoreCard()
-                    LogCard()
+                    LearnMoreCard(backdrop = backdrop)
+                    LogCard(backdrop = backdrop)
                 }
             }
 
@@ -324,7 +327,8 @@ private fun StatusCard(
     onClickWhitelist: () -> Unit = {},
     onClickBlacklist: () -> Unit = {},
     alpha: Boolean = false,
-    colors: CardColors = CardDefaults.defaultColors()
+    colors: CardColors = CardDefaults.defaultColors(),
+    backdrop: LayerBackdrop? = null,
 ) {
     val isWideScreen = LocalIsWideScreen.current
     val cardHeight = if (isWideScreen) 300.dp else 220.dp
@@ -342,7 +346,7 @@ private fun StatusCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Card(
+            CirnoCard(
                 modifier = modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -357,7 +361,8 @@ private fun StatusCard(
                     onClickStatus()
                 },
                 showIndication = true,
-                pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt
+                pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
+                backdrop = backdrop,
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -405,7 +410,7 @@ private fun StatusCard(
                     .weight(1f)
                     .fillMaxHeight()
             ) {
-                Card(
+                CirnoCard(
                     modifier = modifier
                         .fillMaxWidth()
                         .weight(1f),
@@ -413,7 +418,8 @@ private fun StatusCard(
                     onClick = { onClickWhitelist() },
                     showIndication = true,
                     pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-                    colors = colors
+                    colors = colors,
+                    backdrop = backdrop,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -436,7 +442,7 @@ private fun StatusCard(
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                Card(
+                CirnoCard(
                     modifier = modifier
                         .fillMaxWidth()
                         .weight(1f),
@@ -444,7 +450,8 @@ private fun StatusCard(
                     onClick = { onClickBlacklist() },
                     showIndication = true,
                     pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-                    colors = colors
+                    colors = colors,
+                    backdrop = backdrop,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -477,9 +484,10 @@ private fun WarningCard(
     modifier: Modifier = Modifier,
     alpha: Boolean = false,
     color: Color? = null,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    backdrop: LayerBackdrop? = null,
 ) {
-    Card(
+    CirnoCard(
         onClick = {
             onClick?.invoke()
         },
@@ -492,7 +500,8 @@ private fun WarningCard(
         ),
         modifier = modifier,
         showIndication = onClick != null,
-        pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt
+        pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
+        backdrop = backdrop,
     ) {
         Row(
             modifier = Modifier
@@ -509,12 +518,17 @@ private fun WarningCard(
 }
 
 @Composable
-private fun LearnMoreCard(modifier: Modifier = Modifier, colors: CardColors = CardDefaults.defaultColors()) {
+private fun LearnMoreCard(
+    modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.defaultColors(),
+    backdrop: LayerBackdrop? = null,
+) {
     val navigator = LocalNavigator.current
-    Card(
+    CirnoCard(
         modifier = modifier
             .fillMaxWidth(),
-        colors = colors
+        colors = colors,
+        backdrop = backdrop,
     ) {
         ArrowPreference(
             title = stringResource(R.string.home_about_freezer),
@@ -526,12 +540,17 @@ private fun LearnMoreCard(modifier: Modifier = Modifier, colors: CardColors = Ca
 }
 
 @Composable
-private fun LogCard(modifier: Modifier = Modifier, colors: CardColors = CardDefaults.defaultColors()) {
+private fun LogCard(
+    modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.defaultColors(),
+    backdrop: LayerBackdrop? = null,
+) {
     val navigator = LocalNavigator.current
-    Card(
+    CirnoCard(
         modifier = modifier
             .fillMaxWidth(),
-        colors = colors
+        colors = colors,
+        backdrop = backdrop,
     ) {
         ArrowPreference(
             title = stringResource(R.string.home_logs),
@@ -548,15 +567,17 @@ private fun UpdateCard(
     isChecking: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: CardColors = CardDefaults.defaultColors()
+    colors: CardColors = CardDefaults.defaultColors(),
+    backdrop: LayerBackdrop? = null,
 ) {
-    Card(
+    CirnoCard(
         modifier = modifier
             .fillMaxWidth(),
         colors = colors,
         onClick = onClick,
         showIndication = !isChecking,
-        pressFeedbackType = PressFeedbackType.Tilt
+        pressFeedbackType = PressFeedbackType.Tilt,
+        backdrop = backdrop,
     ) {
         ArrowPreference(
             title = if (isChecking) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
@@ -567,7 +588,12 @@ private fun UpdateCard(
 }
 
 @Composable
-private fun InfoCard(working: Boolean, modifier: Modifier = Modifier, colors: CardColors = CardDefaults.defaultColors()) {
+private fun InfoCard(
+    working: Boolean,
+    modifier: Modifier = Modifier,
+    colors: CardColors = CardDefaults.defaultColors(),
+    backdrop: LayerBackdrop? = null,
+) {
     @Composable
     fun InfoText(
         title: String,
@@ -589,7 +615,7 @@ private fun InfoCard(working: Boolean, modifier: Modifier = Modifier, colors: Ca
             modifier = modifier.padding(top = 2.dp, bottom = bottomPadding)
         )
     }
-    Card(colors = colors, modifier = modifier) {
+    CirnoCard(colors = colors, modifier = modifier, backdrop = backdrop) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

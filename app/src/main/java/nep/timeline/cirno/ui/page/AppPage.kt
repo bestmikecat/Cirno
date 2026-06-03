@@ -4,7 +4,6 @@ package nep.timeline.cirno.ui.page
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,12 +57,13 @@ import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.CirnoCard
+import nep.timeline.cirno.ui.utils.cirnoCardBackground
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
 import nep.timeline.cirno.ui.viewModel.AppItemCompose
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -325,7 +325,7 @@ fun AppPage(
                                 key = { _, item -> item.packageName + "#" + item.userId }
                             ) { i, item ->
                                 if (appCount == 1) {
-                                    Card(modifier = Modifier.padding(horizontal = 12.dp)) {
+                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp), backdrop = backdrop) {
                                         AppItemCompose(item)
                                     }
                                 } else {
@@ -341,7 +341,7 @@ fun AppPage(
                                             .fillMaxWidth()
                                             .padding(horizontal = 12.dp)
                                             .clip(shape)
-                                            .background(colorScheme.surfaceContainer),
+                                            .cirnoCardBackground(backdrop, shape, colorScheme.surfaceContainer),
                                     ) {
                                         AppItemCompose(item)
                                     }

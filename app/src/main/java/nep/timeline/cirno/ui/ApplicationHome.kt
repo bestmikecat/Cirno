@@ -30,18 +30,20 @@ import nep.timeline.cirno.utils.PKGUtils
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
+import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
 import nep.timeline.cirno.ui.utils.shouldShowSplitPane
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
+import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +54,7 @@ import kotlinx.coroutines.withContext
 fun ApplicationHome(activity: ApplicationActivity) {
     val scrollBehavior = MiuixScrollBehavior()
     val isWideScreen = shouldShowSplitPane()
+    val backdrop = rememberBlurBackdrop()
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
@@ -121,12 +124,12 @@ fun ApplicationHome(activity: ApplicationActivity) {
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
-            BlurredBar(null, false, scrollBehavior) {
+            BlurredBar(backdrop, backdrop != null, scrollBehavior) {
                 AdaptiveTopAppBar(
                     title = appName,
                     isWideScreen = isWideScreen,
                     scrollBehavior = scrollBehavior,
-                    color = colorScheme.surface,
+                    color = if (backdrop != null) Color.Transparent else colorScheme.surface,
                     navigationIcon = {
                         BackNavigationIcon(onClick = { activity.finish() })
                     }
@@ -136,14 +139,14 @@ fun ApplicationHome(activity: ApplicationActivity) {
     ) { padding ->
         val lazyListState = rememberLazyListState()
         val contentPadding = pageContentPadding(padding, padding, isWideScreen)
-        Box {
+        Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier.pageScrollModifiers(true, true, scrollBehavior),
                 contentPadding = contentPadding,
             ) {
                 item {
-                    Card(modifier = Modifier.padding(12.dp)) {
+                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                         val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
@@ -334,7 +337,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                 if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
                     item {
                         SmallTitle(text = stringResource(R.string.process_freeze_control))
-                        Card(modifier = Modifier.padding(12.dp)) {
+                        CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                             if (processList.isEmpty()) {
                                 Box(
                                     modifier = Modifier

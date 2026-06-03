@@ -33,6 +33,7 @@ import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.BlurredBar
+import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
@@ -40,7 +41,6 @@ import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Slider
@@ -304,7 +304,7 @@ private fun SettingsContent(
             if (active) {
                 item {
                     SmallTitle(text = stringResource(R.string.settings_freeze_group))
-                    Card(modifier = Modifier.padding(12.dp)) {
+                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.freezer_mode),
                             items = freezerModeItems,
@@ -407,7 +407,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_ui_group))
-                    Card(modifier = Modifier.padding(12.dp)) {
+                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.ui_style),
                             items = uiStyleItems,
@@ -500,7 +500,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_log_group))
-                    Card(modifier = Modifier.padding(12.dp)) {
+                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.log_level),
                             items = levelItems,
@@ -528,7 +528,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_backup_group))
-                    Card(modifier = Modifier.padding(12.dp)) {
+                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
                         ArrowPreference(
                             title = stringResource(R.string.backup_config),
                             summary = stringResource(R.string.backup_config_desc),
