@@ -486,13 +486,15 @@ private fun SettingsContent(
                             }
                         )
 
-                        ArrowPreference(
-                            title = stringResource(R.string.remove_custom_background),
-                            onClick = {
-                                BackgroundManager.remove(context)
-                                AppContext.showToast(customBackgroundRemovedText)
-                            }
-                        )
+                        if (BackgroundManager.currentUri != null) {
+                            ArrowPreference(
+                                title = stringResource(R.string.remove_custom_background),
+                                onClick = {
+                                    BackgroundManager.remove(context)
+                                    AppContext.showToast(customBackgroundRemovedText)
+                                }
+                            )
+                        }
                     }
                 }
 
