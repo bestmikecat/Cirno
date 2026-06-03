@@ -325,7 +325,7 @@ fun AppPage(
                                 key = { _, item -> item.packageName + "#" + item.userId }
                             ) { i, item ->
                                 if (appCount == 1) {
-                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp), backdrop = backdrop) {
+                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp)) {
                                         AppItemCompose(item)
                                     }
                                 } else {
@@ -341,7 +341,7 @@ fun AppPage(
                                             .fillMaxWidth()
                                             .padding(horizontal = 12.dp)
                                             .clip(shape)
-                                            .cirnoCardBackground(backdrop, shape, colorScheme.surfaceContainer),
+                                            .cirnoCardBackground(shape, colorScheme.surfaceContainer),
                                     ) {
                                         AppItemCompose(item)
                                     }

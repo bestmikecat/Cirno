@@ -246,21 +246,20 @@ private fun InfoContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (versionMismatch) {
-                        WarningCard(stringResource(R.string.module_version_mismatch), backdrop = backdrop)
+                        WarningCard(stringResource(R.string.module_version_mismatch))
                     } else {
                         if (fool)
-                            WarningCard(stringResource(R.string.fools_day), backdrop = backdrop)
+                            WarningCard(stringResource(R.string.fools_day))
                         if (!active)
-                            WarningCard(stringResource(R.string.not_active), backdrop = backdrop)
+                            WarningCard(stringResource(R.string.not_active))
                         if (active && statusBinderAvailable && missingScopes.isNotEmpty())
                             WarningCard(
-                                stringResource(R.string.scope_not_running, missingScopeLabels),
-                                backdrop = backdrop,
+                                stringResource(R.string.scope_not_running, missingScopeLabels)
                             )
                         if (hasError)
-                            WarningCard(stringResource(R.string.internal_error), backdrop = backdrop)
+                            WarningCard(stringResource(R.string.internal_error))
                         if (active && statusBinderAvailable && !binderState.freezerAvailable)
-                            WarningCard(stringResource(R.string.freezer_v2_unavailable), backdrop = backdrop)
+                            WarningCard(stringResource(R.string.freezer_v2_unavailable))
                     }
                     StatusCard(
                         active = active,
@@ -277,10 +276,9 @@ private fun InfoContent(
                         onClickBlacklist = {
                             appListViewModel.updateByQuery(type = 1)
                             callback(1)
-                        },
-                        backdrop = backdrop,
+                        }
                     )
-                    InfoCard(active, backdrop = backdrop)
+                    InfoCard(active)
                     val alreadyLatestText = stringResource(R.string.update_already_latest)
                     UpdateCard(
                         isChecking = isCheckingUpdate,
@@ -298,11 +296,10 @@ private fun InfoContent(
                                     showUpdateDialog = true
                                 }
                             }
-                        },
-                        backdrop = backdrop,
+                        }
                     )
-                    LearnMoreCard(backdrop = backdrop)
-                    LogCard(backdrop = backdrop)
+                    LearnMoreCard()
+                    LogCard()
                 }
             }
 
@@ -328,7 +325,6 @@ private fun StatusCard(
     onClickBlacklist: () -> Unit = {},
     alpha: Boolean = false,
     colors: CardColors = CardDefaults.defaultColors(),
-    backdrop: LayerBackdrop? = null,
 ) {
     val isWideScreen = LocalIsWideScreen.current
     val cardHeight = if (isWideScreen) 300.dp else 220.dp
@@ -361,8 +357,7 @@ private fun StatusCard(
                     onClickStatus()
                 },
                 showIndication = true,
-                pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-                backdrop = backdrop,
+                pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -418,8 +413,7 @@ private fun StatusCard(
                     onClick = { onClickWhitelist() },
                     showIndication = true,
                     pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-                    colors = colors,
-                    backdrop = backdrop,
+                    colors = colors
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -450,8 +444,7 @@ private fun StatusCard(
                     onClick = { onClickBlacklist() },
                     showIndication = true,
                     pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-                    colors = colors,
-                    backdrop = backdrop,
+                    colors = colors
                 ) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -484,8 +477,7 @@ private fun WarningCard(
     modifier: Modifier = Modifier,
     alpha: Boolean = false,
     color: Color? = null,
-    onClick: (() -> Unit)? = null,
-    backdrop: LayerBackdrop? = null,
+    onClick: (() -> Unit)? = null
 ) {
     CirnoCard(
         onClick = {
@@ -500,8 +492,7 @@ private fun WarningCard(
         ),
         modifier = modifier,
         showIndication = onClick != null,
-        pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt,
-        backdrop = backdrop,
+        pressFeedbackType = if (alpha) PressFeedbackType.None else PressFeedbackType.Tilt
     ) {
         Row(
             modifier = Modifier
@@ -521,14 +512,12 @@ private fun WarningCard(
 private fun LearnMoreCard(
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
-    backdrop: LayerBackdrop? = null,
 ) {
     val navigator = LocalNavigator.current
     CirnoCard(
         modifier = modifier
             .fillMaxWidth(),
-        colors = colors,
-        backdrop = backdrop,
+        colors = colors
     ) {
         ArrowPreference(
             title = stringResource(R.string.home_about_freezer),
@@ -543,14 +532,12 @@ private fun LearnMoreCard(
 private fun LogCard(
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
-    backdrop: LayerBackdrop? = null,
 ) {
     val navigator = LocalNavigator.current
     CirnoCard(
         modifier = modifier
             .fillMaxWidth(),
-        colors = colors,
-        backdrop = backdrop,
+        colors = colors
     ) {
         ArrowPreference(
             title = stringResource(R.string.home_logs),
@@ -568,7 +555,6 @@ private fun UpdateCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
-    backdrop: LayerBackdrop? = null,
 ) {
     CirnoCard(
         modifier = modifier
@@ -576,8 +562,7 @@ private fun UpdateCard(
         colors = colors,
         onClick = onClick,
         showIndication = !isChecking,
-        pressFeedbackType = PressFeedbackType.Tilt,
-        backdrop = backdrop,
+        pressFeedbackType = PressFeedbackType.Tilt
     ) {
         ArrowPreference(
             title = if (isChecking) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
@@ -592,7 +577,6 @@ private fun InfoCard(
     working: Boolean,
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
-    backdrop: LayerBackdrop? = null,
 ) {
     @Composable
     fun InfoText(
@@ -615,7 +599,7 @@ private fun InfoCard(
             modifier = modifier.padding(top = 2.dp, bottom = bottomPadding)
         )
     }
-    CirnoCard(colors = colors, modifier = modifier, backdrop = backdrop) {
+    CirnoCard(colors = colors, modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

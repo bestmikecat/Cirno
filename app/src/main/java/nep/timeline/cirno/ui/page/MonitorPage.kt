@@ -243,7 +243,7 @@ fun MonitorPage(
                                 key = { _, item -> item.packageName + "#" + item.userId }
                             ) { i, item ->
                                 if (appCount == 1) {
-                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp), backdrop = backdrop) {
+                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp)) {
                                         FrozenAppItemCompose(item)
                                     }
                                 } else {
@@ -259,7 +259,7 @@ fun MonitorPage(
                                             .fillMaxWidth()
                                             .padding(horizontal = 12.dp)
                                             .clip(shape)
-                                            .cirnoCardBackground(backdrop, shape, colorScheme.surfaceContainer),
+                                            .cirnoCardBackground(shape, colorScheme.surfaceContainer),
                                     ) {
                                         FrozenAppItemCompose(item)
                                     }

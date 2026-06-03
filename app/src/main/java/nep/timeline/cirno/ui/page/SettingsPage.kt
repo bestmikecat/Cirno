@@ -304,7 +304,7 @@ private fun SettingsContent(
             if (active) {
                 item {
                     SmallTitle(text = stringResource(R.string.settings_freeze_group))
-                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
+                    CirnoCard(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.freezer_mode),
                             items = freezerModeItems,
@@ -407,7 +407,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_ui_group))
-                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
+                    CirnoCard(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.ui_style),
                             items = uiStyleItems,
@@ -500,7 +500,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_log_group))
-                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
+                    CirnoCard(modifier = Modifier.padding(12.dp)) {
                         OverlayDropdownPreference(
                             title = stringResource(R.string.log_level),
                             items = levelItems,
@@ -528,7 +528,7 @@ private fun SettingsContent(
 
                 item {
                     SmallTitle(text = stringResource(R.string.settings_backup_group))
-                    CirnoCard(modifier = Modifier.padding(12.dp), backdrop = backdrop) {
+                    CirnoCard(modifier = Modifier.padding(12.dp)) {
                         ArrowPreference(
                             title = stringResource(R.string.backup_config),
                             summary = stringResource(R.string.backup_config_desc),
