@@ -13,7 +13,6 @@ import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
 import nep.timeline.cirno.configs.settings.GlobalSettings;
 import nep.timeline.cirno.log.Log;
-import nep.timeline.cirno.utils.FrozenRW;
 import nep.timeline.cirno.utils.RWUtils;
 
 public class ConfigManagerJson {
@@ -23,24 +22,6 @@ public class ConfigManagerJson {
 
     private void ensureApplicationSettingsInitialized() {
         GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(GlobalVars.applicationSettings);
-    }
-
-    private void selectFreezerModeIfAvailable() {
-        selectFreezerModeIfAvailable(false);
-    }
-
-    private void selectFreezerModeIfAvailable(boolean su) {
-        GlobalSettings settings = GlobalSettings.ensureInitialized(GlobalVars.globalSettings);
-        GlobalVars.globalSettings = settings;
-        String availableMode = FrozenRW.selectAvailableFreezerMode();
-        if (availableMode != null && !availableMode.equals(settings.freezerMode)) {
-            settings.freezerMode = availableMode;
-            if (su) {
-                saveConfigSU();
-            } else {
-                saveConfig();
-            }
-        }
     }
 
     private void resetToDefaults() {
@@ -117,10 +98,8 @@ public class ConfigManagerJson {
                 }
             }
             ensureApplicationSettingsInitialized();
-            selectFreezerModeIfAvailable();
         } catch (JsonSyntaxException | JsonIOException e) {
             resetToDefaults();
-            selectFreezerModeIfAvailable();
             saveConfig();
         }
     }
