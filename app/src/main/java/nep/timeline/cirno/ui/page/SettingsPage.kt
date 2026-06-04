@@ -118,6 +118,8 @@ private fun SettingsContent(
     val backupSuccessText = stringResource(R.string.backup_success)
     val backupFailedText = stringResource(R.string.backup_failed)
     val customBackgroundUpdatedText = stringResource(R.string.custom_background_updated)
+    val freezerModeFrozenUnavailableText = stringResource(R.string.freezer_mode_frozen_unavailable)
+    val freezerModeUidUnavailableText = stringResource(R.string.freezer_mode_uid_unavailable)
     val customBackgroundUpdateFailedText = stringResource(R.string.custom_background_update_failed)
     val customBackgroundRemovedText = stringResource(R.string.custom_background_removed)
     val restoreSuccessText = stringResource(R.string.restore_success)
@@ -323,10 +325,10 @@ private fun SettingsContent(
                                     }
 
                                     if (!available) {
-                                        WindowUtils.showToast(context.getString(
-                                            if (it == 1) R.string.freezer_mode_frozen_unavailable
-                                            else R.string.freezer_mode_uid_unavailable
-                                        ))
+                                        WindowUtils.showToast(
+                                            if (it == 1) freezerModeFrozenUnavailableText
+                                            else freezerModeUidUnavailableText
+                                        )
                                         return@launch
                                     }
 

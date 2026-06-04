@@ -53,6 +53,8 @@ fun MaterialSettingsPage(
     var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
 
     val backupFailedText = stringResource(R.string.backup_failed)
+    val freezerModeFrozenUnavailableText = stringResource(R.string.freezer_mode_frozen_unavailable)
+    val freezerModeUidUnavailableText = stringResource(R.string.freezer_mode_uid_unavailable)
     val backupSuccessText = stringResource(R.string.backup_success)
     val restoreSuccessText = stringResource(R.string.restore_success)
     val restoreSuccessReloadFailedText = stringResource(R.string.restore_success_reload_failed)
@@ -204,10 +206,10 @@ fun MaterialSettingsPage(
                             }
 
                             if (!available) {
-                                AppContext.showToast(context.getString(
-                                    if (it == 1) R.string.freezer_mode_frozen_unavailable
-                                    else R.string.freezer_mode_uid_unavailable
-                                ))
+                                AppContext.showToast(
+                                    if (it == 1) freezerModeFrozenUnavailableText
+                                    else freezerModeUidUnavailableText
+                                )
                                 return@launch
                             }
 

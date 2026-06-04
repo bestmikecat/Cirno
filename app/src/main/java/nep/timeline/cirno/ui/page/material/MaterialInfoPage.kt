@@ -100,13 +100,15 @@ fun MaterialInfoPage(
         }
     }
 
+    val updateAlreadyLatestText = stringResource(R.string.update_already_latest)
+
     LaunchedEffect(isCheckingUpdate) {
         if (!isCheckingUpdate) return@LaunchedEffect
         scope.launch {
             val result = UpdateChecker.checkForUpdate()
             isCheckingUpdate = false
             if (result == null || UpdateChecker.isSkipped(context, result.versionName)) {
-                WindowUtils.showToast(context.getString(R.string.update_already_latest))
+                WindowUtils.showToast(updateAlreadyLatestText)
             } else {
                 updateResult = result
                 showUpdateDialog = true
