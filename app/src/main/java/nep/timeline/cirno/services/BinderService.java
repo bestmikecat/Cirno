@@ -65,6 +65,7 @@ public class BinderService {
 
         executorService.execute(() -> {
             try {
+                boolean rekernelFound = false;
                 int netlinkUnit;
                 int configNetlinkUnit = GlobalVars.globalSettings == null ? 0 : GlobalVars.globalSettings.netlinkUnit;
                 if (configNetlinkUnit >= NETLINK_UNIT_DEFAULT && configNetlinkUnit <= NETLINK_UNIT_MAX) {
@@ -80,6 +81,7 @@ public class BinderService {
                         }
                         File unitFile = files[0];
                         netlinkUnit = StringUtils.StringToInteger(unitFile.getName());
+                        rekernelFound = true;
                     } else netlinkUnit = NETLINK_UNIT_DEFAULT;
                 }
 
@@ -92,19 +94,40 @@ public class BinderService {
 
                     netlinkClient.bind((SocketAddress) new NetlinkSocketAddress(100).toInstance(classLoader));
 
-                    try {
-                        byte[] message = "#proc_remove\0".getBytes(StandardCharsets.UTF_8);
-                        byte[] bytes = new byte[16 + message.length];
-                        ByteBuffer procRemoveBuf = ByteBuffer.wrap(bytes);
-                        procRemoveBuf.order(ByteOrder.nativeOrder());
-                        procRemoveBuf.putInt(bytes.length);
-                        procRemoveBuf.putShort((short) 0x11);
-                        procRemoveBuf.putShort((short) 0x1);
-                        procRemoveBuf.putInt(1);
-                        procRemoveBuf.putInt(100);
-                        procRemoveBuf.put(message);
-                        netlinkClient.sendMessage(bytes, 0, bytes.length);
-                    } catch (Throwable ignored) {
+                    if (rekernelFound) {
+                        try {
+                            byte[] message = "#proc_remove\0".getBytes(StandardCharsets.UTF_8);
+                            byte[] bytes = new byte[16 + message.length];
+                            ByteBuffer procRemoveBuf = ByteBuffer.wrap(bytes);
+                            procRemoveBuf.order(ByteOrder.nativeOrder());
+                            procRemoveBuf.putInt(bytes.length);
+                            procRemoveBuf.putShort((short) 0x11);
+                            procRemoveBuf.putShort((short) 0x1);
+                            procRemoveBuf.putInt(1);
+                            procRemoveBuf.putInt(100);
+                            procRemoveBuf.put(message);
+                            netlinkClient.sendMessage(bytes, 0, bytes.length);
+                        } catch (Throwable ignored) {
+                        }
+
+                        try {
+                            byte[] payload = new byte[4];
+                            ByteBuffer cmdBuf = ByteBuffer.wrap(payload);
+                            cmdBuf.order(ByteOrder.nativeOrder());
+                            cmdBuf.putInt(1);
+
+                            byte[] bytes = new byte[16 + payload.length];
+                            ByteBuffer cmdMsgBuf = ByteBuffer.wrap(bytes);
+                            cmdMsgBuf.order(ByteOrder.nativeOrder());
+                            cmdMsgBuf.putInt(bytes.length);
+                            cmdMsgBuf.putShort((short) 0x11);
+                            cmdMsgBuf.putShort((short) 0x1);
+                            cmdMsgBuf.putInt(1);
+                            cmdMsgBuf.putInt(100);
+                            cmdMsgBuf.put(payload);
+                            netlinkClient.sendMessage(bytes, 0, bytes.length);
+                        } catch (Throwable ignored) {
+                        }
                     }
 
                     Log.i("已连接至ReKernel, " + netlinkUnit + "#100");
