@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +36,7 @@ public class BinderService {
     private static final long TEMP_UNFREEZE_INTERVAL_MS = 3000L;
     public static volatile boolean received = false;
     private static final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private static volatile NetlinkClient sNetlinkClient;
 
     private static Map<String, String> parseParams(String message) {
         Map<String, String> map = new HashMap<>();
@@ -56,6 +58,30 @@ public class BinderService {
             return StringUtils.StringToInteger(value);
         } catch (NumberFormatException e) {
             return 0;
+        }
+    }
+
+    public static void registerNetUid(int uid) {
+        NetlinkClient client = sNetlinkClient;
+        if (client == null) return;
+        try {
+            byte[] payload = new byte[8];
+            ByteBuffer buf = ByteBuffer.wrap(payload);
+            buf.order(ByteOrder.nativeOrder());
+            buf.putInt(2);
+            buf.putInt(uid);
+
+            byte[] bytes = new byte[16 + payload.length];
+            ByteBuffer msg = ByteBuffer.wrap(bytes);
+            msg.order(ByteOrder.nativeOrder());
+            msg.putInt(bytes.length);
+            msg.putShort((short) 0x11);
+            msg.putShort((short) 0x1);
+            msg.putInt(1);
+            msg.putInt(100);
+            msg.put(payload);
+            client.sendMessage(bytes, 0, bytes.length);
+        } catch (Throwable ignored) {
         }
     }
 
@@ -85,7 +111,9 @@ public class BinderService {
                     } else netlinkUnit = NETLINK_UNIT_DEFAULT;
                 }
 
-                try (NetlinkClient netlinkClient = new NetlinkClient(classLoader, netlinkUnit)) {
+                NetlinkClient netlinkClient = new NetlinkClient(classLoader, netlinkUnit);
+                sNetlinkClient = netlinkClient;
+                try {
                     if (!netlinkClient.getMDescriptor().valid()) {
                         Log.w("无法连接至ReKernel服务器");
                         isRunning.set(false);
@@ -128,6 +156,23 @@ public class BinderService {
                             netlinkClient.sendMessage(bytes, 0, bytes.length);
                         } catch (Throwable ignored) {
                         }
+
+                        Handlers.rekernel.postDelayed(() -> {
+                            Set<String> apps = GlobalVars.applicationSettings != null
+                                ? GlobalVars.applicationSettings.networkMessageApps : null;
+                            if (apps != null) {
+                                for (String key : apps) {
+                                    String[] parts = key.split("#");
+                                    if (parts.length < 1) continue;
+                                    String pkg = parts[0];
+                                    int userId = parts.length > 1 ? StringUtils.StringToInteger(parts[1]) : 0;
+                                    AppRecord record = AppService.get(pkg, userId);
+                                    if (record != null) {
+                                        registerNetUid(record.getUid());
+                                    }
+                                }
+                            }
+                        }, 10_000L);
                     }
 
                     Log.i("已连接至ReKernel, " + netlinkUnit + "#100");
@@ -219,6 +264,9 @@ public class BinderService {
                             Log.e("ReKernel", e);
                         }
                     }
+                } finally {
+                    sNetlinkClient = null;
+                    netlinkClient.close();
                 }
             } catch (ErrnoException | IOException e) {
                 Log.w("无法连接至ReKernel服务器");

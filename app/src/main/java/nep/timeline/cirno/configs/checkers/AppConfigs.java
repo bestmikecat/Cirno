@@ -5,6 +5,9 @@ import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.policy.Capability;
 import nep.timeline.cirno.configs.policy.PolicyKey;
 import nep.timeline.cirno.configs.settings.ApplicationSettings;
+import nep.timeline.cirno.entity.AppRecord;
+import nep.timeline.cirno.services.AppService;
+import nep.timeline.cirno.services.BinderService;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -63,6 +66,13 @@ public class AppConfigs {
             }
         } else {
             apps.remove(key);
+        }
+
+        if (enabled && capability == Capability.ALLOW_NETWORK_MESSAGE) {
+            AppRecord record = AppService.get(pkg, userId);
+            if (record != null) {
+                BinderService.registerNetUid(record.getUid());
+            }
         }
     }
 
