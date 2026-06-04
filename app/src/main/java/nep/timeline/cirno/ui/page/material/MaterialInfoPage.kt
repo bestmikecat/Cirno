@@ -107,7 +107,7 @@ fun MaterialInfoPage(
         scope.launch {
             val result = UpdateChecker.checkForUpdate()
             isCheckingUpdate = false
-            if (result == null || UpdateChecker.isSkipped(context, result.versionName)) {
+            if (result == null) {
                 WindowUtils.showToast(updateAlreadyLatestText)
             } else {
                 updateResult = result

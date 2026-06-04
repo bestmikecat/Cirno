@@ -289,8 +289,6 @@ private fun InfoContent(
                                 isCheckingUpdate = false
                                 if (result == null) {
                                     WindowUtils.showToast(alreadyLatestText)
-                                } else if (UpdateChecker.isSkipped(context, result.versionName)) {
-                                    WindowUtils.showToast(alreadyLatestText)
                                 } else {
                                     updateResult = result
                                     showUpdateDialog = true
