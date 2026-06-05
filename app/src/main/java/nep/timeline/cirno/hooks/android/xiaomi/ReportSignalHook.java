@@ -1,8 +1,7 @@
 package nep.timeline.cirno.hooks.android.xiaomi;
 
-import android.os.Build;
-
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
@@ -10,6 +9,7 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.MonitorBinderHub;
 import nep.timeline.cirno.services.ProcessService;
+import nep.timeline.cirno.utils.ReflectUtils;
 import nep.timeline.cirno.utils.SystemChecker;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
@@ -30,9 +30,12 @@ public class ReportSignalHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-            return new Object[]{int.class, int.class, long.class, int.class};
-        return new Object[]{int.class, int.class, long.class};
+        return ReflectUtils.findParameterTypesOrDefault(
+                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                getTargetMethod(),
+                int.class,
+                int.class,
+                long.class);
     }
 
     @Override
