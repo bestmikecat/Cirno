@@ -33,7 +33,7 @@ fun DownloadProgressDialog(
                 .padding(bottom = 24.dp)
         ) {
             LinearProgressIndicator(
-                progress = { progress / 100f },
+                progress = progress / 100f,
                 modifier = Modifier.fillMaxWidth()
             )
         }
