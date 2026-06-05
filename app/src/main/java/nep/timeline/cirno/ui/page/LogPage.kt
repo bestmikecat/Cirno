@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -89,16 +88,6 @@ fun LogPage(
         onDispose { logViewModel.stopLogSession() }
     }
 
-    LaunchedEffect(uiState.pendingScrollToBottom, uiState.allLines.size, uiState.searchQuery, uiState.selectedLevel) {
-        if (!uiState.pendingScrollToBottom) {
-            return@LaunchedEffect
-        }
-
-        val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
-        lazyListState.scrollToItem(bottomIndex)
-        logViewModel.cancelScrollToBottom()
-    }
-
     Scaffold(
         containerColor = colorScheme.surface,
         topBar = {
@@ -118,15 +107,13 @@ fun LogPage(
                         onLevelSelected = logViewModel::selectLevel,
                         onScrollTop = {
                             scope.launch {
-                                logViewModel.cancelScrollToBottom()
                                 lazyListState.animateScrollToItem(0)
                             }
                         },
                         onScrollBottom = {
                             scope.launch {
-                                logViewModel.requestScrollToBottom()
                                 val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
-                                lazyListState.scrollToItem(bottomIndex)
+                                lazyListState.animateScrollToItem(bottomIndex)
                             }
                         }
                     )

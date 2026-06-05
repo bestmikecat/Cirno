@@ -28,7 +28,6 @@ data class LogUiState(
     val searchQuery: String = "",
     val searchExpanded: Boolean = false,
     val selectedLevel: LogDisplayLevel = LogDisplayLevel.All,
-    val pendingScrollToBottom: Boolean = false,
 )
 
 class LogViewModel : ViewModel() {
@@ -124,14 +123,6 @@ class LogViewModel : ViewModel() {
 
     fun setSearchExpanded(expanded: Boolean) {
         _uiState.update { it.copy(searchExpanded = expanded) }
-    }
-
-    fun requestScrollToBottom() {
-        _uiState.update { it.copy(pendingScrollToBottom = true) }
-    }
-
-    fun cancelScrollToBottom() {
-        _uiState.update { it.copy(pendingScrollToBottom = false) }
     }
 
     private fun limitLines(lines: List<String>): List<String> {
