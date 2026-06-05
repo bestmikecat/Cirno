@@ -335,7 +335,9 @@ private fun MaterialUpdateDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    dismiss()
+                    if (dontRemind) {
+                        UpdateChecker.markSkipped(context, updateResult.versionName)
+                    }
                     showDownloadDialog.value = true
                     scope.launch {
                         ApkInstaller.downloadAndInstall(
@@ -346,9 +348,11 @@ private fun MaterialUpdateDialog(
                             },
                             onComplete = {
                                 showDownloadDialog.value = false
+                                onDismissRequest()
                             },
                             onError = {
                                 showDownloadDialog.value = false
+                                onDismissRequest()
                             }
                         )
                     }

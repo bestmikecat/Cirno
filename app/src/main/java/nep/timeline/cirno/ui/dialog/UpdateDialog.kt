@@ -127,7 +127,6 @@ fun UpdateDialog(
                             UpdateChecker.markSkipped(context, updateResult.versionName)
                         }
                         isShow.value = false
-                        onDismissRequest()
                         showDownloadDialog.value = true
                         scope.launch {
                             ApkInstaller.downloadAndInstall(
@@ -138,9 +137,11 @@ fun UpdateDialog(
                                 },
                                 onComplete = {
                                     showDownloadDialog.value = false
+                                    onDismissRequest()
                                 },
                                 onError = {
                                     showDownloadDialog.value = false
+                                    onDismissRequest()
                                 }
                             )
                         }
