@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -30,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -39,11 +39,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
+import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,49 +54,26 @@ fun MaterialLogPage(
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val uiState by logViewModel.uiState.collectAsStateWithLifecycle()
-    val filteredLines by remember(uiState.loadedLines, uiState.searchQuery) {
+    val filteredLines by remember(uiState.allLines, uiState.searchQuery, uiState.selectedLevel) {
         derivedStateOf {
-            if (uiState.searchQuery.isBlank()) uiState.loadedLines
-            else uiState.loadedLines.filter { it.contains(uiState.searchQuery, ignoreCase = true) }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        logViewModel.ensureInitialized()
-    }
-
-    LaunchedEffect(lazyListState, uiState.hasMore, uiState.isLoadingMore) {
-        snapshotFlow {
-            val lastVisible = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            val totalItems = lazyListState.layoutInfo.totalItemsCount
-            lastVisible to totalItems
-        }.distinctUntilChanged().collect { (lastVisible, totalItems) ->
-            if (!uiState.hasMore || uiState.isLoadingMore || totalItems <= 0) return@collect
-            if (lastVisible >= totalItems - 5) {
-                logViewModel.loadNextPage()
+            uiState.allLines.filter {
+                it.matchesLogLevel(uiState.selectedLevel) &&
+                    (uiState.searchQuery.isBlank() || it.contains(uiState.searchQuery, ignoreCase = true))
             }
         }
     }
 
-    LaunchedEffect(uiState.pendingScrollToBottom, uiState.loadedLines.size, uiState.hasMore, uiState.isLoadingMore, uiState.searchQuery) {
+    DisposableEffect(Unit) {
+        logViewModel.startLogSession()
+        onDispose { logViewModel.stopLogSession() }
+    }
+
+    LaunchedEffect(uiState.pendingScrollToBottom, uiState.allLines.size, uiState.searchQuery, uiState.selectedLevel) {
         if (!uiState.pendingScrollToBottom) return@LaunchedEffect
 
-        val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+        val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
         lazyListState.scrollToItem(bottomIndex)
-
-        if (uiState.searchQuery.isNotBlank()) {
-            logViewModel.cancelScrollToBottom()
-            return@LaunchedEffect
-        }
-
-        if (uiState.hasMore && !uiState.isLoadingMore) {
-            logViewModel.loadNextPage()
-            return@LaunchedEffect
-        }
-
-        if (!uiState.hasMore) {
-            logViewModel.cancelScrollToBottom()
-        }
+        logViewModel.cancelScrollToBottom()
     }
 
     MaterialPageScaffold(
@@ -121,6 +98,8 @@ fun MaterialLogPage(
                 )
             }
             MaterialLogMenu(
+                selectedLevel = uiState.selectedLevel,
+                onLevelSelected = logViewModel::selectLevel,
                 onScrollTop = {
                     scope.launch {
                         logViewModel.cancelScrollToBottom()
@@ -130,7 +109,7 @@ fun MaterialLogPage(
                 onScrollBottom = {
                     scope.launch {
                         logViewModel.requestScrollToBottom()
-                        val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+                        val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
                         lazyListState.scrollToItem(bottomIndex)
                     }
                 },
@@ -147,13 +126,13 @@ fun MaterialLogPage(
             }
         }
 
-        if (!uiState.isInitialLoadDone && uiState.loadedLines.isEmpty()) {
+        if (uiState.isLoading && !uiState.isInitialLoadDone) {
             item(key = "loading") {
                 MaterialLoadingIndicator(
                     modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
                 )
             }
-        } else if (uiState.isInitialLoadDone && uiState.loadedLines.isEmpty()) {
+        } else if (uiState.isInitialLoadDone && uiState.allLines.isEmpty()) {
             item(key = "empty") {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
@@ -167,15 +146,18 @@ fun MaterialLogPage(
                 }
             }
         } else {
-            items(filteredLines) { line ->
-                MaterialLogLine(line = line)
-            }
-            if (uiState.isLoadingMore) {
-                item(key = "loadingMore") {
-                    MaterialLoadingIndicator(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+            if (uiState.isTruncated) {
+                item(key = "logTruncated") {
+                    Text(
+                        text = stringResource(R.string.logs_truncated),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            items(filteredLines) { line ->
+                MaterialLogLine(line = line)
             }
         }
     }
@@ -183,6 +165,8 @@ fun MaterialLogPage(
 
 @Composable
 private fun MaterialLogMenu(
+    selectedLevel: LogDisplayLevel,
+    onLevelSelected: (LogDisplayLevel) -> Unit,
     onScrollTop: () -> Unit,
     onScrollBottom: () -> Unit,
 ) {
@@ -201,6 +185,22 @@ private fun MaterialLogMenu(
             onDismissRequest = { expanded = false },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
+            val levelItems = listOf(
+                stringResource(R.string.log_all) to LogDisplayLevel.All,
+                stringResource(R.string.log_debug) to LogDisplayLevel.Debug,
+                stringResource(R.string.log_info) to LogDisplayLevel.Info,
+                stringResource(R.string.log_warning) to LogDisplayLevel.Warning,
+                stringResource(R.string.log_error) to LogDisplayLevel.Error,
+            )
+            levelItems.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(if (selectedLevel == item.second) "${item.first} *" else item.first) },
+                    onClick = {
+                        expanded = false
+                        onLevelSelected(item.second)
+                    },
+                )
+            }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.scroll_to_top)) },
                 onClick = {
@@ -264,5 +264,15 @@ private fun MaterialLogLine(line: String) {
                 else -> MaterialTheme.colorScheme.onSurface
             },
         )
+    }
+}
+
+private fun String.matchesLogLevel(level: LogDisplayLevel): Boolean {
+    return when (level) {
+        LogDisplayLevel.All -> true
+        LogDisplayLevel.Debug -> contains("调试") || contains("DEBUG")
+        LogDisplayLevel.Info -> contains("信息") || contains("INFO")
+        LogDisplayLevel.Warning -> contains("警告") || contains("WARN")
+        LogDisplayLevel.Error -> contains("错误") || contains("ERROR")
     }
 }

@@ -2,7 +2,9 @@
 package nep.timeline.cirno.ui.page
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -21,11 +24,9 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -33,7 +34,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
@@ -45,6 +45,7 @@ import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InputField
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -61,6 +62,7 @@ import top.yukonga.miuix.kmp.icon.basic.Search
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
 
 @Composable
 fun LogPage(
@@ -73,53 +75,28 @@ fun LogPage(
 
     val uiState by logViewModel.uiState.collectAsStateWithLifecycle()
 
-    val filteredLines by remember(uiState.loadedLines, uiState.searchQuery) {
+    val filteredLines by remember(uiState.allLines, uiState.searchQuery, uiState.selectedLevel) {
         derivedStateOf {
-            if (uiState.searchQuery.isBlank()) uiState.loadedLines
-            else uiState.loadedLines.filter { it.contains(uiState.searchQuery, ignoreCase = true) }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        logViewModel.ensureInitialized()
-    }
-
-    LaunchedEffect(lazyListState, uiState.hasMore, uiState.isLoadingMore) {
-        snapshotFlow {
-            val lastVisible = lazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            val totalItems = lazyListState.layoutInfo.totalItemsCount
-            lastVisible to totalItems
-        }.distinctUntilChanged().collect { (lastVisible, totalItems) ->
-            if (!uiState.hasMore || uiState.isLoadingMore || totalItems <= 0) {
-                return@collect
-            }
-            if (lastVisible >= totalItems - 5) {
-                logViewModel.loadNextPage()
+            uiState.allLines.filter {
+                it.matchesLogLevel(uiState.selectedLevel) &&
+                    (uiState.searchQuery.isBlank() || it.contains(uiState.searchQuery, ignoreCase = true))
             }
         }
     }
 
-    LaunchedEffect(uiState.pendingScrollToBottom, uiState.loadedLines.size, uiState.hasMore, uiState.isLoadingMore, uiState.searchQuery) {
+    DisposableEffect(Unit) {
+        logViewModel.startLogSession()
+        onDispose { logViewModel.stopLogSession() }
+    }
+
+    LaunchedEffect(uiState.pendingScrollToBottom, uiState.allLines.size, uiState.searchQuery, uiState.selectedLevel) {
         if (!uiState.pendingScrollToBottom) {
             return@LaunchedEffect
         }
 
-        val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+        val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
         lazyListState.scrollToItem(bottomIndex)
-
-        if (uiState.searchQuery.isNotBlank()) {
-            logViewModel.cancelScrollToBottom()
-            return@LaunchedEffect
-        }
-
-        if (uiState.hasMore && !uiState.isLoadingMore) {
-            logViewModel.loadNextPage()
-            return@LaunchedEffect
-        }
-
-        if (!uiState.hasMore) {
-            logViewModel.cancelScrollToBottom()
-        }
+        logViewModel.cancelScrollToBottom()
     }
 
     Scaffold(
@@ -137,6 +114,8 @@ fun LogPage(
                 },
                 actions = {
                     LogTopBarActions(
+                        selectedLevel = uiState.selectedLevel,
+                        onLevelSelected = logViewModel::selectLevel,
                         onScrollTop = {
                             scope.launch {
                                 logViewModel.cancelScrollToBottom()
@@ -146,7 +125,7 @@ fun LogPage(
                         onScrollBottom = {
                             scope.launch {
                                 logViewModel.requestScrollToBottom()
-                                val bottomIndex = if (filteredLines.isEmpty()) 0 else filteredLines.size
+                                val bottomIndex = if (filteredLines.isEmpty()) 0 else lazyListState.layoutInfo.totalItemsCount.minus(1).coerceAtLeast(0)
                                 lazyListState.scrollToItem(bottomIndex)
                             }
                         }
@@ -162,8 +141,10 @@ fun LogPage(
             ),
             lazyListState = lazyListState,
             lines = filteredLines,
-            hasAnyLog = uiState.loadedLines.isNotEmpty(),
+            hasAnyLog = uiState.allLines.isNotEmpty(),
+            isLoading = uiState.isLoading,
             isInitialLoadDone = uiState.isInitialLoadDone,
+            isTruncated = uiState.isTruncated,
             searchQuery = uiState.searchQuery,
             onSearchQueryChange = logViewModel::updateSearchQuery,
             searchExpanded = uiState.searchExpanded,
@@ -174,6 +155,8 @@ fun LogPage(
 
 @Composable
 private fun LogTopBarActions(
+    selectedLevel: LogDisplayLevel,
+    onLevelSelected: (LogDisplayLevel) -> Unit,
     onScrollTop: () -> Unit,
     onScrollBottom: () -> Unit,
 ) {
@@ -202,23 +185,44 @@ private fun LogTopBarActions(
         onDismissFinished = { holdDownState.value = false },
         content = {
             val dismissState = top.yukonga.miuix.kmp.theme.LocalDismissState.current
-            val items = listOf(
-                stringResource(R.string.scroll_to_top),
-                stringResource(R.string.scroll_to_bottom),
+            val levelItems = listOf(
+                stringResource(R.string.log_all) to LogDisplayLevel.All,
+                stringResource(R.string.log_debug) to LogDisplayLevel.Debug,
+                stringResource(R.string.log_info) to LogDisplayLevel.Info,
+                stringResource(R.string.log_warning) to LogDisplayLevel.Warning,
+                stringResource(R.string.log_error) to LogDisplayLevel.Error,
             )
+            val actionItems = listOf(
+                stringResource(R.string.scroll_to_top) to onScrollTop,
+                stringResource(R.string.scroll_to_bottom) to onScrollBottom,
+            )
+            val optionSize = levelItems.size + actionItems.size
             ListPopupColumn {
-                items.forEachIndexed { index, string ->
+                levelItems.forEachIndexed { index, item ->
                     key(index) {
                         DropdownImpl(
-                            text = string,
-                            optionSize = items.size,
+                            text = item.first,
+                            optionSize = optionSize,
+                            isSelected = selectedLevel == item.second,
+                            onSelectedIndexChange = {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                                onLevelSelected(item.second)
+                                dismissState?.invoke()
+                            },
+                            index = index
+                        )
+                    }
+                }
+                actionItems.forEachIndexed { actionIndex, item ->
+                    val index = levelItems.size + actionIndex
+                    key(index) {
+                        DropdownImpl(
+                            text = item.first,
+                            optionSize = optionSize,
                             isSelected = false,
                             onSelectedIndexChange = {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                                when (index) {
-                                    0 -> onScrollTop()
-                                    1 -> onScrollBottom()
-                                }
+                                item.second()
                                 dismissState?.invoke()
                             },
                             index = index
@@ -236,7 +240,9 @@ private fun LogContent(
     lazyListState: LazyListState,
     lines: List<String>,
     hasAnyLog: Boolean,
+    isLoading: Boolean,
     isInitialLoadDone: Boolean,
+    isTruncated: Boolean,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     searchExpanded: Boolean,
@@ -247,7 +253,15 @@ private fun LogContent(
     val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (isInitialLoadDone && !hasAnyLog) {
+        if (isLoading && !isInitialLoadDone) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                InfiniteProgressIndicator()
+            }
+        } else if (isInitialLoadDone && !hasAnyLog) {
             Text(
                 text = stringResource(R.string.logs_empty),
                 modifier = Modifier.align(Alignment.Center),
@@ -291,6 +305,18 @@ private fun LogContent(
                             onExpandedChange = onSearchExpandedChange
                         ) {}
                     }
+                    if (isTruncated) {
+                        item(key = "logTruncated") {
+                            Text(
+                                text = stringResource(R.string.logs_truncated),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                fontSize = 13.sp,
+                                color = colorScheme.onSurfaceVariantSummary,
+                            )
+                        }
+                    }
                     items(lines) { line ->
                         Text(
                             text = line,
@@ -315,5 +341,15 @@ private fun LogContent(
                 trackPadding = contentPadding,
             )
         }
+    }
+}
+
+private fun String.matchesLogLevel(level: LogDisplayLevel): Boolean {
+    return when (level) {
+        LogDisplayLevel.All -> true
+        LogDisplayLevel.Debug -> contains("调试") || contains("DEBUG")
+        LogDisplayLevel.Info -> contains("信息") || contains("INFO")
+        LogDisplayLevel.Warning -> contains("警告") || contains("WARN")
+        LogDisplayLevel.Error -> contains("错误") || contains("ERROR")
     }
 }

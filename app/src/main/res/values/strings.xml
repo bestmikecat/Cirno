@@ -33,9 +33,12 @@
   <string name="interval_freeze_delay">Interval freeze delay</string>
   <string name="wake_freeze_delay">Wake freeze delay</string>
   <string name="log_level">Log Level</string>
+  <string name="log_all">All</string>
   <string name="log_close">Close</string>
   <string name="log_info">Info</string>
   <string name="log_debug">Debug</string>
+  <string name="log_warning">Warning</string>
+  <string name="log_error">Error</string>
   <string name="foreground_service">Foreground service</string>
   <string name="netreceive_unfreeze">NetReceive unfreeze</string>
   <string name="network_speed_check">Network speed detection</string>
@@ -65,6 +68,7 @@
   <string name="home_logs">Logs</string>
   <string name="home_logs_desc">View module log output</string>
   <string name="logs_empty">No log data</string>
+  <string name="logs_truncated">Log is too large. Showing recent logs only.</string>
   <string name="logs_title">Logs</string>
   <string name="scroll_to_top">Scroll to top</string>
   <string name="scroll_to_bottom">Scroll to bottom</string>
