@@ -10,6 +10,7 @@ import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.utils.PKGUtils;
+import nep.timeline.cirno.utils.SystemChecker;
 
 public class WakeLockHook extends MethodHook {
     public WakeLockHook(ClassLoader classLoader) {
@@ -28,9 +29,14 @@ public class WakeLockHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
+        if (SystemChecker.isSamsung(classLoader) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            return new Object[] { IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class,
+                    String.class, int.class, int.class, "android.os.IWakeLockCallback", boolean.class };
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2)
-            return new Object[]{IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class, "android.os.IWakeLockCallback"};
-        return new Object[]{IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class, String.class, int.class, int.class};
+            return new Object[] { IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class,
+                    String.class, int.class, int.class, "android.os.IWakeLockCallback" };
+        return new Object[] { IBinder.class, int.class, int.class, String.class, String.class, WorkSource.class,
+                String.class, int.class, int.class };
     }
 
     @Override

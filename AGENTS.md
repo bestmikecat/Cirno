@@ -16,12 +16,6 @@
 - `./gradlew :app:assembleRelease` (release APK, minified)
 - `./gradlew :app:lint` (lint)
 
-## Testing
-
-- Only scaffold tests exist (`ExampleUnitTest`, `ExampleInstrumentedTest`).
-- There is no full test suite requirement in this repo.
-- Practical validation is build-first (`./gradlew :app:assembleDebug`) plus device/framework verification in an Xposed environment (for example LSPosed).
-
 ## Git Commit Style
 
 - Format: `<action>(<scope>): <summary>`
