@@ -7,6 +7,7 @@ import nep.timeline.cirno.log.Log;
 
 public class ReflectUtils {
     public static Object[] findParameterTypesOrDefault(Class<?> clazz, String methodName, Object... parameter) {
+        if (clazz == null) return parameter;
         try {
             StringBuilder candidates = new StringBuilder();
             for (Method method : clazz.getDeclaredMethods()) {
