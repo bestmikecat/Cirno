@@ -138,6 +138,11 @@
   <string name="update_already_latest">已是最新版本</string>
   <string name="update_changelog">更新日志</string>
   <string name="update_dont_remind">不再提示</string>
+  <string name="downloading">正在下载…</string>
+  <string name="download_progress">下载进度：%d%%</string>
+  <string name="download_complete">下载完成，正在安装…</string>
+  <string name="install_success">安装完成</string>
+  <string name="install_failed">安装失败</string>
   <string-array name="dropdownOptions">
     <item>用户应用</item>
     <item>系统应用</item>

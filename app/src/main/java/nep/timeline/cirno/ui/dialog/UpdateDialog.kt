@@ -1,6 +1,5 @@
 package nep.timeline.cirno.ui.dialog
 
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,8 +17,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
+import kotlinx.coroutines.launch
 import nep.timeline.cirno.R
+import nep.timeline.cirno.ui.utils.ApkInstaller
 import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -34,11 +36,19 @@ fun UpdateDialog(
     val isShow = rememberSaveable { mutableStateOf(false) }
     val dontRemind = rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val showDownloadDialog = rememberSaveable { mutableStateOf(false) }
+    val downloadProgress = rememberSaveable { mutableIntStateOf(0) }
 
     if (show && !isShow.value) {
         isShow.value = true
         dontRemind.value = false
     }
+
+    DownloadProgressDialog(
+        show = showDownloadDialog.value,
+        progress = downloadProgress.intValue
+    )
 
     OverlayDialog(
         title = stringResource(R.string.update_available),
@@ -118,9 +128,22 @@ fun UpdateDialog(
                         }
                         isShow.value = false
                         onDismissRequest()
-                        val intent = Intent(Intent.ACTION_VIEW, updateResult.downloadUrl.toUri())
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
+                        showDownloadDialog.value = true
+                        scope.launch {
+                            ApkInstaller.downloadAndInstall(
+                                context = context,
+                                url = updateResult.downloadUrl,
+                                onProgress = { progress ->
+                                    downloadProgress.intValue = progress
+                                },
+                                onComplete = {
+                                    showDownloadDialog.value = false
+                                },
+                                onError = {
+                                    showDownloadDialog.value = false
+                                }
+                            )
+                        }
                     }
                 )
             }

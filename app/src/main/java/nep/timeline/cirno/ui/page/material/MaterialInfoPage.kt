@@ -1,6 +1,5 @@
 package nep.timeline.cirno.ui.page.material
 
-import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +29,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -50,7 +49,9 @@ import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
+import nep.timeline.cirno.ui.dialog.DownloadProgressDialog
 import nep.timeline.cirno.ui.navigation3.Route
+import nep.timeline.cirno.ui.utils.ApkInstaller
 import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
@@ -280,7 +281,10 @@ private fun MaterialUpdateDialog(
     if (!show) return
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var dontRemind by remember(updateResult.versionName) { mutableStateOf(false) }
+    val showDownloadDialog = remember { mutableStateOf(false) }
+    val downloadProgress = remember { mutableIntStateOf(0) }
 
     fun dismiss() {
         if (dontRemind) {
@@ -288,6 +292,11 @@ private fun MaterialUpdateDialog(
         }
         onDismissRequest()
     }
+
+    DownloadProgressDialog(
+        show = showDownloadDialog.value,
+        progress = downloadProgress.intValue
+    )
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -327,9 +336,22 @@ private fun MaterialUpdateDialog(
             Button(
                 onClick = {
                     dismiss()
-                    val intent = Intent(Intent.ACTION_VIEW, updateResult.downloadUrl.toUri())
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
+                    showDownloadDialog.value = true
+                    scope.launch {
+                        ApkInstaller.downloadAndInstall(
+                            context = context,
+                            url = updateResult.downloadUrl,
+                            onProgress = { progress ->
+                                downloadProgress.intValue = progress
+                            },
+                            onComplete = {
+                                showDownloadDialog.value = false
+                            },
+                            onError = {
+                                showDownloadDialog.value = false
+                            }
+                        )
+                    }
                 },
             ) {
                 Text(text = stringResource(R.string.update_now))
