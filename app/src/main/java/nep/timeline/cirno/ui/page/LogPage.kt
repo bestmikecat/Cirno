@@ -123,7 +123,7 @@ fun LogPage(
     }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = colorScheme.surface,
         topBar = {
             SmallTopAppBar(
                 title = stringResource(R.string.logs_title),
