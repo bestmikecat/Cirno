@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.topjohnwu.superuser.Shell;
 import com.topjohnwu.superuser.io.SuFile;
 
 import java.io.File;
@@ -29,6 +30,19 @@ public class ConfigManagerJson {
         GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(null);
     }
 
+    private void prepareLogDirSU() {
+        Shell.cmd(
+                "mkdir -p " + GlobalVars.LOG_DIR,
+                "chown system:system " + GlobalVars.CONFIG_DIR + " " + GlobalVars.LOG_DIR,
+                "chmod 0770 " + GlobalVars.CONFIG_DIR + " " + GlobalVars.LOG_DIR,
+                "[ ! -e " + GlobalVars.LOG_DIR + "/current.log ] || chown system:system " + GlobalVars.LOG_DIR + "/current.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/current.log ] || chmod 0660 " + GlobalVars.LOG_DIR + "/current.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/last.log ] || chown system:system " + GlobalVars.LOG_DIR + "/last.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/last.log ] || chmod 0660 " + GlobalVars.LOG_DIR + "/last.log",
+                "restorecon -R " + GlobalVars.CONFIG_DIR + " >/dev/null 2>&1 || true"
+        ).exec();
+    }
+
     private void writeConfigByMode(boolean su) {
         try {
             if (su) {
@@ -40,6 +54,7 @@ public class ConfigManagerJson {
                 if (!logDir.exists()) {
                     logDir.mkdir();
                 }
+                prepareLogDirSU();
             } else {
                 File configDir = new File(GlobalVars.CONFIG_DIR);
                 if (!configDir.exists()) {
