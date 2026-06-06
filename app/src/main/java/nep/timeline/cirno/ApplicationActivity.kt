@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
+import nep.timeline.cirno.configs.ConfigManagerJson.ReadResult
 import nep.timeline.cirno.ui.app.AppTheme
 import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.ApplicationHome
@@ -31,7 +32,7 @@ class ApplicationActivity : ComponentActivity() {
             var configLoaded by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
-                    if (!ConfigManager.manager.readConfigSU()) {
+                    if (ConfigManager.manager.readConfigSU() == ReadResult.MISSING) {
                         ConfigManager.manager.saveConfigSU()
                     }
                 }

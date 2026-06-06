@@ -17,6 +17,13 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.utils.RWUtils;
 
 public class ConfigManagerJson {
+    public enum ReadResult {
+        OK,
+        MISSING,
+        READ_FAILED,
+        INVALID_JSON
+    }
+
     private final Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
     private final String globalSettingsName = "GlobalSettings.json";
     private final String applicationSettingsName = "ApplicationSettings.json";
@@ -25,9 +32,31 @@ public class ConfigManagerJson {
         GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(GlobalVars.applicationSettings);
     }
 
+    private boolean fileExists(File file, boolean su) {
+        return su ? new SuFile(file.getAbsolutePath()).exists() : file.exists();
+    }
+
     private void resetToDefaults() {
         GlobalVars.globalSettings = new GlobalSettings();
         GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(null);
+    }
+
+    private void prepareConfigDirSU() {
+        Shell.cmd(
+                "mkdir -p " + GlobalVars.CONFIG_DIR,
+                "mkdir -p " + GlobalVars.LOG_DIR,
+                "chown system:system " + GlobalVars.CONFIG_DIR + " " + GlobalVars.LOG_DIR,
+                "chmod 0770 " + GlobalVars.CONFIG_DIR + " " + GlobalVars.LOG_DIR,
+                "[ ! -e " + GlobalVars.CONFIG_DIR + "/" + globalSettingsName + " ] || chown system:system " + GlobalVars.CONFIG_DIR + "/" + globalSettingsName,
+                "[ ! -e " + GlobalVars.CONFIG_DIR + "/" + globalSettingsName + " ] || chmod 0660 " + GlobalVars.CONFIG_DIR + "/" + globalSettingsName,
+                "[ ! -e " + GlobalVars.CONFIG_DIR + "/" + applicationSettingsName + " ] || chown system:system " + GlobalVars.CONFIG_DIR + "/" + applicationSettingsName,
+                "[ ! -e " + GlobalVars.CONFIG_DIR + "/" + applicationSettingsName + " ] || chmod 0660 " + GlobalVars.CONFIG_DIR + "/" + applicationSettingsName,
+                "[ ! -e " + GlobalVars.LOG_DIR + "/current.log ] || chown system:system " + GlobalVars.LOG_DIR + "/current.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/current.log ] || chmod 0660 " + GlobalVars.LOG_DIR + "/current.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/last.log ] || chown system:system " + GlobalVars.LOG_DIR + "/last.log",
+                "[ ! -e " + GlobalVars.LOG_DIR + "/last.log ] || chmod 0660 " + GlobalVars.LOG_DIR + "/last.log",
+                "restorecon -R " + GlobalVars.CONFIG_DIR + " >/dev/null 2>&1 || true"
+        ).exec();
     }
 
     private void prepareLogDirSU() {
@@ -54,7 +83,7 @@ public class ConfigManagerJson {
                 if (!logDir.exists()) {
                     logDir.mkdir();
                 }
-                prepareLogDirSU();
+                prepareConfigDirSU();
             } else {
                 File configDir = new File(GlobalVars.CONFIG_DIR);
                 if (!configDir.exists()) {
@@ -85,73 +114,102 @@ public class ConfigManagerJson {
                     RWUtils.writeStringToFile(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), applicationConfigStr);
                 }
             }
+
+            if (su) {
+                prepareConfigDirSU();
+            }
         } catch (IOException e) {
             Log.e("Save Config", e);
         }
     }
 
-    public void readConfig() {
+    private ReadResult readGlobalConfig(File globalFile, boolean su) {
+        if (!fileExists(globalFile, su)) {
+            GlobalVars.globalSettings = new GlobalSettings();
+            return ReadResult.MISSING;
+        }
+
+        String globalData = su ? RWUtils.readConfig(new SuFile(globalFile.getAbsolutePath())) : RWUtils.readConfig(globalFile.getAbsolutePath());
+        if (globalData == null) {
+            Log.w("Read Config", new IOException("Failed to read " + globalFile.getAbsolutePath()));
+            return ReadResult.READ_FAILED;
+        }
+
         try {
-            File globalFile = new File(GlobalVars.CONFIG_DIR, globalSettingsName);
-            if (!globalFile.exists()) {
-                GlobalVars.globalSettings = new GlobalSettings();
-                saveConfig();
-            } else {
-                String globalData = RWUtils.readConfig(GlobalVars.CONFIG_DIR + "/" + globalSettingsName);
-                GlobalVars.globalSettings = GlobalSettings.ensureInitialized(gson.fromJson(globalData, GlobalSettings.class));
-            }
-            File applicationFile = new File(GlobalVars.CONFIG_DIR, applicationSettingsName);
-            if (!applicationFile.exists()) {
-                GlobalVars.applicationSettings = new ApplicationSettings();
-                saveConfig();
-            } else {
-                String applicationData = RWUtils.readConfig(GlobalVars.CONFIG_DIR + "/" + applicationSettingsName);
-                GlobalVars.applicationSettings = gson.fromJson(applicationData, ApplicationSettings.class);
-                if (GlobalVars.applicationSettings == null) {
-                    GlobalVars.applicationSettings = new ApplicationSettings();
-                    saveConfig();
-                }
-            }
-            ensureApplicationSettingsInitialized();
+            GlobalVars.globalSettings = GlobalSettings.ensureInitialized(gson.fromJson(globalData, GlobalSettings.class));
+            return ReadResult.OK;
         } catch (JsonSyntaxException | JsonIOException e) {
-            resetToDefaults();
+            Log.e("Read Config", e);
+            return ReadResult.INVALID_JSON;
+        }
+    }
+
+    private ReadResult readApplicationConfig(File applicationFile, boolean su) {
+        if (!fileExists(applicationFile, su)) {
+            GlobalVars.applicationSettings = new ApplicationSettings();
+            return ReadResult.MISSING;
+        }
+
+        String applicationData = su ? RWUtils.readConfig(new SuFile(applicationFile.getAbsolutePath())) : RWUtils.readConfig(applicationFile.getAbsolutePath());
+        if (applicationData == null) {
+            Log.w("Read Config", new IOException("Failed to read " + applicationFile.getAbsolutePath()));
+            return ReadResult.READ_FAILED;
+        }
+
+        try {
+            GlobalVars.applicationSettings = ApplicationSettings.ensureInitialized(gson.fromJson(applicationData, ApplicationSettings.class));
+            return ReadResult.OK;
+        } catch (JsonSyntaxException | JsonIOException e) {
+            Log.e("Read Config", e);
+            return ReadResult.INVALID_JSON;
+        }
+    }
+
+    private ReadResult mergeReadResults(ReadResult first, ReadResult second) {
+        if (first == ReadResult.READ_FAILED || second == ReadResult.READ_FAILED) {
+            return ReadResult.READ_FAILED;
+        }
+        if (first == ReadResult.INVALID_JSON || second == ReadResult.INVALID_JSON) {
+            return ReadResult.INVALID_JSON;
+        }
+        if (first == ReadResult.MISSING || second == ReadResult.MISSING) {
+            return ReadResult.MISSING;
+        }
+        return ReadResult.OK;
+    }
+
+    public ReadResult readConfig() {
+        File globalFile = new File(GlobalVars.CONFIG_DIR, globalSettingsName);
+        File applicationFile = new File(GlobalVars.CONFIG_DIR, applicationSettingsName);
+
+        ReadResult globalResult = readGlobalConfig(globalFile, false);
+        ReadResult applicationResult = readApplicationConfig(applicationFile, false);
+
+        ensureApplicationSettingsInitialized();
+
+        ReadResult result = mergeReadResults(globalResult, applicationResult);
+        GlobalVars.globalSettings = GlobalSettings.ensureInitialized(GlobalVars.globalSettings);
+        if (result == ReadResult.MISSING) {
             saveConfig();
         }
+        return result;
     }
 
     public void saveConfig() {
         writeConfigByMode(false);
     }
 
-    public boolean readConfigSU() {
-        boolean read = true;
-        try {
-            SuFile globalFile = new SuFile(GlobalVars.CONFIG_DIR, globalSettingsName);
-            if (!globalFile.exists()) {
-                GlobalVars.globalSettings = new GlobalSettings();
-                read = false;
-            } else {
-                String globalData = RWUtils.readConfig(globalFile);
-                GlobalVars.globalSettings = GlobalSettings.ensureInitialized(gson.fromJson(globalData, GlobalSettings.class));
-            }
-            SuFile applicationFile = new SuFile(GlobalVars.CONFIG_DIR, applicationSettingsName);
-            if (!applicationFile.exists()) {
-                GlobalVars.applicationSettings = new ApplicationSettings();
-                read = false;
-            } else {
-                String applicationData = RWUtils.readConfig(applicationFile);
-                GlobalVars.applicationSettings = gson.fromJson(applicationData, ApplicationSettings.class);
-                if (GlobalVars.applicationSettings == null) {
-                    GlobalVars.applicationSettings = new ApplicationSettings();
-                    read = false;
-                }
-            }
-            ensureApplicationSettingsInitialized();
-        } catch (JsonSyntaxException | JsonIOException e) {
-            resetToDefaults();
-            return false;
+    public ReadResult readConfigSU() {
+        ReadResult globalResult = readGlobalConfig(new File(GlobalVars.CONFIG_DIR, globalSettingsName), true);
+        ReadResult applicationResult = readApplicationConfig(new File(GlobalVars.CONFIG_DIR, applicationSettingsName), true);
+        ensureApplicationSettingsInitialized();
+
+        ReadResult result = mergeReadResults(globalResult, applicationResult);
+        GlobalVars.globalSettings = GlobalSettings.ensureInitialized(GlobalVars.globalSettings);
+        if (result == ReadResult.MISSING) {
+            saveConfigSU();
         }
-        return read;
+        return result;
     }
 
     public void saveConfigSU() {

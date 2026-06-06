@@ -38,7 +38,7 @@ public class RWUtils {
             Log.e("Read Config", e);
         }
 
-        return "";
+        return null;
     }
 
     public static void writeStringToFile(File file, String value) throws IOException {

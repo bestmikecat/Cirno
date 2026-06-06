@@ -82,6 +82,7 @@ import nep.timeline.cirno.MainActivity.MonitorViewModelSingleton.monitorViewMode
 import nep.timeline.cirno.R
 import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.configs.ConfigManager
+import nep.timeline.cirno.configs.ConfigManagerJson.ReadResult
 import nep.timeline.cirno.ui.custom.FloatingBottomBar
 import nep.timeline.cirno.ui.custom.FloatingBottomBarItem
 import nep.timeline.cirno.ui.dialog.RootDialog
@@ -178,7 +179,7 @@ fun AppContent(
             return@LaunchedEffect
         }
         withContext(Dispatchers.IO) {
-            if (!ConfigManager.manager.readConfigSU()) {
+            if (ConfigManager.manager.readConfigSU() == ReadResult.MISSING) {
                 ConfigManager.manager.saveConfigSU()
             }
         }

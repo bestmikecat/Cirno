@@ -2,6 +2,7 @@ package nep.timeline.cirno.ui.utils
 
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.configs.ConfigManager
+import nep.timeline.cirno.configs.ConfigManagerJson.ReadResult
 import nep.timeline.cirno.configs.settings.ApplicationSettings
 import nep.timeline.cirno.configs.settings.GlobalSettings
 
@@ -11,7 +12,7 @@ object RootConfigRepository {
 
     fun loadIntoMemory(): Boolean {
         return try {
-            if (!ConfigManager.manager.readConfigSU()) {
+            if (ConfigManager.manager.readConfigSU() == ReadResult.MISSING) {
                 ConfigManager.manager.saveConfigSU()
             }
             lastError = ""
