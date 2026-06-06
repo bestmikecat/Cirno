@@ -5,10 +5,9 @@ import android.os.Build;
 
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.handlers.AudioHandler;
 import nep.timeline.cirno.log.Log;
@@ -36,31 +35,31 @@ public class AudioStateHook extends MethodHook {
     public Object[] getTargetParam() {
         if (Build.VERSION.SDK_INT >= 36)
             return ReflectUtils.findParameterTypesOrDefault(
-                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                     getTargetMethod(), int.class, int[].class);
         return ReflectUtils.findParameterTypesOrDefault(
-                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                 getTargetMethod(), int.class);
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void afterMethod(MethodHookParam param) {
+            public void call(CakeHooker.AfterHookCallback callback) {
                 try {
-                    Object result = param.getResult();
+                    Object result = callback.result;
                     if (result instanceof Boolean && !(boolean) result) {
                         return;
                     }
 
-                    int event = (int) param.args[0];
+                    int event = (int) callback.getArgs()[0];
 
                     if (!AudioHandler.LISTEN_EVENT.contains(event)) {
                         return;
                     }
 
-                    AudioPlaybackConfigurationReflect reflect = new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) param.thisObject);
+                    AudioPlaybackConfigurationReflect reflect = new AudioPlaybackConfigurationReflect((AudioPlaybackConfiguration) callback.getThisObject());
 
                     Handlers.audio.post(() -> {
                         try {

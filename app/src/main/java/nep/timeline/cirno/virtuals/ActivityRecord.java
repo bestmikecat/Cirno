@@ -2,7 +2,7 @@ package nep.timeline.cirno.virtuals;
 
 import android.os.IBinder;
 
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeReflection;
 import lombok.Getter;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.services.AppService;
@@ -16,9 +16,9 @@ public class ActivityRecord {
 
     public ActivityRecord(Object instance) {
         this.instance = instance;
-        this.packageName = (String) XposedHelpers.getObjectField(instance, "packageName");
-        this.userId = XposedHelpers.getIntField(instance, "mUserId");
-        this.token = (IBinder) XposedHelpers.getObjectField(instance, "token");
+        this.packageName = (String) CakeReflection.getObjectField(instance, "packageName");
+        this.userId = CakeReflection.getIntField(instance, "mUserId");
+        this.token = (IBinder) CakeReflection.getObjectField(instance, "token");
     }
 
     public AppRecord toAppRecord() {

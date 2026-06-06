@@ -20,5 +20,3 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 -keep class nep.timeline.cirno.** {*;}
--keep class nep.timeline.cirno.GlobalVars{boolean isModuleActive;}
--keep class nep.timeline.cirno.GlobalVars{int XposedVersion;}

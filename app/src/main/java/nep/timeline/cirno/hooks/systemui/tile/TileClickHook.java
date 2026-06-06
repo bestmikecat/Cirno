@@ -4,9 +4,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 
@@ -32,7 +31,7 @@ public class TileClickHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        Class<?> expandableClass = XposedHelpers.findClassIfExists(EXPANDABLE_CLASS, classLoader);
+        Class<?> expandableClass = CakeReflection.findClassIfExists(EXPANDABLE_CLASS, classLoader);
         if (expandableClass == null) {
             Log.e("QSTileImpl -> Expandable 类未找到");
             return null;
@@ -41,14 +40,14 @@ public class TileClickHook extends MethodHook {
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void beforeMethod(MethodHookParam param) {
+            public void call(CakeHooker.BeforeHookCallback callback) {
                 try {
-                    Object tile = param.thisObject;
-                    Context context = (Context) XposedHelpers.getObjectField(tile, "mContext");
-                    String tileSpec = (String) XposedHelpers.getObjectField(tile, "mTileSpec");
+                    Object tile = callback.getThisObject();
+                    Context context = (Context) CakeReflection.getObjectField(tile, "mContext");
+                    String tileSpec = (String) CakeReflection.getObjectField(tile, "mTileSpec");
                     Log.d("磁贴被点击: " + tileSpec);
 
                     String targetPkg = extractPackageFromTileSpec(tileSpec);

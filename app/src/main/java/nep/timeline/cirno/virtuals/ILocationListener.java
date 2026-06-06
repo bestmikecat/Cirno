@@ -2,7 +2,7 @@ package nep.timeline.cirno.virtuals;
 
 import android.os.IBinder;
 
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeReflection;
 
 public record ILocationListener(Object instance) {
 
@@ -10,6 +10,6 @@ public record ILocationListener(Object instance) {
         if (instance == null)
             return null;
 
-        return (IBinder) XposedHelpers.callMethod(instance, "asBinder");
+        return (IBinder) CakeReflection.callMethod(instance, "asBinder");
     }
 }

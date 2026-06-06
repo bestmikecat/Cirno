@@ -7,14 +7,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 
 public abstract class MethodHook {
     public final int ANY_VERSION = -1;
     public final ClassLoader classLoader;
-    private XC_MethodHook.Unhook unhook = null;
+    public io.github.libxposed.api.XposedInterface.HookHandle unhooker;
     private boolean hooked = false;
 
     public MethodHook(ClassLoader classLoader) {
@@ -33,7 +33,7 @@ public abstract class MethodHook {
 
     public abstract Object[] getTargetParam();
 
-    public abstract XC_MethodHook getTargetHook();
+    public abstract CakeHooker.Callback getTargetHook();
 
     public int getMinVersion() {
         return ANY_VERSION;
@@ -47,7 +47,7 @@ public abstract class MethodHook {
         int minVersion = getMinVersion();
         if (minVersion == ANY_VERSION || Build.VERSION.SDK_INT >= minVersion) {
             Object[] targetParam = getTargetParam();
-            XC_MethodHook targetHook = getTargetHook();
+            CakeHooker.Callback targetHook = getTargetHook();
 
             if (targetHook == null || targetParam == null)
                 return;
@@ -59,9 +59,9 @@ public abstract class MethodHook {
             param.add(targetHook);
             try {
                 if (targetMethod == null)
-                    unhook = XposedHelpers.findAndHookConstructor(targetClass, classLoader, param.toArray());
+                    unhooker = CakeReflection.findAndHookConstructor(targetClass, classLoader, param.toArray());
                 else
-                    unhook = XposedHelpers.findAndHookMethod(targetClass, classLoader, targetMethod, param.toArray());
+                    unhooker = CakeReflection.findAndHookMethod(targetClass, classLoader, targetMethod, param.toArray());
                 hooked = true;
                 Log.i(getTargetMethod() + " -> 成功Hook完毕!");
             } catch (Throwable t) {
@@ -77,7 +77,7 @@ public abstract class MethodHook {
 
     private void logAvailableSignatures(String className, String methodName, boolean isConstructor) {
         try {
-            Class<?> clazz = XposedHelpers.findClassIfExists(className, classLoader);
+            Class<?> clazz = CakeReflection.findClassIfExists(className, classLoader);
             if (clazz == null) {
                 Log.d("[MethodHook-DEBUG] " + className + " 类未找到");
                 return;
@@ -107,10 +107,10 @@ public abstract class MethodHook {
     }
 
     public void unhook() {
-        if (unhook == null)
+        if (unhooker == null)
             return;
 
-        unhook.unhook();
-        unhook = null;
+        unhooker.unhook();
+        unhooker = null;
     }
 }

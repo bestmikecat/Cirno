@@ -4,8 +4,7 @@ import android.os.Build;
 
 import java.util.Arrays;
 
-import de.robv.android.xposed.XC_MethodHook;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.BinderService;
@@ -37,22 +36,22 @@ public class MilletBinderTransHook extends MethodHook {
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void beforeMethod(MethodHookParam param) {
-                Log.d("reportBinderTrans params: " + Arrays.toString(param.args));
+            public void call(CakeHooker.BeforeHookCallback callback) {
+                Log.d("reportBinderTrans params: " + Arrays.toString(callback.getArgs()));
 
                 if (BinderService.received) {
                     unhook();
                     return;
                 }
 
-                boolean isOneway = (boolean) param.args[5];
+                boolean isOneway = (boolean) callback.getArgs()[5];
                 if (isOneway)
                     return;
 
-                int dstUid = (int) param.args[0];
+                int dstUid = (int) callback.getArgs()[0];
 
                 FreezerService.temporaryUnfreezeIfNeed(dstUid, "Binder", TEMP_UNFREEZE_INTERVAL_MS);
             }

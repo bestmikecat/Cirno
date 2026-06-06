@@ -1,8 +1,7 @@
 package nep.timeline.cirno.hooks.android.activity;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.MonitorBinderHub;
 import nep.timeline.cirno.services.NetworkSpeedMonitor;
@@ -26,15 +25,15 @@ public class ActivityManagerSystemReadyHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         return ReflectUtils.findParameterTypesOrDefault(
-                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                 getTargetMethod(), Runnable.class);
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void afterMethod(MethodHookParam param) {
+            public void call(CakeHooker.AfterHookCallback callback) {
                 MonitorBinderHub.setBootCompleted();
                 MonitorBinderHub.publish("ActivityManagerService.systemReady");
                 NetworkSpeedMonitor.init();

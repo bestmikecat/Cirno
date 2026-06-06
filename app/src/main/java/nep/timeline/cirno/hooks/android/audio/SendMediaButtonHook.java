@@ -5,15 +5,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
 
 public class SendMediaButtonHook {
     public SendMediaButtonHook(ClassLoader classLoader) {
-        Class<?> targetClass = XposedHelpers.findClassIfExists(
+        Class<?> targetClass = CakeReflection.findClassIfExists(
                 "com.android.server.media.MediaSessionRecord$SessionCb", classLoader);
 
         if (targetClass == null) {
@@ -49,16 +48,16 @@ public class SendMediaButtonHook {
         for (Method method : methods) {
             try {
                 String finalFieldName = fieldName;
-                XposedBridge.hookMethod(method, new AbstractMethodHook() {
+                CakeHooker.hook(method, new CakeHooker.Callback() {
                     @Override
-                    protected void beforeMethod(MethodHookParam param) {
+                    public void call(CakeHooker.BeforeHookCallback callback) {
                         try {
-                            Object record = XposedHelpers.getObjectField(param.thisObject, finalFieldName);
+                            Object record = CakeReflection.getObjectField(callback.getThisObject(), finalFieldName);
                             if (record == null) {
                                 return;
                             }
 
-                            int uid = XposedHelpers.getIntField(record, "mOwnerUid");
+                            int uid = CakeReflection.getIntField(record, "mOwnerUid");
                             FreezerService.temporaryUnfreezeIfNeed(uid, "媒体按键", 3000);
                         } catch (Exception e) {
                             Log.e("媒体按键处理失败", e);

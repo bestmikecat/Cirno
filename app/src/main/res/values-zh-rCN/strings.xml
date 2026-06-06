@@ -46,7 +46,6 @@
   <string name="network_speed_threshold">网速识别阈值</string>
   <string name="battery_opt">电池优化</string>
   <string name="version">版本</string>
-  <string name="xposed_version">Xposed 版本</string>
   <string name="android_version">Android 版本</string>
   <string name="working">工作中</string>
   <string name="crying">哭泣</string>

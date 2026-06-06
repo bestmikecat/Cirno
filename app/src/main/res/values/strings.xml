@@ -46,7 +46,6 @@
   <string name="network_speed_threshold">Network speed threshold</string>
   <string name="battery_opt">Battery Opt</string>
   <string name="version">Version</string>
-  <string name="xposed_version">Xposed Version</string>
   <string name="android_version">Android Version</string>
   <string name="working">Working</string>
   <string name="crying">Crying</string>

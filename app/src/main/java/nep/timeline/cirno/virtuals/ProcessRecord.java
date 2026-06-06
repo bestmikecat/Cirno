@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.services.AppService;
 
@@ -25,17 +25,17 @@ public class ProcessRecord {
 
     public ProcessRecord(Object instance) {
         this.instance = instance;
-        this.userId = XposedHelpers.getIntField(instance, "userId");
-        this.runningUid = XposedHelpers.getIntField(instance, "uid");
-        this.applicationInfo = (ApplicationInfo) XposedHelpers.getObjectField(instance, "info");
+        this.userId = CakeReflection.getIntField(instance, "userId");
+        this.runningUid = CakeReflection.getIntField(instance, "uid");
+        this.applicationInfo = (ApplicationInfo) CakeReflection.getObjectField(instance, "info");
         this.uid = applicationInfo.uid;
         this.packageName = applicationInfo.packageName;
-        this.processName = (String) XposedHelpers.getObjectField(instance, "processName");
+        this.processName = (String) CakeReflection.getObjectField(instance, "processName");
         this.appRecord = AppService.get(packageName, userId);
     }
 
     public int getPid() {
-        return (int) XposedHelpers.getObjectField(instance, "mPid");
+        return (int) CakeReflection.getObjectField(instance, "mPid");
     }
 
     public boolean isDeathProcess() {

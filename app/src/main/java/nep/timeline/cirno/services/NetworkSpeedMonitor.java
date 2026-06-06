@@ -5,7 +5,7 @@ import android.os.IBinder;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
@@ -91,12 +91,12 @@ public class NetworkSpeedMonitor {
             long totalRx = 0;
             long totalTx = 0;
 
-            int size = (int) XposedHelpers.callMethod(stats, "size");
+            int size = (int) CakeReflection.callMethod(stats, "size");
             Object entry = null;
             for (int i = 0; i < size; i++) {
-                entry = XposedHelpers.callMethod(stats, "getValues", i, entry);
-                totalRx += (long) XposedHelpers.getObjectField(entry, "rxBytes");
-                totalTx += (long) XposedHelpers.getObjectField(entry, "txBytes");
+                entry = CakeReflection.callMethod(stats, "getValues", i, entry);
+                totalRx += (long) CakeReflection.getObjectField(entry, "rxBytes");
+                totalTx += (long) CakeReflection.getObjectField(entry, "txBytes");
             }
 
             long[] prev = sSnapshots.get(uid);

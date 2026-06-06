@@ -1,9 +1,8 @@
 package nep.timeline.cirno.hooks.android.xiaomi;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.BinderService;
@@ -31,7 +30,7 @@ public class ReportSignalHook extends MethodHook {
     @Override
     public Object[] getTargetParam() {
         return ReflectUtils.findParameterTypesOrDefault(
-                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                 getTargetMethod(),
                 int.class,
                 int.class,
@@ -39,16 +38,16 @@ public class ReportSignalHook extends MethodHook {
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void beforeMethod(MethodHookParam param) {
+            public void call(CakeHooker.BeforeHookCallback callback) {
                 if (BinderService.received) {
                     unhook();
                     return;
                 }
 
-                int pid = (int) param.args[1];
+                int pid = (int) callback.getArgs()[1];
                 if (pid <= 0)
                     return;
 

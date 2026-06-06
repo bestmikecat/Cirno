@@ -137,7 +137,7 @@ fun MaterialInfoPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            val active = GlobalVars.isModuleActive
+            val active = true
             val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
             val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
@@ -179,7 +179,7 @@ fun MaterialInfoPage(
         }
 
         item {
-            val active = GlobalVars.isModuleActive
+            val active = true
             val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
@@ -203,7 +203,7 @@ fun MaterialInfoPage(
 
         item {
             val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
-            val working = GlobalVars.isModuleActive && !binderState.hasError && !addOnMissing
+            val working = !binderState.hasError && !addOnMissing
             MaterialSurfaceCard(
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -211,7 +211,6 @@ fun MaterialInfoPage(
                 MaterialInfoRow(stringResource(R.string.manager_version), "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}-${BuildConfig.BUILD_TIME})")
                 MaterialInfoRow(stringResource(R.string.hook_type), if (working) "Xposed" else stringResource(R.string.unknown))
                 MaterialInfoRow(stringResource(R.string.android_version), if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")"))
-                MaterialInfoRow(stringResource(R.string.xposed_version), if (working) GlobalVars.XposedVersion.toString() else stringResource(R.string.unknown))
                 MaterialInfoRow(stringResource(R.string.system_fingerprint), Build.FINGERPRINT)
             }
         }

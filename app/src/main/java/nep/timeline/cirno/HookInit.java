@@ -2,44 +2,53 @@ package nep.timeline.cirno;
 
 import java.io.File;
 
-import de.robv.android.xposed.IXposedHookLoadPackage;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import androidx.annotation.NonNull;
+
+import io.github.libxposed.api.XposedModule;
 import nep.timeline.cirno.master.AndroidHooks;
 import nep.timeline.cirno.master.SystemUIHooks;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.framework.XposedInstance;
 import nep.timeline.cirno.services.StatusBinderHub;
 
-public class HookInit implements IXposedHookLoadPackage {
+public class HookInit extends XposedModule {
+    private boolean systemUIHooksStarted;
+
     @Override
-    public void handleLoadPackage(XC_LoadPackage.LoadPackageParam packageParam) {
-        String packageName = packageParam.packageName;
-        ClassLoader classLoader = GlobalVars.classLoader = packageParam.classLoader;
+    public void onModuleLoaded(@NonNull ModuleLoadedParam param) {
+        XposedInstance.setModule(this);
+        CakeHooker.setXposedModule(this);
+    }
 
-        if ("com.android.systemui".equals(packageName)) {
-            try {
-                SystemUIHooks.start(classLoader);
-            } catch (Throwable throwable) {
-                nep.timeline.cirno.log.Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
-            }
+    @Override
+    public void onPackageLoaded(@NonNull PackageLoadedParam param) {
+        String packageName = param.getPackageName();
+    }
+
+    @Override
+    public void onPackageReady(@NonNull PackageReadyParam param) {
+        String packageName = param.getPackageName();
+        if (!"com.android.systemui".equals(packageName) || systemUIHooksStarted) {
             return;
         }
 
-        if (BuildConfig.APPLICATION_ID.equals(packageName)) {
-            Class<?> globalVars = XposedHelpers.findClassIfExists(GlobalVars.class.getTypeName(), classLoader);
+        systemUIHooksStarted = true;
+        ClassLoader classLoader = GlobalVars.classLoader = param.getClassLoader();
+        CakeHooker.setHostClassLoader(classLoader);
 
-            if (globalVars == null) {
-                nep.timeline.cirno.log.Log.e(GlobalVars.TAG + " -> Failed to set module active");
-                return;
-            }
-
-            XposedHelpers.setStaticBooleanField(globalVars, "isModuleActive", true);
-            XposedHelpers.setStaticIntField(globalVars, "XposedVersion", XposedBridge.getXposedVersion());
-            return;
+        try {
+            SystemUIHooks.start(classLoader);
+            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
+        } catch (Throwable throwable) {
+            Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
         }
+    }
 
-        if (!packageName.equals("android"))
-            return;
+    @Override
+    public void onSystemServerStarting(@NonNull SystemServerStartingParam param) {
+        ClassLoader classLoader = GlobalVars.classLoader = param.getClassLoader();
+        CakeHooker.setHostClassLoader(classLoader);
 
         try {
             File source = new File(GlobalVars.LOG_DIR, "current.log");
@@ -49,7 +58,7 @@ public class HookInit implements IXposedHookLoadPackage {
             AndroidHooks.start(classLoader);
             StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_ANDROID_HOOK_READY, "1");
         } catch (Throwable throwable) {
-            nep.timeline.cirno.log.Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
+            Log.e("Cirno (android) -> Hook failed", throwable);
         }
     }
 }

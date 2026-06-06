@@ -3,7 +3,7 @@ package nep.timeline.cirno.netlink;
 import java.net.SocketAddress;
 import java.util.Objects;
 
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeReflection;
 
 public final class NetlinkSocketAddress extends SocketAddress {
     /**
@@ -77,6 +77,6 @@ public final class NetlinkSocketAddress extends SocketAddress {
     }
 
     public Object toInstance(ClassLoader classLoader) {
-        return XposedHelpers.newInstance(XposedHelpers.findClass("android.system.NetlinkSocketAddress", classLoader), nlPortId, nlGroupsMask);
+        return CakeReflection.newInstance(CakeReflection.findClass("android.system.NetlinkSocketAddress", classLoader), nlPortId, nlGroupsMask);
     }
 }

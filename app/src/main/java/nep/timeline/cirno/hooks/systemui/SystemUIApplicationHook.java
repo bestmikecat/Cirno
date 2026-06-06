@@ -3,8 +3,7 @@ package nep.timeline.cirno.hooks.systemui;
 import android.content.Context;
 import android.content.Intent;
 
-import de.robv.android.xposed.XC_MethodHook;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 
@@ -31,19 +30,19 @@ public class SystemUIApplicationHook extends MethodHook {
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void afterMethod(MethodHookParam param) {
+            public void call(CakeHooker.AfterHookCallback callback) {
                 try {
-                    if (!(param.thisObject instanceof Context)) {
+                    if (!(callback.getThisObject() instanceof Context)) {
                         Log.w("SystemUIApplication 不是 Context，无法上报 SystemUI hook 状态");
                         return;
                     }
                     Intent intent = new Intent(ACTION_HOOK_READY);
                     intent.putExtra("scope", "systemui");
                     intent.setPackage("android");
-                    ((Context) param.thisObject).sendBroadcast(intent);
+                    ((Context) callback.getThisObject()).sendBroadcast(intent);
                     Log.i("SystemUI hook ready");
                 } catch (Throwable t) {
                     Log.e("上报 SystemUI hook 状态失败", t);

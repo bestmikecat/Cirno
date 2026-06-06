@@ -2,9 +2,8 @@ package nep.timeline.cirno.hooks.android.broadcast;
 
 import android.os.Build;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.ProcessService;
@@ -31,38 +30,38 @@ public class BroadcastSkipHook extends MethodHook {
     public Object[] getTargetParam() {
         if (SystemChecker.isVivo(classLoader))
             return ReflectUtils.findParameterTypesOrDefault(
-                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                     getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class, int.class, "com.android.server.am.IVivoBroadcastQueueModern");
         if (Build.VERSION.SDK_INT >= 36)
             return ReflectUtils.findParameterTypesOrDefault(
-                    XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                     getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter", boolean.class);
         return ReflectUtils.findParameterTypesOrDefault(
-                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                 getTargetMethod(), "com.android.server.am.BroadcastRecord", "com.android.server.am.BroadcastFilter");
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             @Override
-            protected void afterMethod(MethodHookParam param) {
+            public void call(CakeHooker.AfterHookCallback callback) {
                 try {
-                    if (param.getResult() != null) {
+                    if (callback.result != null) {
                         return;
                     }
 
-                    Object filter = param.args[1];
+                    Object filter = callback.getArgs()[1];
                     if (filter == null) {
                         return;
                     }
 
-                    Object receiver = XposedHelpers.getObjectField(filter, "receiverList");
+                    Object receiver = CakeReflection.getObjectField(filter, "receiverList");
                     if (receiver == null) {
                         return;
                     }
 
-                    Object app = XposedHelpers.getObjectField(receiver, "app");
+                    Object app = CakeReflection.getObjectField(receiver, "app");
                     if (app == null) {
                         return;
                     }
@@ -73,7 +72,7 @@ public class BroadcastSkipHook extends MethodHook {
                     }
 
                     if (processRecord.isFrozen()) {
-                        param.setResult("Skipping deliver [Cirno]: frozen process");
+                        callback.result = "Skipping deliver [Cirno]: frozen process";
                     }
                 } catch (Exception e) {
                     Log.e("BroadcastSkipHook 处理失败", e);

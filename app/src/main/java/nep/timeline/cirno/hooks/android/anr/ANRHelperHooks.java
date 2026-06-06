@@ -2,15 +2,14 @@ package nep.timeline.cirno.hooks.android.anr;
 
 import java.lang.reflect.Method;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import nep.timeline.cirno.framework.AbstractMethodHook;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.utils.AnrHelper;
 
 public class ANRHelperHooks {
     public ANRHelperHooks(ClassLoader classLoader) {
         try {
-            Class<?> targetClass = XposedHelpers.findClassIfExists("com.android.server.am.AnrHelper", classLoader);
+            Class<?> targetClass = CakeReflection.findClassIfExists("com.android.server.am.AnrHelper", classLoader);
 
             if (targetClass == null)
                 return;
@@ -21,27 +20,27 @@ public class ANRHelperHooks {
                     if (index == null) { // Not found
                         Integer MIUIRecordIndex = findIndex(method.getParameterTypes(), "com.android.server.am.AnrHelper$AnrRecord");
                         if (MIUIRecordIndex != null) {
-                            XposedBridge.hookMethod(method, new AbstractMethodHook() {
+                            CakeHooker.hook(method, new CakeHooker.Callback() {
                                 @Override
-                                protected void beforeMethod(MethodHookParam param) {
-                                    Object anrRecord = param.args[MIUIRecordIndex];
+                                public void call(CakeHooker.BeforeHookCallback callback) {
+                                    Object anrRecord = callback.getArgs()[MIUIRecordIndex];
                                     if (anrRecord == null)
                                         return;
-                                    Object app = XposedHelpers.getObjectField(anrRecord, "mApp");
+                                    Object app = CakeReflection.getObjectField(anrRecord, "mApp");
                                     if (app == null)
                                         return;
-                                    AnrHelper.processingAnr(param, app);
+                                    AnrHelper.processingAnr(callback, app);
                                 }
                             });
                         }
                     } else {
-                        XposedBridge.hookMethod(method, new AbstractMethodHook() {
+                        CakeHooker.hook(method, new CakeHooker.Callback() {
                             @Override
-                            protected void beforeMethod(MethodHookParam param) {
-                                Object record = param.args[index];
+                            public void call(CakeHooker.BeforeHookCallback callback) {
+                                Object record = callback.getArgs()[index];
                                 if (record == null)
                                     return;
-                                AnrHelper.processingAnr(param, record);
+                                AnrHelper.processingAnr(callback, record);
                             }
                         });
                     }

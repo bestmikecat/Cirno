@@ -5,10 +5,9 @@ import android.view.inputmethod.InputMethodInfo;
 
 import java.util.Map;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.ActivityManagerService;
@@ -26,13 +25,13 @@ public class InputMethodManagerService extends MethodHook {
         }
 
         try {
-            Object map = XposedHelpers.getObjectField(settings, "mMethodMap");
+            Object map = CakeReflection.getObjectField(settings, "mMethodMap");
             if (map == null) {
                 return null;
             }
 
             if ("com.android.server.inputmethod.InputMethodMap".equals(map.getClass().getTypeName())) {
-                return (Map<String, InputMethodInfo>) XposedHelpers.getObjectField(map, "mMap");
+                return (Map<String, InputMethodInfo>) CakeReflection.getObjectField(map, "mMap");
             }
 
             return (Map<String, InputMethodInfo>) map;
@@ -44,8 +43,8 @@ public class InputMethodManagerService extends MethodHook {
     private Object resolveInputMethodSettings(Object service, int userId) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             try {
-                return XposedHelpers.callStaticMethod(
-                        XposedHelpers.findClassIfExists(
+                return CakeReflection.callStaticMethod(
+                        CakeReflection.findClassIfExists(
                                 "com.android.server.inputmethod.InputMethodSettingsRepository",
                                 classLoader),
                         "get", userId);
@@ -56,7 +55,7 @@ public class InputMethodManagerService extends MethodHook {
         }
 
         try {
-            return XposedHelpers.getObjectField(service, "mSettings");
+            return CakeReflection.getObjectField(service, "mSettings");
         } catch (Exception e) {
             Log.e("获取 mSettings 失败", e);
             return null;
@@ -81,16 +80,16 @@ public class InputMethodManagerService extends MethodHook {
     public Object[] getTargetParam() {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM)
             return ReflectUtils.findParameterTypesOrDefault(
-                XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                 getTargetMethod(), String.class, int.class, int.class, int.class);
         return ReflectUtils.findParameterTypesOrDefault(
-            XposedHelpers.findClassIfExists(getTargetClass(), classLoader),
+            CakeReflection.findClassIfExists(getTargetClass(), classLoader),
             getTargetMethod(), String.class, int.class);
     }
 
     @Override
-    public XC_MethodHook getTargetHook() {
-        return new AbstractMethodHook() {
+    public CakeHooker.Callback getTargetHook() {
+        return new CakeHooker.Callback() {
             private String getPackageNameFromId(String id) {
                 if (id == null)
                     return null;
@@ -102,13 +101,13 @@ public class InputMethodManagerService extends MethodHook {
 
             @Override
             @SuppressWarnings("unchecked")
-            protected void beforeMethod(MethodHookParam param) {
+            public void call(CakeHooker.BeforeHookCallback callback) {
                 try {
-                    if (param.args.length < 1) {
+                    if (callback.getArgs().length < 1) {
                         return;
                     }
 
-                    Object arg0 = param.args[0];
+                    Object arg0 = callback.getArgs()[0];
                     if (!(arg0 instanceof String id)) {
                         return;
                     }
@@ -117,14 +116,14 @@ public class InputMethodManagerService extends MethodHook {
                         return;
                     }
 
-                    int userId = (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && param.args.length > 3)
-                            ? (int) param.args[3]
+                    int userId = (Build.VERSION.SDK_INT > Build.VERSION_CODES.VANILLA_ICE_CREAM && callback.getArgs().length > 3)
+                            ? (int) callback.getArgs()[3]
                             : ActivityManagerService.getCurrentOrTargetUserId();
-                    Object settings = resolveInputMethodSettings(param.thisObject, userId);
+                    Object settings = resolveInputMethodSettings(callback.getThisObject(), userId);
 
                     synchronized (InputMethodData.class) {
                         if (InputMethodData.instance == null) {
-                            InputMethodData.instance = param.thisObject;
+                            InputMethodData.instance = callback.getThisObject();
                         }
 
                         InputMethodData.inputMethods = resolveInputMethodMap(settings);

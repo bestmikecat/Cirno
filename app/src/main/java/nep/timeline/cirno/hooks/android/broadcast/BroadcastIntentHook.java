@@ -5,11 +5,10 @@ import android.os.Build;
 
 import java.lang.reflect.Method;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.entity.AppRecord;
-import nep.timeline.cirno.framework.AbstractMethodHook;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.services.FreezerService;
@@ -21,9 +20,9 @@ public class BroadcastIntentHook {
 
     public BroadcastIntentHook(ClassLoader classLoader) {
         try {
-            Class<?> clazz = XposedHelpers.findClassIfExists("com.android.server.am.ActivityManagerService", classLoader);
+            Class<?> clazz = CakeReflection.findClassIfExists("com.android.server.am.ActivityManagerService", classLoader);
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                Class<?> controller = XposedHelpers.findClassIfExists("com.android.server.am.BroadcastController", classLoader);
+                Class<?> controller = CakeReflection.findClassIfExists("com.android.server.am.BroadcastController", classLoader);
                 if (controller != null)
                     clazz = controller;
             }
@@ -43,9 +42,9 @@ public class BroadcastIntentHook {
                 return;
             }
 
-            XposedBridge.hookMethod(targetMethod, new AbstractMethodHook() {
+            CakeHooker.hook(targetMethod, new CakeHooker.Callback() {
                 @Override
-                protected void beforeMethod(MethodHookParam param) {
+                public void call(CakeHooker.BeforeHookCallback callback) {
                     int intentArgsIndex = 3;
 
                     int userIdIndex = 19;
@@ -54,8 +53,8 @@ public class BroadcastIntentHook {
                     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU)
                         userIdIndex = 21;
 
-                    Intent intent = (Intent) param.args[intentArgsIndex];
-                    int userId = (int) param.args[userIdIndex];
+                    Intent intent = (Intent) callback.getArgs()[intentArgsIndex];
+                    int userId = (int) callback.getArgs()[userIdIndex];
                     if (intent != null) {
                         String action = intent.getAction();
 

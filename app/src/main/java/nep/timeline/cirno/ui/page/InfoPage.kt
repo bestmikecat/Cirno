@@ -226,7 +226,7 @@ private fun InfoContent(
             contentPadding = contentPadding,
         ) {
             item {
-                val active = GlobalVars.isModuleActive
+                val active = true
                 val statusBinderAvailable = binderState.statusBinderAvailable
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
@@ -637,10 +637,6 @@ private fun InfoCard(
             InfoText(
                 title = stringResource(R.string.android_version),
                 content = if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")")
-            )
-            InfoText(
-                title = stringResource(R.string.xposed_version),
-                content = if (working) GlobalVars.XposedVersion.toString() else stringResource(R.string.unknown)
             )
             InfoText(
                 title = stringResource(R.string.system_fingerprint),
