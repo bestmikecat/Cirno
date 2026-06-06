@@ -72,7 +72,7 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.2")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.2")
     implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.2")
-    implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.2")
+    implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.1")
     implementation("top.yukonga.miuix.kmp:miuix-navigation3-ui:0.9.2")
     testImplementation(libs.junit)
 

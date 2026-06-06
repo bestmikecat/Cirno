@@ -3,7 +3,7 @@ package nep.timeline.cirno.ui.app
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
-import top.yukonga.miuix.kmp.shader.isRenderEffectSupported
+import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 
 @Stable
 data class AppState(
