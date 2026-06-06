@@ -171,10 +171,7 @@ fun AppTheme(
         LocalColorMode provides colorMode,
         LocalUiStyle provides uiStyle,
     ) {
-        MiuixTheme(
-            controller = controller,
-            smoothRounding = smoothRounding,
-        ) {
+        MiuixTheme(controller) {
             MaterialTheme(
                 colorScheme = materialColors,
                 shapes = MaterialShapes,

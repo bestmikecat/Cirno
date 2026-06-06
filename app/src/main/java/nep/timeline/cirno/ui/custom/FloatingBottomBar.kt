@@ -63,7 +63,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
 import kotlin.math.abs
 import kotlin.math.sign
 
@@ -76,11 +75,10 @@ fun RowScope.FloatingBottomBarItem(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scale = LocalFloatingBottomBarTabScale.current
-    val capsuleShape = miuixCapsuleShape()
 
     Column(
         modifier
-            .clip(capsuleShape)
+            .clip(CircleShape)
             .clickable(
                 interactionSource = null,
                 indication = null,
