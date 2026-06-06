@@ -59,6 +59,7 @@ import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
+import nep.timeline.cirno.ui.utils.XposedServiceStatus
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.pageScrollModifiers
 import nep.timeline.cirno.ui.utils.rememberBlurBackdrop
@@ -91,22 +92,6 @@ import java.util.Date
 var clickNum = 0
 var lastClickTime = 0L
 val fool = SimpleDateFormat("MMdd").format(Date()).equals("0401")
-
-private data class HookScopeStatus(
-    val androidReady: Boolean,
-    val systemUiReady: Boolean
-) {
-    fun missingScopes(): List<String> {
-        val scopes = mutableListOf<String>()
-        if (!androidReady) {
-            scopes += "android"
-        }
-        if (!systemUiReady) {
-            scopes += "systemui"
-        }
-        return scopes
-    }
-}
 
 private data class HookStatusState(
     val statusBinderAvailable: Boolean = false,
@@ -231,13 +216,15 @@ private fun InfoContent(
                 val hookVersion = binderState.hookVersion
                 val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
                 val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
+                val xposedServiceStatus = XposedServiceStatus.state.value
+                val configuredScopes = xposedServiceStatus.scope.toSet()
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
-                val hookScopeStatus = HookScopeStatus(
-                    androidReady = binderState.androidReady,
-                    systemUiReady = binderState.systemUiReady
-                )
-                val missingScopes = hookScopeStatus.missingScopes()
+                val missingScopes = if (xposedServiceStatus.active) {
+                    listOf("android", "com.android.systemui").filterNot { it in configuredScopes }
+                } else {
+                    emptyList()
+                }
                 val missingScopeLabels = missingScopes.joinToString(separator = ", ") { scope ->
                     when (scope) {
                         "android" -> androidScopeLabel
