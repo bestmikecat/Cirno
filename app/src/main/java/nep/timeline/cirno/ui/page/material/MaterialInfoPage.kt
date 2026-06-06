@@ -52,6 +52,7 @@ import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.dialog.DownloadProgressDialog
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.utils.ApkInstaller
+import nep.timeline.cirno.ui.utils.AddOnStatusRepository
 import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
@@ -65,7 +66,6 @@ private data class MaterialHookStatusState(
     val freezerAvailable: Boolean = true,
     val hookVersion: String? = null,
     val addOnRequired: Boolean = false,
-    val addOnEnabled: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +95,6 @@ fun MaterialInfoPage(
                 freezerAvailable = !snapshot.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                 hookVersion = snapshot.hookVersion,
                 addOnRequired = snapshot.addOnRequired,
-                addOnEnabled = snapshot.addOnEnabled,
             )
         }
         val result = UpdateChecker.checkForUpdate()
@@ -138,7 +137,7 @@ fun MaterialInfoPage(
     ) {
         item {
             val active = true
-            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+            val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
 
@@ -182,7 +181,7 @@ fun MaterialInfoPage(
             val active = true
             val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
-            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+            val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             if (versionMismatch) {
                 MaterialWarningCard(stringResource(R.string.module_version_mismatch))
             } else {
@@ -202,7 +201,7 @@ fun MaterialInfoPage(
         }
 
         item {
-            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+            val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = !binderState.hasError && !addOnMissing
             MaterialSurfaceCard(
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),

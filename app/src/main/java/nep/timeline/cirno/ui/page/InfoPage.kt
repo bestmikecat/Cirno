@@ -53,6 +53,7 @@ import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.utils.CirnoCard
+import nep.timeline.cirno.ui.utils.AddOnStatusRepository
 import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
@@ -115,7 +116,6 @@ private data class HookStatusState(
     val freezerAvailable: Boolean = true,
     val hookVersion: String? = null,
     val addOnRequired: Boolean = false,
-    val addOnEnabled: Boolean = false,
 )
 
 @Composable
@@ -194,7 +194,6 @@ private fun InfoContent(
                     freezerAvailable = !it.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                     hookVersion = it.hookVersion,
                     addOnRequired = it.addOnRequired,
-                    addOnEnabled = it.addOnEnabled,
                 )
             }
         }
@@ -231,7 +230,7 @@ private fun InfoContent(
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
                 val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
-                val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+                val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
