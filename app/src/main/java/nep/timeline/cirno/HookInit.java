@@ -10,7 +10,6 @@ import nep.timeline.cirno.master.SystemUIHooks;
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.framework.XposedInstance;
-import nep.timeline.cirno.services.StatusBinderHub;
 
 public class HookInit extends XposedModule {
     private boolean systemUIHooksStarted;
@@ -39,7 +38,6 @@ public class HookInit extends XposedModule {
 
         try {
             SystemUIHooks.start(classLoader);
-            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
         } catch (Throwable throwable) {
             Log.e("Cirno (" + packageName + ") -> Hook failed", throwable);
         }
@@ -56,7 +54,6 @@ public class HookInit extends XposedModule {
             boolean ignoredDelete = dest.delete();
             boolean ignoredRename = source.renameTo(dest);
             AndroidHooks.start(classLoader);
-            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_ANDROID_HOOK_READY, "1");
         } catch (Throwable throwable) {
             Log.e("Cirno (android) -> Hook failed", throwable);
         }

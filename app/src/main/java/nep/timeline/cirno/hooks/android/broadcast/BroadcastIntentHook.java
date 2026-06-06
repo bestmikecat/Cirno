@@ -12,10 +12,8 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.services.FreezerService;
-import nep.timeline.cirno.services.StatusBinderHub;
 
 public class BroadcastIntentHook {
-    private static final String ACTION_HOOK_READY = "nep.timeline.cirno.HOOK_READY";
     private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
 
     public BroadcastIntentHook(ClassLoader classLoader) {
@@ -57,15 +55,6 @@ public class BroadcastIntentHook {
                     int userId = (int) callback.getArgs()[userIdIndex];
                     if (intent != null) {
                         String action = intent.getAction();
-
-                        if (ACTION_HOOK_READY.equals(action)) {
-                            String scope = intent.getStringExtra("scope");
-                            if ("systemui".equals(scope)) {
-                                StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_SYSTEMUI_HOOK_READY, "1");
-                                Log.i("SystemUI hook ready");
-                            }
-                            return;
-                        }
 
                         if (ACTION_TILE_CLICK.equals(action)) {
                             String packageName = intent.getStringExtra("package_name");

@@ -8,8 +8,6 @@ import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.binders.StatusInterface;
 
 public final class StatusBinderHub {
-    public static final String SIGNAL_ANDROID_HOOK_READY = "android_hook_ready";
-    public static final String SIGNAL_SYSTEMUI_HOOK_READY = "systemui_hook_ready";
     public static final String SIGNAL_DEVICE_TYPE = "device_type";
     public static final String SIGNAL_ADD_ON_REQUIRED = "add_on_required";
     private static final Map<String, String> SIGNALS = new ConcurrentHashMap<>();

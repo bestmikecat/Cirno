@@ -96,8 +96,6 @@ val fool = SimpleDateFormat("MMdd").format(Date()).equals("0401")
 private data class HookStatusState(
     val statusBinderAvailable: Boolean = false,
     val hasError: Boolean = false,
-    val androidReady: Boolean = false,
-    val systemUiReady: Boolean = false,
     val freezerAvailable: Boolean = true,
     val hookVersion: String? = null,
     val addOnRequired: Boolean = false,
@@ -174,8 +172,6 @@ private fun InfoContent(
                 HookStatusState(
                     statusBinderAvailable = it.statusBinderAvailable,
                     hasError = it.hasError,
-                    androidReady = it.androidReady,
-                    systemUiReady = it.systemUiReady,
                     freezerAvailable = !it.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                     hookVersion = it.hookVersion,
                     addOnRequired = it.addOnRequired,

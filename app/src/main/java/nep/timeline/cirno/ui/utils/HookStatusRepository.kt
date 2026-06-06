@@ -7,8 +7,6 @@ object HookStatusRepository {
     data class HookStatusSnapshot(
         val statusBinderAvailable: Boolean,
         val hasError: Boolean = false,
-        val androidReady: Boolean = false,
-        val systemUiReady: Boolean = false,
         val hookVersion: String? = null,
         val deviceType: String? = null,
         val addOnRequired: Boolean = false,
@@ -22,8 +20,6 @@ object HookStatusRepository {
             HookStatusSnapshot(
                 statusBinderAvailable = true,
                 hasError = status.getSignal("error") == "1",
-                androidReady = status.getSignal("android_hook_ready") == "1",
-                systemUiReady = status.getSignal("systemui_hook_ready") == "1",
                 hookVersion = if (version.isNullOrBlank()) null else version,
                 deviceType = status.getSignal("device_type").takeIf { !it.isNullOrBlank() },
                 addOnRequired = status.getSignal("add_on_required") == "1",
