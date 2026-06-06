@@ -20,6 +20,7 @@ public class AppRecord {
     private volatile AppState appState;
     private volatile boolean frozen;
     private volatile boolean waitingNotification = false;
+    private volatile int thawSeq = 0;
 
     public AppRecord(ApplicationInfo applicationInfo) {
         this.packageName = applicationInfo.packageName;
@@ -65,6 +66,14 @@ public class AppRecord {
         this.frozen = frozen;
     }
 
+    public synchronized int nextThawSeq() {
+        return ++thawSeq;
+    }
+
+    public int getThawSeq() {
+        return thawSeq;
+    }
+
     public boolean isWaitingNotification() { return waitingNotification; }
 
     public void setWaitingNotification(boolean waitingNotification) { this.waitingNotification = waitingNotification; }
@@ -77,6 +86,7 @@ public class AppRecord {
 
     public void reset() {
         this.frozen = false;
+        nextThawSeq();
         this.appState = new AppState(this);
     }
 
