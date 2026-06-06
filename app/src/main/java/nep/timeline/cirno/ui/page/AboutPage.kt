@@ -82,7 +82,6 @@ import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurBlendMode
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.BlurDefaults
-import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
@@ -92,9 +91,9 @@ import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.interfaces.ExperimentalScrollBarApi
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.shapes.SmoothRoundedCornerShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.shader.isRenderEffectSupported
 import androidx.compose.ui.graphics.BlendMode as ComposeBlendMode
 
 @Composable
@@ -163,7 +162,7 @@ private fun AboutContent(
     val backdrop = rememberLayerBackdrop()
     var isOs3Effect by remember { mutableStateOf(true) }
     var showTextureSet by remember { mutableStateOf(false) }
-    var blurRadius by remember { mutableFloatStateOf(60f) }
+    var blurRadius by remember { mutableFloatStateOf(20f) }
     var noiseCoefficient by remember { mutableFloatStateOf(BlurDefaults.NoiseCoefficient) }
     var brightness by remember { mutableFloatStateOf(0f) }
     var contrast by remember { mutableFloatStateOf(1f) }
@@ -315,8 +314,8 @@ private fun AboutContent(
                 Image(
                     modifier = Modifier.size(200.dp).textureBlur(
                         backdrop = backdrop,
-                        shape = SmoothRoundedCornerShape(16.dp),
-                        blurRadius = 150f,
+                        shape = RoundedCornerShape(16.dp),
+                        blurRadius = 50f,
                         noiseCoefficient = noiseCoefficient,
                         colors = BlurColors(
                             blendColors = logoBlend,
@@ -344,8 +343,8 @@ private fun AboutContent(
                     }
                     .textureBlur(
                         backdrop = backdrop,
-                        shape = SmoothRoundedCornerShape(16.dp),
-                        blurRadius = 150f,
+                        shape = RoundedCornerShape(16.dp),
+                        blurRadius = 50f,
                         noiseCoefficient = noiseCoefficient,
                         colors = BlurColors(
                             blendColors = logoBlend,
@@ -421,7 +420,7 @@ private fun AboutContent(
                         modifier = Modifier.padding(horizontal = 12.dp)
                             .textureBlur(
                                 backdrop = backdrop,
-                                shape = SmoothRoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 blurRadius = blurRadius,
                                 noiseCoefficient = noiseCoefficient,
                                 colors = BlurColors(
@@ -521,8 +520,8 @@ private fun AboutContent(
                         endActions = { ValueText("${blurRadius.toInt()}") },
                         bottomAction = {
                             Slider(
-                                value = blurRadius / 200f,
-                                onValueChange = { blurRadius = it * 200f },
+                                value = blurRadius / 60f,
+                                onValueChange = { blurRadius = it * 60f },
                             )
                         },
                         insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),

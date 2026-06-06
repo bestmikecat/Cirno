@@ -103,7 +103,6 @@ import nep.timeline.cirno.ui.utils.textureBlur
 import nep.timeline.cirno.utils.EnvUtils
 import nep.timeline.cirno.ui.viewModel.AppUiStateViewModel
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
-import top.yukonga.miuix.kmp.basic.FloatingNavigationBarDisplayMode
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.NavigationBar
@@ -120,7 +119,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -129,6 +127,7 @@ import top.yukonga.miuix.kmp.icon.extended.HorizontalSplit
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.icon.extended.Tasks
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
+import top.yukonga.miuix.kmp.shader.isRenderEffectSupported
 import kotlin.math.abs
 
 private object UIConstants {
@@ -493,7 +492,6 @@ private fun NavigationBar(
                     )
                     .background(barColor)
                     .then(modifier),
-                mode = FloatingNavigationBarDisplayMode.IconAndText,
                 horizontalAlignment = FloatingNavigationBarAlignment.Center
                     .toAlignment(),
             ) {
@@ -518,7 +516,6 @@ private fun NavigationBar(
             modifier = Modifier.fillMaxWidth()
         ) {
             if (!isRenderEffectSupported()) FloatingNavigationBar(
-                mode = FloatingNavigationBarDisplayMode.IconAndText,
                 horizontalAlignment = FloatingNavigationBarAlignment.Center
                     .toAlignment(),
             ) {
