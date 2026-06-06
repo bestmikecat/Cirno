@@ -217,13 +217,13 @@ private fun InfoContent(
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val missingScopes = if (xposedServiceStatus.active) {
-                    listOf("android", "com.android.systemui").filterNot { it in configuredScopes }
+                    listOf("system", "com.android.systemui").filterNot { it in configuredScopes }
                 } else {
                     emptyList()
                 }
                 val missingScopeLabels = missingScopes.joinToString(separator = ", ") { scope ->
                     when (scope) {
-                        "android" -> androidScopeLabel
+                        "system" -> androidScopeLabel
                         else -> systemUiScopeLabel
                     }
                 }

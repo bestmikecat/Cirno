@@ -84,7 +84,7 @@
   <string name="module_version_mismatch">当前运行版本与管理器版本不一致，您似乎已更新过，请重启手机以应用更新。</string>
   <string name="add_on_required_warning">当前设备需要开启附加模块，请安装并启用墓碑附加模块后重启。</string>
   <string name="scope_not_running">以下作用域未启用：%s</string>
-  <string name="scope_android">android</string>
+  <string name="scope_android">system</string>
   <string name="scope_systemui">systemui</string>
   <string name="navigation_style">导航样式</string>
   <string name="theme_mode">主题模式</string>
