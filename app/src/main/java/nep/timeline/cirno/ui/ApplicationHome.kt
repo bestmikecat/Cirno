@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -385,7 +385,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     )
                                 }
                                 Spacer(
-                                    modifier = Modifier.height(navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp)
+                                    modifier = Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp)
                                 )
                             }
                         }
