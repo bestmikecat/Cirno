@@ -68,6 +68,8 @@
   <string name="home_logs">日志</string>
   <string name="home_logs_desc">查看模块日志输出</string>
   <string name="logs_empty">暂无日志数据</string>
+  <string name="logs_read_failed">读取日志失败：%1$s</string>
+  <string name="logs_file_log_failed">hook side 写入日志失败：%1$s</string>
   <string name="logs_truncated">日志过大，仅显示最近日志。</string>
   <string name="logs_title">日志</string>
   <string name="scroll_to_top">滚动到顶部</string>

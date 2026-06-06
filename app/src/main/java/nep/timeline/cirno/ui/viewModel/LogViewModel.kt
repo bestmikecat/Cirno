@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import nep.timeline.cirno.ui.utils.LogEmptyReason
 import nep.timeline.cirno.ui.utils.RootLogRepository
 
 enum class LogDisplayLevel {
@@ -28,6 +29,8 @@ data class LogUiState(
     val searchQuery: String = "",
     val searchExpanded: Boolean = false,
     val selectedLevel: LogDisplayLevel = LogDisplayLevel.All,
+    val emptyReason: LogEmptyReason? = null,
+    val emptyReasonDetail: String? = null,
 )
 
 class LogViewModel : ViewModel() {
@@ -71,6 +74,8 @@ class LogViewModel : ViewModel() {
                     isLoading = false,
                     isInitialLoadDone = true,
                     isTruncated = snapshot.truncated,
+                    emptyReason = snapshot.emptyReason,
+                    emptyReasonDetail = snapshot.emptyReasonDetail,
                 )
             }
         }
@@ -89,6 +94,22 @@ class LogViewModel : ViewModel() {
     private fun refreshIncremental() {
         if (!_uiState.value.isInitialLoadDone) return
         val snapshot = RootLogRepository.getLogContentAfter(logFileSize)
+        if (snapshot.emptyReason != null) {
+            _uiState.update {
+                it.copy(
+                    emptyReason = snapshot.emptyReason,
+                    emptyReasonDetail = snapshot.emptyReasonDetail,
+                )
+            }
+        }
+        if (_uiState.value.allLines.isEmpty() && snapshot.lines.isEmpty()) {
+            _uiState.update {
+                it.copy(
+                    emptyReason = snapshot.emptyReason,
+                    emptyReasonDetail = snapshot.emptyReasonDetail,
+                )
+            }
+        }
         if (snapshot.size < logFileSize) {
             val fullSnapshot = RootLogRepository.getLogSnapshot()
             logFileSize = fullSnapshot.size
@@ -96,6 +117,8 @@ class LogViewModel : ViewModel() {
                 it.copy(
                     allLines = fullSnapshot.lines,
                     isTruncated = fullSnapshot.truncated,
+                    emptyReason = fullSnapshot.emptyReason,
+                    emptyReasonDetail = fullSnapshot.emptyReasonDetail,
                 )
             }
             return
@@ -109,6 +132,8 @@ class LogViewModel : ViewModel() {
             it.copy(
                 allLines = mergedLines,
                 isTruncated = it.isTruncated || mergedLines.size < it.allLines.size + snapshot.lines.size,
+                emptyReason = null,
+                emptyReasonDetail = null,
             )
         }
     }

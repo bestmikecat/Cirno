@@ -43,6 +43,7 @@ import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
+import nep.timeline.cirno.ui.utils.LogEmptyReason
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +129,7 @@ fun MaterialLogPage(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = stringResource(R.string.logs_empty),
+                        text = materialLogEmptyText(uiState.emptyReason, uiState.emptyReasonDetail),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -149,6 +150,16 @@ fun MaterialLogPage(
                 MaterialLogLine(line = line)
             }
         }
+    }
+}
+
+@Composable
+private fun materialLogEmptyText(reason: LogEmptyReason?, detail: String?): String {
+    val fallback = stringResource(R.string.logs_empty)
+    if (reason == null || detail.isNullOrBlank()) return fallback
+    return when (reason) {
+        LogEmptyReason.ReadFailed -> stringResource(R.string.logs_read_failed, detail)
+        LogEmptyReason.FileLogFailed -> stringResource(R.string.logs_file_log_failed, detail)
     }
 }
 

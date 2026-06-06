@@ -40,6 +40,7 @@ import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.pageContentPadding
+import nep.timeline.cirno.ui.utils.LogEmptyReason
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -132,6 +133,8 @@ fun LogPage(
             isLoading = uiState.isLoading,
             isInitialLoadDone = uiState.isInitialLoadDone,
             isTruncated = uiState.isTruncated,
+            emptyReason = uiState.emptyReason,
+            emptyReasonDetail = uiState.emptyReasonDetail,
             searchQuery = uiState.searchQuery,
             onSearchQueryChange = logViewModel::updateSearchQuery,
             searchExpanded = uiState.searchExpanded,
@@ -230,6 +233,8 @@ private fun LogContent(
     isLoading: Boolean,
     isInitialLoadDone: Boolean,
     isTruncated: Boolean,
+    emptyReason: LogEmptyReason?,
+    emptyReasonDetail: String?,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     searchExpanded: Boolean,
@@ -250,7 +255,7 @@ private fun LogContent(
             }
         } else if (isInitialLoadDone && !hasAnyLog) {
             Text(
-                text = stringResource(R.string.logs_empty),
+                text = logEmptyText(emptyReason, emptyReasonDetail),
                 modifier = Modifier.align(Alignment.Center),
                 fontSize = 16.sp,
                 color = colorScheme.onSurfaceVariantSummary,
@@ -328,6 +333,16 @@ private fun LogContent(
                 trackPadding = contentPadding,
             )
         }
+    }
+}
+
+@Composable
+private fun logEmptyText(reason: LogEmptyReason?, detail: String?): String {
+    val fallback = stringResource(R.string.logs_empty)
+    if (reason == null || detail.isNullOrBlank()) return fallback
+    return when (reason) {
+        LogEmptyReason.ReadFailed -> stringResource(R.string.logs_read_failed, detail)
+        LogEmptyReason.FileLogFailed -> stringResource(R.string.logs_file_log_failed, detail)
     }
 }
 

@@ -68,6 +68,8 @@
   <string name="home_logs">Logs</string>
   <string name="home_logs_desc">View module log output</string>
   <string name="logs_empty">No log data</string>
+  <string name="logs_read_failed">Failed to read logs: %1$s</string>
+  <string name="logs_file_log_failed">hook side failed to write logs: %1$s</string>
   <string name="logs_truncated">Log is too large. Showing recent logs only.</string>
   <string name="logs_title">Logs</string>
   <string name="scroll_to_top">Scroll to top</string>

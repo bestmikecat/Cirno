@@ -16,6 +16,7 @@ import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.RWUtils;
 
 public class Log {
+    private static final String SIGNAL_FILE_LOG_ERROR = "file_log_error";
     private final static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
     private final static File currentLog = new File(GlobalVars.LOG_DIR, "current.log");
 
@@ -136,8 +137,19 @@ public class Log {
     public static void fileLog(String msg) {
         try {
             RWUtils.writeStringToFile(currentLog, msg, true);
-        } catch (IOException ignored) {
+            StatusBinderHub.setSignal(SIGNAL_FILE_LOG_ERROR, "");
+        } catch (IOException e) {
+            StatusBinderHub.setSignal(SIGNAL_FILE_LOG_ERROR, formatFileLogError(e));
         }
+    }
+
+    private static String formatFileLogError(IOException e) {
+        String detail = e.getClass().getSimpleName();
+        String message = e.getMessage();
+        if (message != null && !message.isEmpty()) {
+            detail += ": " + message;
+        }
+        return detail + " (" + currentLog.getAbsolutePath() + ")";
     }
 
 }
