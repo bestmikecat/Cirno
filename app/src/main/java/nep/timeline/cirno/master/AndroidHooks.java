@@ -36,10 +36,14 @@ import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
 import nep.timeline.cirno.hooks.android.xiaomi.ReportSignalHook;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
+import nep.timeline.cirno.services.StatusBinderHub;
+import nep.timeline.cirno.utils.SystemChecker;
 
 public class AndroidHooks {
     private static ConfigFileObserver sFileObserver;
     public static void start(ClassLoader classLoader) {
+        publishDeviceStatus(classLoader);
+
         // Config
         sFileObserver = new ConfigFileObserver();
         sFileObserver.startWatching();
@@ -94,5 +98,16 @@ public class AndroidHooks {
         new NotificationHook(classLoader);
         // ReKernel
         BinderService.start(classLoader);
+    }
+
+    private static void publishDeviceStatus(ClassLoader classLoader) {
+        boolean isXiaomi = SystemChecker.isXiaomi(classLoader);
+        boolean isOplus = !isXiaomi && SystemChecker.isOplus(classLoader);
+        boolean addOnRequired = isXiaomi || isOplus;
+        String deviceType = isXiaomi ? "xiaomi" : isOplus ? "oplus" : "other";
+
+        StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_DEVICE_TYPE, deviceType);
+        StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_ADD_ON_REQUIRED, addOnRequired ? "1" : "0");
+        StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_ADD_ON_ENABLED, SystemChecker.isTombStoneAddOnEnabled() ? "1" : "0");
     }
 }

@@ -1,8 +1,12 @@
 package nep.timeline.cirno.utils;
 
+import java.io.File;
+
 import de.robv.android.xposed.XposedHelpers;
 
 public class SystemChecker {
+    private static final String TOMB_STONE_ADD_ON_PROP = "/data/adb/modules/lib_tombstone/module.prop";
+
     public static boolean isSamsung(ClassLoader classLoader) {
         return XposedHelpers.findClassIfExists("com.android.server.am.FreecessController", classLoader) != null;
     }
@@ -25,5 +29,9 @@ public class SystemChecker {
 
     public static boolean isNubia(ClassLoader classLoader) {
         return XposedHelpers.findClassIfExists("cn.nubia.server.appmgmt.ApplicationControllerUtils", classLoader) != null;
+    }
+
+    public static boolean isTombStoneAddOnEnabled() {
+        return new File(TOMB_STONE_ADD_ON_PROP).exists();
     }
 }

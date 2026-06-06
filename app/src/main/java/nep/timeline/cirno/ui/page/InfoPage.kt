@@ -113,7 +113,9 @@ private data class HookStatusState(
     val androidReady: Boolean = false,
     val systemUiReady: Boolean = false,
     val freezerAvailable: Boolean = true,
-    val hookVersion: String? = null
+    val hookVersion: String? = null,
+    val addOnRequired: Boolean = false,
+    val addOnEnabled: Boolean = false,
 )
 
 @Composable
@@ -190,7 +192,9 @@ private fun InfoContent(
                     androidReady = it.androidReady,
                     systemUiReady = it.systemUiReady,
                     freezerAvailable = !it.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
-                    hookVersion = it.hookVersion
+                    hookVersion = it.hookVersion,
+                    addOnRequired = it.addOnRequired,
+                    addOnEnabled = it.addOnEnabled,
                 )
             }
         }
@@ -227,6 +231,7 @@ private fun InfoContent(
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
                 val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
+                val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
                 val hookScopeStatus = HookScopeStatus(
@@ -258,12 +263,14 @@ private fun InfoContent(
                             )
                         if (hasError)
                             WarningCard(stringResource(R.string.internal_error))
+                        if (active && statusBinderAvailable && addOnMissing)
+                            WarningCard(stringResource(R.string.add_on_required_warning))
                         if (active && statusBinderAvailable && !binderState.freezerAvailable)
                             WarningCard(stringResource(R.string.freezer_v2_unavailable))
                     }
                     StatusCard(
                         active = active,
-                        working = active && !hasError,
+                        working = active && !hasError && !addOnMissing,
                         version = hookVersion
                             ?: stringResource(R.string.not_running),
                         onClickStatus = {

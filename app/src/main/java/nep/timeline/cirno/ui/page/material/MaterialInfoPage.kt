@@ -64,6 +64,8 @@ private data class MaterialHookStatusState(
     val hasError: Boolean = false,
     val freezerAvailable: Boolean = true,
     val hookVersion: String? = null,
+    val addOnRequired: Boolean = false,
+    val addOnEnabled: Boolean = false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +94,8 @@ fun MaterialInfoPage(
                 hasError = snapshot.hasError,
                 freezerAvailable = !snapshot.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
                 hookVersion = snapshot.hookVersion,
+                addOnRequired = snapshot.addOnRequired,
+                addOnEnabled = snapshot.addOnEnabled,
             )
         }
         val result = UpdateChecker.checkForUpdate()
@@ -134,7 +138,8 @@ fun MaterialInfoPage(
     ) {
         item {
             val active = GlobalVars.isModuleActive
-            val working = active && !binderState.hasError
+            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+            val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
 
             MaterialSurfaceCard(
@@ -177,6 +182,7 @@ fun MaterialInfoPage(
             val active = GlobalVars.isModuleActive
             val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
+            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
             if (versionMismatch) {
                 MaterialWarningCard(stringResource(R.string.module_version_mismatch))
             } else {
@@ -186,6 +192,9 @@ fun MaterialInfoPage(
                 if (binderState.hasError) {
                     MaterialWarningCard(stringResource(R.string.internal_error))
                 }
+                if (active && binderState.statusBinderAvailable && addOnMissing) {
+                    MaterialWarningCard(stringResource(R.string.add_on_required_warning))
+                }
                 if (active && binderState.statusBinderAvailable && !binderState.freezerAvailable) {
                     MaterialWarningCard(stringResource(R.string.freezer_v2_unavailable))
                 }
@@ -193,7 +202,8 @@ fun MaterialInfoPage(
         }
 
         item {
-            val working = GlobalVars.isModuleActive && !binderState.hasError
+            val addOnMissing = binderState.addOnRequired && !binderState.addOnEnabled
+            val working = GlobalVars.isModuleActive && !binderState.hasError && !addOnMissing
             MaterialSurfaceCard(
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
