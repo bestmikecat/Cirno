@@ -162,7 +162,7 @@ private fun AboutContent(
     val backdrop = rememberLayerBackdrop()
     var isOs3Effect by remember { mutableStateOf(true) }
     var showTextureSet by remember { mutableStateOf(false) }
-    var blurRadius by remember { mutableFloatStateOf(20f) }
+    var blurRadius by remember { mutableFloatStateOf(60f) }
     var noiseCoefficient by remember { mutableFloatStateOf(BlurDefaults.NoiseCoefficient) }
     var brightness by remember { mutableFloatStateOf(0f) }
     var contrast by remember { mutableFloatStateOf(1f) }
@@ -315,7 +315,7 @@ private fun AboutContent(
                     modifier = Modifier.size(200.dp).textureBlur(
                         backdrop = backdrop,
                         shape = RoundedCornerShape(16.dp),
-                        blurRadius = 50f,
+                        blurRadius = 150f,
                         noiseCoefficient = noiseCoefficient,
                         colors = BlurColors(
                             blendColors = logoBlend,
@@ -344,7 +344,7 @@ private fun AboutContent(
                     .textureBlur(
                         backdrop = backdrop,
                         shape = RoundedCornerShape(16.dp),
-                        blurRadius = 50f,
+                        blurRadius = 150f,
                         noiseCoefficient = noiseCoefficient,
                         colors = BlurColors(
                             blendColors = logoBlend,
@@ -520,8 +520,8 @@ private fun AboutContent(
                         endActions = { ValueText("${blurRadius.toInt()}") },
                         bottomAction = {
                             Slider(
-                                value = blurRadius / 60f,
-                                onValueChange = { blurRadius = it * 60f },
+                                value = blurRadius / 200f,
+                                onValueChange = { blurRadius = it * 200f },
                             )
                         },
                         insideMargin = PaddingValues(16.dp, 16.dp, 16.dp, 0.dp),
