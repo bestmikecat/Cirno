@@ -73,6 +73,10 @@
   <string name="logs_title">Logs</string>
   <string name="scroll_to_top">Scroll to top</string>
   <string name="scroll_to_bottom">Scroll to bottom</string>
+  <string name="export_log">导出日志</string>
+  <string name="export_log_requires_debug">导出日志需要将日志级别设置为 Debug</string>
+  <string name="export_log_success">日志已复制，准备分享</string>
+  <string name="export_log_failed">导出日志失败：%1$s</string>
   <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
   <string name="system_fingerprint">System Fingerprint</string>
   <string name="hook_type">Hook Type</string>

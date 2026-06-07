@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -175,6 +176,7 @@ private fun LogTopBarActions(
         onDismissFinished = { holdDownState.value = false },
         content = {
             val dismissState = top.yukonga.miuix.kmp.theme.LocalDismissState.current
+            val context = LocalContext.current
             val levelItems = listOf(
                 stringResource(R.string.log_all) to LogDisplayLevel.All,
                 stringResource(R.string.log_debug) to LogDisplayLevel.Debug,
@@ -185,6 +187,7 @@ private fun LogTopBarActions(
             val actionItems = listOf(
                 stringResource(R.string.scroll_to_top) to onScrollTop,
                 stringResource(R.string.scroll_to_bottom) to onScrollBottom,
+                stringResource(R.string.export_log) to { logViewModel.exportLog(context) },
             )
             val optionSize = levelItems.size + actionItems.size
             ListPopupColumn {

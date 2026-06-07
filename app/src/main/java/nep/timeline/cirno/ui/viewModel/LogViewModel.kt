@@ -1,7 +1,12 @@
 package nep.timeline.cirno.ui.viewModel
 
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.topjohnwu.superuser.io.SuFile
+import com.topjohnwu.superuser.io.SuFileInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -10,8 +15,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import nep.timeline.cirno.GlobalVars
+import nep.timeline.cirno.R
+import nep.timeline.cirno.configs.settings.GlobalSettings
+import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.LogEmptyReason
 import nep.timeline.cirno.ui.utils.RootLogRepository
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 enum class LogDisplayLevel {
     All,
@@ -148,6 +162,61 @@ class LogViewModel : ViewModel() {
 
     fun setSearchExpanded(expanded: Boolean) {
         _uiState.update { it.copy(searchExpanded = expanded) }
+    }
+
+    fun exportLog(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // 检查日志级别
+                val logLevel = GlobalVars.globalSettings?.logLevel
+                if (logLevel != GlobalSettings.LOG_LEVEL_DEBUG) {
+                    AppContext.showToast(R.string.export_log_requires_debug)
+                    return@launch
+                }
+
+                // 读取源文件
+                val sourceFile = SuFile(GlobalVars.LOG_DIR, "current.log")
+                if (!sourceFile.exists() || sourceFile.length() == 0L) {
+                    AppContext.showToast("日志文件为空或不存在")
+                    return@launch
+                }
+
+                // 清理旧缓存
+                val cacheDir = context.cacheDir
+                cacheDir.listFiles()?.filter { it.name.startsWith("cirno_log_") }?.forEach { it.delete() }
+
+                // 生成带时间戳的文件名
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val destFile = File(cacheDir, "cirno_log_$timestamp.log")
+
+                // 复制文件
+                SuFileInputStream.open(sourceFile).use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                // 触发分享
+                withContext(Dispatchers.Main) {
+                    val uri = FileProvider.getUriForFile(
+                        context,
+                        "nep.timeline.cirno.fileprovider",
+                        destFile
+                    )
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    val chooser = Intent.createChooser(shareIntent, "分享日志")
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(chooser)
+                }
+            } catch (e: Exception) {
+                val msg = e.message ?: e::class.simpleName
+                AppContext.showToast(context.getString(R.string.export_log_failed, msg ?: "未知错误"))
+            }
+        }
     }
 
     private fun limitLines(lines: List<String>): List<String> {
