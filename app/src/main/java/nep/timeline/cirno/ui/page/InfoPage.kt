@@ -228,7 +228,10 @@ private fun InfoContent(
                             callback(1)
                         }
                     )
-                    InfoCard(active)
+                    InfoCard(
+                        working = active,
+                        xposedServiceStatus = xposedServiceStatus
+                    )
                     UpdateCard(
                         isChecking = infoState.isCheckingUpdate,
                         onClick = {
@@ -512,6 +515,7 @@ private fun UpdateCard(
 @Composable
 private fun InfoCard(
     working: Boolean,
+    xposedServiceStatus: nep.timeline.cirno.ui.utils.ModuleStatus,
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
 ) {
