@@ -120,6 +120,7 @@ import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
+import top.yukonga.miuix.kmp.blur.BlurBlendMode
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -358,12 +359,22 @@ private fun CompactScreenLayout(
     val surfaceColor = colorScheme.surface
     val hasBackground = BackgroundManager.currentUri != null
     val backdrop = rememberLayerBackdrop {
-        if (!hasBackground) drawRect(surfaceColor)
-        drawContent()
+        if (!hasBackground) {
+            drawRect(surfaceColor)
+        } else {
+            drawContent()
+            // 添加淡淡的去饱和层，减少内容对比度（约 10% 的轻微暗化）
+            drawRect(surfaceColor.copy(alpha = 0.1f))
+        }
     }
     val kyantBackdrop = com.kyant.backdrop.backdrops.rememberLayerBackdrop {
-        if (!hasBackground) drawRect(surfaceColor)
-        drawContent()
+        if (!hasBackground) {
+            drawRect(surfaceColor)
+        } else {
+            drawContent()
+            // 添加淡淡的去饱和层，减少内容对比度（约 10% 的轻微暗化）
+            drawRect(surfaceColor.copy(alpha = 0.1f))
+        }
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -422,9 +433,18 @@ private fun NavigationBar(
                         Modifier.textureBlur(
                             backdrop = backdrop,
                             colors = BlurColors(
-                                blendColors = listOf(
-                                    BlendColorEntry(color = colorScheme.surface.copy(0.8f)),
-                                ),
+                                blendColors = if (BackgroundManager.currentUri != null) {
+                                    // 有自定义背景时，使用多层混合模式抑制色彩扩散
+                                    listOf(
+                                        BlendColorEntry(colorScheme.surface.copy(0.6f), BlurBlendMode.Luminosity),
+                                        BlendColorEntry(colorScheme.surface.copy(0.3f), BlurBlendMode.SrcOver),
+                                    )
+                                } else {
+                                    // 无背景时保持原样
+                                    listOf(
+                                        BlendColorEntry(colorScheme.surface.copy(0.8f)),
+                                    )
+                                }
                             )
                         )
                     } else {
@@ -470,9 +490,18 @@ private fun NavigationBar(
                             Modifier.textureBlur(
                                 backdrop = backdrop,
                                 colors = BlurColors(
-                                    blendColors = listOf(
-                                        BlendColorEntry(color = colorScheme.surface.copy(0.8f)),
-                                    ),
+                                    blendColors = if (BackgroundManager.currentUri != null) {
+                                        // 有自定义背景时，使用多层混合模式抑制色彩扩散
+                                        listOf(
+                                            BlendColorEntry(colorScheme.surface.copy(0.6f), BlurBlendMode.Luminosity),
+                                            BlendColorEntry(colorScheme.surface.copy(0.3f), BlurBlendMode.SrcOver),
+                                        )
+                                    } else {
+                                        // 无背景时保持原样
+                                        listOf(
+                                            BlendColorEntry(colorScheme.surface.copy(0.8f)),
+                                        )
+                                    }
                                 )
                             )
                         } else {

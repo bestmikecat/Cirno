@@ -115,8 +115,13 @@ fun rememberBlurBackdrop(blurEnabled: Boolean = true, replaceBlurChecker: Boolea
     val surfaceColor = MiuixTheme.colorScheme.surface
     val hasBackground = BackgroundManager.currentUri != null
     return rememberLayerBackdrop {
-        if (!hasBackground) drawRect(surfaceColor)
-        drawContent()
+        if (!hasBackground) {
+            drawRect(surfaceColor)
+        } else {
+            drawContent()
+            // 添加淡淡的去饱和层，减少内容对比度（约 10% 的轻微暗化）
+            drawRect(surfaceColor.copy(alpha = 0.1f))
+        }
     }
 }
 
