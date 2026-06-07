@@ -406,12 +406,17 @@ private fun SettingsContent(
                                 val previous = globalSettings.uiStyle
                                 uiStyleIndex.intValue = it
                                 globalSettings.uiStyle = it
-                                updateAppState { state -> state.copy(uiStyle = it) }
-                                saveGlobalSettingsAsync("界面风格更新失败") {
-                                    globalSettings.uiStyle = previous
-                                    uiStyleIndex.intValue = previous.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
-                                    updateAppState { state -> state.copy(uiStyle = previous) }
-                                }
+                                RootConfigSaveScope.saveGlobalSettingsAndThen(
+                                    defaultError = "界面风格更新失败",
+                                    onSuccess = {
+                                        updateAppState { state -> state.copy(uiStyle = it) }
+                                    },
+                                    onFailed = {
+                                        globalSettings.uiStyle = previous
+                                        uiStyleIndex.intValue = previous.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
+                                        updateAppState { state -> state.copy(uiStyle = previous) }
+                                    },
+                                )
                             }
                         )
 

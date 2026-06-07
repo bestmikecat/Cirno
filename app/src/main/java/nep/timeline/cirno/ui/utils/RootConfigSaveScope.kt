@@ -27,4 +27,23 @@ object RootConfigSaveScope {
             }
         }
     }
+
+    fun saveGlobalSettingsAndThen(
+        defaultError: String,
+        onSuccess: () -> Unit,
+        onFailed: () -> Unit = {},
+    ) {
+        scope.launch {
+            val success = RootConfigRepository.saveGlobalSettingsFromMemory()
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    onSuccess()
+                } else {
+                    val error = RootConfigRepository.getLastErrorOrDefault(defaultError)
+                    onFailed()
+                    WindowUtils.showToast(error)
+                }
+            }
+        }
+    }
 }
