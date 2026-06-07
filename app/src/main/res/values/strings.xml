@@ -47,6 +47,7 @@
   <string name="battery_opt">Battery Opt</string>
   <string name="version">Version</string>
   <string name="android_version">Android Version</string>
+  <string name="xposed_version">Xposed Version</string>
   <string name="working">Working</string>
   <string name="crying">Crying</string>
   <string name="fools_day">Cirno will stop updating tonight, and the module will stop working at that time!</string>

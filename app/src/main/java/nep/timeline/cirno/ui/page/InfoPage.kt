@@ -571,6 +571,10 @@ private fun InfoCard(
                 content = if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")")
             )
             InfoText(
+                title = stringResource(R.string.xposed_version),
+                content = if (xposedServiceStatus.frameworkVersion.isNotEmpty()) "${xposedServiceStatus.frameworkName} ${xposedServiceStatus.frameworkVersion}, API ${xposedServiceStatus.apiVersion}" else stringResource(R.string.unknown)
+            )
+            InfoText(
                 title = stringResource(R.string.system_fingerprint),
                 content = Build.FINGERPRINT,
                 bottomPadding = 0.dp

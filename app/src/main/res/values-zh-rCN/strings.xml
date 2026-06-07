@@ -47,6 +47,7 @@
   <string name="battery_opt">电池优化</string>
   <string name="version">版本</string>
   <string name="android_version">Android 版本</string>
+  <string name="xposed_version">Xposed 版本</string>
   <string name="working">工作中</string>
   <string name="crying">哭泣</string>
   <string name="fools_day">Cirno 将于今晚停止更新，届时模块也将停止工作！</string>
