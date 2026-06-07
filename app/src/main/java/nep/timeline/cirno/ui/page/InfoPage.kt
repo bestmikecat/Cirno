@@ -3,7 +3,6 @@ package nep.timeline.cirno.ui.page
 
 import android.os.Build
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +43,7 @@ import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewMode
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
+import nep.timeline.cirno.ui.app.isInDarkTheme
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.rememberInfoScreenState
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
@@ -286,7 +286,7 @@ private fun StatusCard(
                 colors = CardDefaults.defaultColors(
                     color = when {
                         isDynamicColor -> if (alpha) colorScheme.secondaryContainer.copy(0.35f) else colorScheme.secondaryContainer
-                        isSystemInDarkTheme() -> if (working && !fool) (if (alpha) Color(0xFF1A3825).copy(0.35f) else Color(0xFF1A3825)) else (if (alpha) Color(0xFF381A1A).copy(0.35f) else Color(0xFF381A1A))
+                        isInDarkTheme() -> if (working && !fool) (if (alpha) Color(0xFF1A3825).copy(0.35f) else Color(0xFF1A3825)) else (if (alpha) Color(0xFF381A1A).copy(0.35f) else Color(0xFF381A1A))
                         else -> if (working && !fool) (if (alpha) Color(0xFFDFFAE4).copy(0.35f) else Color(0xFFDFFAE4)) else (if (alpha) Color(0xFFFADFDF).copy(0.35f) else Color(0xFFFADFDF))
                     }
                 ),
@@ -423,7 +423,7 @@ private fun WarningCard(
         colors = CardDefaults.defaultColors(
             color = color ?: when {
                 isDynamicColor -> if (alpha) colorScheme.errorContainer.copy(0.35f) else colorScheme.errorContainer
-                isSystemInDarkTheme() -> if (alpha) Color(0XFF310808).copy(0.35f) else Color(0XFF310808)
+                isInDarkTheme() -> if (alpha) Color(0XFF310808).copy(0.35f) else Color(0XFF310808)
                 else -> if (alpha) Color(0XFF310808).copy(0.35f) else Color(0xFFF8E2E2)
             }
         ),

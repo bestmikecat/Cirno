@@ -2,7 +2,6 @@ package nep.timeline.cirno.ui.viewModel
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -18,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import nep.timeline.cirno.R
 import nep.timeline.cirno.entity.AppItem
+import nep.timeline.cirno.ui.app.isInDarkTheme
 import nep.timeline.cirno.ui.custom.CustomBasicComponent
 import nep.timeline.cirno.ui.utils.AppContext
 import top.yukonga.miuix.kmp.basic.Text
@@ -67,10 +67,10 @@ fun AppItemCompose(
                     },
                     backgroundColor = when {
                         app.black -> Color(0xFFD13636)
-                        app.white -> if (isSystemInDarkTheme()) Color.White else Color.Black
+                        app.white -> if (isInDarkTheme()) Color.White else Color.Black
                         else -> Color(60, 179, 113)
                     },
-                    contentColor = if (app.white && isSystemInDarkTheme()) Color.Black else Color.White
+                    contentColor = if (app.white && isInDarkTheme()) Color.Black else Color.White
                 )
             }
         },
