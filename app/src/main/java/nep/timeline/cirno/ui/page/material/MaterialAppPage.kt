@@ -18,9 +18,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -54,10 +54,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import nep.timeline.cirno.R
 import nep.timeline.cirno.entity.AppItem
+import nep.timeline.cirno.ui.page.rememberAppListScreenState
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.viewModel.AppListViewModel
 
@@ -67,10 +67,11 @@ fun MaterialAppPage(
     viewModel: AppListViewModel,
     padding: PaddingValues,
 ) {
-    val apps by viewModel.cacheFilterApps.collectAsStateWithLifecycle()
-    val searchValue by viewModel.search.collectAsStateWithLifecycle()
-    val type by viewModel.type.collectAsStateWithLifecycle()
-    val updatedApps by viewModel.updatedApps.collectAsStateWithLifecycle()
+    val screenState = rememberAppListScreenState(viewModel)
+    val apps = screenState.filteredApps
+    val searchValue = screenState.searchValue
+    val type = screenState.type
+    val updatedApps = screenState.updatedApps
     val lifecycleOwner = LocalLifecycleOwner.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val isActive = remember { mutableStateOf(false) }
@@ -88,10 +89,6 @@ fun MaterialAppPage(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    LaunchedEffect(isActive.value, type) {
-        viewModel.getFilterApps()
     }
 
     val sortedApps = remember(apps, sortAscending) {
@@ -184,7 +181,7 @@ private fun MaterialAppToolbarActions(
     Spacer(modifier = Modifier.width(16.dp))
     IconButton(onClick = onSort, modifier = Modifier.size(40.dp)) {
         Icon(
-            imageVector = Icons.Outlined.Sort,
+            imageVector = Icons.AutoMirrored.Outlined.Sort,
             contentDescription = null,
             modifier = Modifier.size(24.dp),
             tint = MaterialTheme.colorScheme.onSurface,

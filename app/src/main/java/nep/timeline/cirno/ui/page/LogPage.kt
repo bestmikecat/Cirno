@@ -16,9 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
@@ -42,6 +38,7 @@ import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.custom.BackNavigationIcon
 import nep.timeline.cirno.ui.utils.pageContentPadding
 import nep.timeline.cirno.ui.utils.LogEmptyReason
+import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -63,7 +60,6 @@ import top.yukonga.miuix.kmp.icon.basic.Search
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
 
 @Composable
 fun LogPage(
@@ -73,22 +69,9 @@ fun LogPage(
     val navigator = LocalNavigator.current
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-
-    val uiState by logViewModel.uiState.collectAsStateWithLifecycle()
-
-    val filteredLines by remember(uiState.allLines, uiState.searchQuery, uiState.selectedLevel) {
-        derivedStateOf {
-            uiState.allLines.filter {
-                it.matchesLogLevel(uiState.selectedLevel) &&
-                    (uiState.searchQuery.isBlank() || it.contains(uiState.searchQuery, ignoreCase = true))
-            }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        logViewModel.startLogSession()
-        onDispose { logViewModel.stopLogSession() }
-    }
+    val screenState = rememberLogScreenState(logViewModel)
+    val uiState = screenState.uiState
+    val filteredLines = screenState.filteredLines
 
     Scaffold(
         containerColor = colorScheme.surface,
@@ -177,14 +160,14 @@ private fun LogTopBarActions(
         content = {
             val dismissState = top.yukonga.miuix.kmp.theme.LocalDismissState.current
             val context = LocalContext.current
-            val levelItems = listOf(
+            val levelItems: List<Pair<String, LogDisplayLevel>> = listOf(
                 stringResource(R.string.log_all) to LogDisplayLevel.All,
                 stringResource(R.string.log_debug) to LogDisplayLevel.Debug,
                 stringResource(R.string.log_info) to LogDisplayLevel.Info,
                 stringResource(R.string.log_warning) to LogDisplayLevel.Warning,
                 stringResource(R.string.log_error) to LogDisplayLevel.Error,
             )
-            val actionItems = listOf(
+            val actionItems: List<Pair<String, () -> Unit>> = listOf(
                 stringResource(R.string.scroll_to_top) to onScrollTop,
                 stringResource(R.string.scroll_to_bottom) to onScrollBottom,
                 stringResource(R.string.export_log) to { logViewModel.exportLog(context) },
@@ -346,15 +329,5 @@ private fun logEmptyText(reason: LogEmptyReason?, detail: String?): String {
     return when (reason) {
         LogEmptyReason.ReadFailed -> stringResource(R.string.logs_read_failed, detail)
         LogEmptyReason.FileLogFailed -> stringResource(R.string.logs_file_log_failed, detail)
-    }
-}
-
-private fun String.matchesLogLevel(level: LogDisplayLevel): Boolean {
-    return when (level) {
-        LogDisplayLevel.All -> true
-        LogDisplayLevel.Debug -> contains("调试") || contains("DEBUG")
-        LogDisplayLevel.Info -> contains("信息") || contains("INFO")
-        LogDisplayLevel.Warning -> contains("警告") || contains("WARN")
-        LogDisplayLevel.Error -> contains("错误") || contains("ERROR")
     }
 }

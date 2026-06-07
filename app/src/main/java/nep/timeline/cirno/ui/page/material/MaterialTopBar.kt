@@ -31,7 +31,7 @@ fun CirnoLargeTopAppBar(
         },
         navigationIcon = navigationIcon,
         actions = actions,
-        colors = TopAppBarDefaults.largeTopAppBarColors(
+        colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background,
             scrolledContainerColor = MaterialTheme.colorScheme.background,
             titleContentColor = MaterialTheme.colorScheme.onSurface,

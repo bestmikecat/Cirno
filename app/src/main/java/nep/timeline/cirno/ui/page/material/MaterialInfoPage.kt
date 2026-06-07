@@ -27,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,32 +40,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.dialog.DownloadProgressDialog
 import nep.timeline.cirno.ui.navigation3.Route
+import nep.timeline.cirno.ui.page.rememberInfoScreenState
 import nep.timeline.cirno.ui.utils.ApkInstaller
 import nep.timeline.cirno.ui.utils.AddOnStatusRepository
-import nep.timeline.cirno.ui.utils.HookStatusRepository
-import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
-import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.utils.VersionUtils
-
-private data class MaterialHookStatusState(
-    val statusBinderAvailable: Boolean = false,
-    val hasError: Boolean = false,
-    val freezerAvailable: Boolean = true,
-    val hookVersion: String? = null,
-    val addOnRequired: Boolean = false,
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,56 +62,14 @@ fun MaterialInfoPage(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    var isCheckingUpdate by remember { mutableStateOf(false) }
-    var binderState by remember { mutableStateOf(MaterialHookStatusState()) }
+    val infoState = rememberInfoScreenState(context)
 
-    LaunchedEffect(Unit) {
-        binderState = withContext(Dispatchers.IO) {
-            var snapshot = HookStatusRepository.loadHookStatusSnapshot()
-            for (attempt in 0 until 5) {
-                if (snapshot.statusBinderAvailable) break
-                delay(300)
-                snapshot = HookStatusRepository.loadHookStatusSnapshot()
-            }
-            MaterialHookStatusState(
-                statusBinderAvailable = snapshot.statusBinderAvailable,
-                hasError = snapshot.hasError,
-                freezerAvailable = !snapshot.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
-                hookVersion = snapshot.hookVersion,
-                addOnRequired = snapshot.addOnRequired,
-            )
-        }
-        val result = UpdateChecker.checkForUpdate()
-        if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
-            updateResult = result
-            showUpdateDialog = true
-        }
-    }
-
-    val updateAlreadyLatestText = stringResource(R.string.update_already_latest)
-
-    LaunchedEffect(isCheckingUpdate) {
-        if (!isCheckingUpdate) return@LaunchedEffect
-        scope.launch {
-            val result = UpdateChecker.checkForUpdate()
-            isCheckingUpdate = false
-            if (result == null) {
-                WindowUtils.showToast(updateAlreadyLatestText)
-            } else {
-                updateResult = result
-                showUpdateDialog = true
-            }
-        }
-    }
-
-    updateResult?.let { result ->
-        if (showUpdateDialog) {
+    infoState.updateResult?.let { result ->
+        if (infoState.showUpdateDialog) {
             MaterialUpdateDialog(
                 show = true,
                 updateResult = result,
-                onDismissRequest = { showUpdateDialog = false },
+                onDismissRequest = { infoState.dismissUpdateDialog() },
             )
         }
     }
@@ -137,6 +81,7 @@ fun MaterialInfoPage(
     ) {
         item {
             val active = true
+            val binderState = infoState.binderState
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
@@ -179,6 +124,7 @@ fun MaterialInfoPage(
 
         item {
             val active = true
+            val binderState = infoState.binderState
             val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
@@ -201,6 +147,7 @@ fun MaterialInfoPage(
         }
 
         item {
+            val binderState = infoState.binderState
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = !binderState.hasError && !addOnMissing
             MaterialSurfaceCard(
@@ -216,10 +163,10 @@ fun MaterialInfoPage(
 
         item {
             MaterialNavigationCard(
-                title = if (isCheckingUpdate) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
+                title = if (infoState.isCheckingUpdate) stringResource(R.string.update_checking) else stringResource(R.string.check_update),
                 icon = { MaterialIcon(Icons.Outlined.SystemUpdate) },
-                enabled = !isCheckingUpdate,
-                onClick = { isCheckingUpdate = true },
+                enabled = !infoState.isCheckingUpdate,
+                onClick = { infoState.startUpdateCheck() },
             )
         }
 
@@ -314,7 +261,7 @@ private fun MaterialUpdateDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text = stringResource(R.string.update_new_version, updateResult.versionName))
-                if (!updateResult.changelog.isNullOrBlank()) {
+            if (updateResult.changelog != null && updateResult.changelog.isNotBlank()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = stringResource(R.string.update_changelog),

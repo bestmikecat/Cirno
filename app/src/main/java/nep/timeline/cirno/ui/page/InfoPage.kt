@@ -25,11 +25,8 @@ import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.PauseCircleOutline
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,15 +45,13 @@ import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.navigation3.Route
+import nep.timeline.cirno.ui.page.rememberInfoScreenState
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.AddOnStatusRepository
-import nep.timeline.cirno.ui.utils.HookStatusRepository
-import nep.timeline.cirno.ui.utils.RootFreezerRepository
-import nep.timeline.cirno.ui.utils.UpdateChecker
 import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.XposedServiceStatus
@@ -82,10 +77,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -112,6 +103,7 @@ fun InfoPage(
     val blurActive = backdrop != null
     val barColor = if (blurActive) Color.Transparent else colorScheme.surface
     val topAppBarScrollBehavior = MiuixScrollBehavior()
+    val infoState = rememberInfoScreenState(LocalContext.current)
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -134,7 +126,8 @@ fun InfoPage(
             topAppBarScrollBehavior = topAppBarScrollBehavior,
             backdrop = backdrop,
             scrollEndHaptic = scrollEndHaptic,
-            callback = callback
+            callback = callback,
+            infoState = infoState,
         )
     }
 }
@@ -145,52 +138,20 @@ private fun InfoContent(
     topAppBarScrollBehavior: ScrollBehavior,
     backdrop: LayerBackdrop?,
     scrollEndHaptic: Boolean,
-    callback: (Int) -> Unit
+    callback: (Int) -> Unit,
+    infoState: InfoScreenStateHolder,
 ) {
     val isWideScreen = LocalIsWideScreen.current
-    val context = LocalContext.current
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
-    val scope = rememberCoroutineScope()
+    val binderState = infoState.binderState
 
-    var updateResult by remember { mutableStateOf<UpdateResult?>(null) }
-    var showUpdateDialog by remember { mutableStateOf(false) }
-    var isCheckingUpdate by remember { mutableStateOf(false) }
-    var binderState by remember { mutableStateOf(HookStatusState()) }
-
-    LaunchedEffect(Unit) {
-        binderState = withContext(Dispatchers.IO) {
-            var snapshot = HookStatusRepository.loadHookStatusSnapshot()
-            for (attempt in 0 until 5) {
-                if (snapshot.statusBinderAvailable) {
-                    break
-                }
-                delay(300)
-                snapshot = HookStatusRepository.loadHookStatusSnapshot()
-            }
-            snapshot.let {
-                HookStatusState(
-                    statusBinderAvailable = it.statusBinderAvailable,
-                    hasError = it.hasError,
-                    freezerAvailable = !it.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),
-                    hookVersion = it.hookVersion,
-                    addOnRequired = it.addOnRequired,
-                )
-            }
-        }
-        val result = UpdateChecker.checkForUpdate()
-        if (result != null && !UpdateChecker.isSkipped(context, result.versionName)) {
-            updateResult = result
-            showUpdateDialog = true
-        }
-    }
-
-    updateResult?.let { result ->
-        if (showUpdateDialog) {
+    infoState.updateResult?.let { result ->
+        if (infoState.showUpdateDialog) {
             UpdateDialog(
                 show = true,
                 updateResult = result,
-                onDismissRequest = { showUpdateDialog = false }
+                onDismissRequest = { infoState.dismissUpdateDialog() }
             )
         }
     }
@@ -268,21 +229,10 @@ private fun InfoContent(
                         }
                     )
                     InfoCard(active)
-                    val alreadyLatestText = stringResource(R.string.update_already_latest)
                     UpdateCard(
-                        isChecking = isCheckingUpdate,
+                        isChecking = infoState.isCheckingUpdate,
                         onClick = {
-                            isCheckingUpdate = true
-                            scope.launch {
-                                val result = UpdateChecker.checkForUpdate()
-                                isCheckingUpdate = false
-                                if (result == null) {
-                                    WindowUtils.showToast(alreadyLatestText)
-                                } else {
-                                    updateResult = result
-                                    showUpdateDialog = true
-                                }
-                            }
+                            infoState.startUpdateCheck()
                         }
                     )
                     LearnMoreCard()

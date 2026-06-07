@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -46,9 +45,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
@@ -155,17 +151,14 @@ fun AppPage(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val isWideScreen = LocalIsWideScreen.current
-
-    val filteredApps by viewModel.cacheFilterApps.collectAsStateWithLifecycle()
+    val screenState = rememberAppListScreenState(viewModel)
+    val filteredApps = screenState.filteredApps
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val searchValue by viewModel.search.collectAsStateWithLifecycle()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val type by viewModel.type.collectAsStateWithLifecycle()
-    val updatedApps by viewModel.updatedApps.collectAsStateWithLifecycle()
-    val isLoading by viewModel.filterApps.collectAsStateWithLifecycle()
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val isActive = remember { mutableStateOf(false) }
+    val searchValue = screenState.searchValue
+    val type = screenState.type
+    val updatedApps = screenState.updatedApps
+    val isLoading = screenState.loadingApps
 
     val pullToRefreshState = rememberPullToRefreshState()
     var isRefreshing by remember { mutableStateOf(false) }
@@ -176,25 +169,6 @@ fun AppPage(
         }
         viewModel.update().join()
         isRefreshing = false
-    }
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START)
-                isActive.value = true
-            else if (event == Lifecycle.Event.ON_STOP)
-                isActive.value = false
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-
-    LaunchedEffect(isActive.value, type) {
-        viewModel.getFilterApps()
     }
 
     val backdrop = rememberBlurBackdrop()

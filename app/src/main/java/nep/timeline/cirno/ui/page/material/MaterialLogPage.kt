@@ -23,8 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,13 +36,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.LogViewModelSingleton.logViewModel
 import nep.timeline.cirno.R
 import nep.timeline.cirno.ui.app.LocalNavigator
-import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
+import nep.timeline.cirno.ui.page.matchesLogLevel
 import nep.timeline.cirno.ui.utils.LogEmptyReason
+import nep.timeline.cirno.ui.page.rememberLogScreenState
+import nep.timeline.cirno.ui.viewModel.LogDisplayLevel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,20 +53,9 @@ fun MaterialLogPage(
     val navigator = LocalNavigator.current
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val uiState by logViewModel.uiState.collectAsStateWithLifecycle()
-    val filteredLines by remember(uiState.allLines, uiState.searchQuery, uiState.selectedLevel) {
-        derivedStateOf {
-            uiState.allLines.filter {
-                it.matchesLogLevel(uiState.selectedLevel) &&
-                    (uiState.searchQuery.isBlank() || it.contains(uiState.searchQuery, ignoreCase = true))
-            }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        logViewModel.startLogSession()
-        onDispose { logViewModel.stopLogSession() }
-    }
+    val screenState = rememberLogScreenState(logViewModel)
+    val uiState = screenState.uiState
+    val filteredLines = screenState.filteredLines
 
     MaterialPageScaffold(
         title = stringResource(R.string.logs_title),
@@ -273,15 +261,5 @@ private fun MaterialLogLine(line: String) {
                 else -> MaterialTheme.colorScheme.onSurface
             },
         )
-    }
-}
-
-private fun String.matchesLogLevel(level: LogDisplayLevel): Boolean {
-    return when (level) {
-        LogDisplayLevel.All -> true
-        LogDisplayLevel.Debug -> contains("调试") || contains("DEBUG")
-        LogDisplayLevel.Info -> contains("信息") || contains("INFO")
-        LogDisplayLevel.Warning -> contains("警告") || contains("WARN")
-        LogDisplayLevel.Error -> contains("错误") || contains("ERROR")
     }
 }

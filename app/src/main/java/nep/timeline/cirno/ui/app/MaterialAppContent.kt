@@ -63,6 +63,8 @@ import kotlinx.coroutines.launch
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.MainActivity.MonitorViewModelSingleton.monitorViewModel
 import nep.timeline.cirno.R
+import nep.timeline.cirno.ui.app.NavigationShellBackHandler
+import nep.timeline.cirno.ui.app.rememberMainPagerBackEnabled
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
 import nep.timeline.cirno.ui.page.material.MaterialAboutPage
@@ -111,31 +113,29 @@ fun MaterialAppContent(
         }
     }
 
-    MaterialMainScreenBackHandler(mainPagerState, navigator)
+    NavigationShellBackHandler(
+        isBackEnabled = rememberMainPagerBackEnabled(mainPagerState.selectedPage, navigator),
+        onBackCompleted = { mainPagerState.animateToPage(0) },
+    )
 
     CompositionLocalProvider(
         LocalNavigator provides navigator,
         LocalMainPagerState provides rememberMainPagerState(pagerState),
         LocalIsWideScreen provides isWideScreen,
     ) {
-        val entryProvider = remember(backStack) {
-            entryProvider<NavKey> {
-                entry<Route.Main> {
-                    MaterialHome(
-                        padding = padding,
-                        navigationItems = navigationItems,
-                        mainPagerState = mainPagerState,
-                        settingsPageIndex = settingsPageIndex,
-                    )
-                }
-                entry<Route.About> {
-                    MaterialAboutPage(padding = padding)
-                }
-                entry<Route.Log> {
-                    MaterialLogPage(padding = padding)
-                }
-            }
-        }
+        val entryProvider = rememberSharedNavigationEntries(
+            backStack = backStack,
+            mainContent = {
+                MaterialHome(
+                    padding = padding,
+                    navigationItems = navigationItems,
+                    mainPagerState = mainPagerState,
+                    settingsPageIndex = settingsPageIndex,
+                )
+            },
+            aboutContent = { MaterialAboutPage(padding = padding) },
+            logContent = { MaterialLogPage(padding = padding) },
+        )
 
         val entries = rememberDecoratedNavEntries(
             backStack = backStack,
@@ -144,19 +144,7 @@ fun MaterialAppContent(
         )
 
         val appState = LocalAppState.current
-        val transitionEffects = remember(
-            appState.enableCornerClip,
-            appState.enableDim,
-            appState.blockInputDuringTransition,
-            appState.popDirectionFollowsSwipeEdge,
-        ) {
-            NavDisplayTransitionEffects(
-                enableCornerClip = appState.enableCornerClip,
-                dimAmount = if (appState.enableDim) 0.5f else 0f,
-                blockInputDuringTransition = appState.blockInputDuringTransition,
-                popDirectionFollowsSwipeEdge = appState.popDirectionFollowsSwipeEdge,
-            )
-        }
+        val transitionEffects = rememberSharedTransitionEffects(appState)
 
         Surface(color = MaterialTheme.colorScheme.background) {
             NavDisplay(
@@ -299,27 +287,7 @@ private fun MaterialAppPager(
     }
 }
 
-@Composable
-private fun MaterialMainScreenBackHandler(
-    mainState: MaterialMainPagerState,
-    navigator: Navigator,
-) {
-    val isPagerBackHandlerEnabled by remember {
-        derivedStateOf {
-            navigator.current() is Route.Main && navigator.backStackSize() == 1 && mainState.selectedPage != 0
-        }
-    }
 
-    val navEventState = rememberNavigationEventState(NavigationEventInfo.None)
-
-    NavigationBackHandler(
-        state = navEventState,
-        isBackEnabled = isPagerBackHandlerEnabled,
-        onBackCompleted = {
-            mainState.animateToPage(0)
-        },
-    )
-}
 
 private class MaterialMainPagerState(
     val pagerState: PagerState,

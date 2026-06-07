@@ -88,6 +88,8 @@ import nep.timeline.cirno.ui.custom.FloatingBottomBarItem
 import nep.timeline.cirno.ui.dialog.RootDialog
 import nep.timeline.cirno.ui.navigation3.Navigator
 import nep.timeline.cirno.ui.navigation3.Route
+import nep.timeline.cirno.ui.app.NavigationShellBackHandler
+import nep.timeline.cirno.ui.app.rememberMainPagerBackEnabled
 import nep.timeline.cirno.ui.page.AboutPage
 import nep.timeline.cirno.ui.page.AppPage
 import nep.timeline.cirno.ui.page.InfoPage
@@ -211,7 +213,10 @@ fun AppContent(
             )
     }
 
-    MainScreenBackHandler(mainPagerState, navigator)
+    NavigationShellBackHandler(
+        isBackEnabled = rememberMainPagerBackEnabled(mainPagerState.selectedPage, navigator),
+        onBackCompleted = { mainPagerState.animateToPage(0) },
+    )
 
     val isWideScreen = shouldShowSplitPane()
 
@@ -220,24 +225,19 @@ fun AppContent(
         LocalMainPagerState provides mainPagerState,
         LocalIsWideScreen provides isWideScreen
     ) {
-        val entryProvider = remember(backStack) {
-            entryProvider<NavKey> {
-                entry<Route.Main> {
-                    Home(
-                        padding = padding,
-                        navigationItems = navigationItems,
-                        mainPagerState = mainPagerState,
-                        showRootDialog = showRootDialog
-                    )
-                }
-                entry<Route.About> {
-                    AboutPage(padding = padding)
-                }
-                entry<Route.Log> {
-                    LogPage(padding = padding)
-                }
-            }
-        }
+        val entryProvider = rememberSharedNavigationEntries(
+            backStack = backStack,
+            mainContent = {
+                Home(
+                    padding = padding,
+                    navigationItems = navigationItems,
+                    mainPagerState = mainPagerState,
+                    showRootDialog = showRootDialog
+                )
+            },
+            aboutContent = { AboutPage(padding = padding) },
+            logContent = { LogPage(padding = padding) },
+        )
 
         val entries = rememberDecoratedNavEntries(
             backStack = backStack,
@@ -245,19 +245,7 @@ fun AppContent(
             entryProvider = entryProvider,
         )
 
-        val transitionEffects = remember(
-            appState.enableCornerClip,
-            appState.enableDim,
-            appState.blockInputDuringTransition,
-            appState.popDirectionFollowsSwipeEdge,
-        ) {
-            NavDisplayTransitionEffects(
-                enableCornerClip = appState.enableCornerClip,
-                dimAmount = if (appState.enableDim) 0.5f else 0f,
-                blockInputDuringTransition = appState.blockInputDuringTransition,
-                popDirectionFollowsSwipeEdge = appState.popDirectionFollowsSwipeEdge,
-            )
-        }
+        val transitionEffects = rememberSharedTransitionEffects(appState)
 
         MiuixBackground {
             NavDisplay(
@@ -620,27 +608,7 @@ fun AppPager(
     )
 }
 
-@Composable
-private fun MainScreenBackHandler(
-    mainState: MainPagerState,
-    navigator: Navigator,
-) {
-    val isPagerBackHandlerEnabled by remember {
-        derivedStateOf {
-            navigator.current() is Route.Main && navigator.backStackSize() == 1 && mainState.selectedPage != 0
-        }
-    }
 
-    val navEventState = rememberNavigationEventState(NavigationEventInfo.None)
-
-    NavigationBackHandler(
-        state = navEventState,
-        isBackEnabled = isPagerBackHandlerEnabled,
-        onBackCompleted = {
-            mainState.animateToPage(0)
-        },
-    )
-}
 
 @Stable
 class MainPagerState(

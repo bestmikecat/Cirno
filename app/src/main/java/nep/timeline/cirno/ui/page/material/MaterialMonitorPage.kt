@@ -18,8 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -125,7 +125,7 @@ fun MaterialMonitorPage(
             Spacer(modifier = Modifier.width(16.dp))
             IconButton(onClick = { sortAscending = !sortAscending }, modifier = Modifier.size(40.dp)) {
                 Icon(
-                    imageVector = Icons.Outlined.Sort,
+                    imageVector = Icons.AutoMirrored.Outlined.Sort,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp),
                     tint = MaterialTheme.colorScheme.onSurface,

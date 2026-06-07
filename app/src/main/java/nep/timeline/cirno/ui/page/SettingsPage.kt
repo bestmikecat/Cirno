@@ -34,6 +34,7 @@ import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
 import nep.timeline.cirno.ui.utils.RootConfigRepository
+import nep.timeline.cirno.ui.utils.RootConfigSaveScope
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.pageContentPadding
@@ -178,19 +179,10 @@ private fun SettingsContent(
     }
 
     fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
-        scope.launch {
-            val error = withContext(Dispatchers.IO) {
-                if (RootConfigRepository.saveGlobalSettingsFromMemory()) {
-                    null
-                } else {
-                    RootConfigRepository.getLastErrorOrDefault(defaultError)
-                }
-            }
-            if (error != null) {
-                onFailed()
-                WindowUtils.showToast(error)
-            }
-        }
+        RootConfigSaveScope.saveGlobalSettingsAsync(
+            defaultError = defaultError,
+            onFailed = onFailed,
+        )
     }
 
     fun syncLocalStateFromSettings() {
