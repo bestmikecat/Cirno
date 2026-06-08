@@ -29,6 +29,7 @@ configure<ApplicationExtension> {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
             buildConfigField("String", "FREEZER_TYPE", "\"$freezerType\"")
             proguardFiles(
