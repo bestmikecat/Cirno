@@ -24,6 +24,8 @@ import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.PauseCircleOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,10 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import nep.timeline.cirno.BuildConfig
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.MainActivity.AppListViewModelSingleton.appListViewModel
 import nep.timeline.cirno.R
+import nep.timeline.cirno.configs.settings.ApplicationSettings
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalNavigator
 import nep.timeline.cirno.ui.app.isInDarkTheme
@@ -52,6 +57,7 @@ import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.dialog.UpdateDialog
 import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.AddOnStatusRepository
+import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 import nep.timeline.cirno.ui.utils.XposedServiceStatus
@@ -145,6 +151,16 @@ private fun InfoContent(
     val lazyListState = rememberLazyListState()
     val contentPadding = pageContentPadding(padding, padding, isWideScreen)
     val binderState = infoState.binderState
+    var applicationSettings by remember { mutableStateOf(GlobalVars.applicationSettings) }
+
+    LaunchedEffect(Unit) {
+        if (applicationSettings == null) {
+            withContext(Dispatchers.IO) {
+                RootConfigRepository.loadIntoMemory()
+            }
+        }
+        applicationSettings = GlobalVars.applicationSettings
+    }
 
     infoState.updateResult?.let { result ->
         if (infoState.showUpdateDialog) {
@@ -216,6 +232,7 @@ private fun InfoContent(
                         working = active && !hasError && !addOnMissing,
                         version = hookVersion
                             ?: stringResource(R.string.not_running),
+                        applicationSettings = applicationSettings,
                         onClickStatus = {
 
                         },
@@ -260,6 +277,7 @@ private fun StatusCard(
     active: Boolean,
     working: Boolean,
     version: String,
+    applicationSettings: ApplicationSettings?,
     onClickStatus: () -> Unit = {},
     onClickWhitelist: () -> Unit = {},
     onClickBlacklist: () -> Unit = {},
@@ -368,7 +386,7 @@ private fun StatusCard(
                         )
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = if (!active || GlobalVars.applicationSettings == null || fool) "N/A" else GlobalVars.applicationSettings.whiteApps.size.toString(),
+                            text = if (!active || applicationSettings == null || fool) "N/A" else applicationSettings.whiteApps.size.toString(),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colorScheme.onSurface,
@@ -399,7 +417,7 @@ private fun StatusCard(
                         )
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = if (!active || GlobalVars.applicationSettings == null || fool) "N/A" else GlobalVars.applicationSettings.blackApps.size.toString(),
+                            text = if (!active || applicationSettings == null || fool) "N/A" else applicationSettings.blackApps.size.toString(),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = colorScheme.onSurface,
