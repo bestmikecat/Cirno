@@ -3,12 +3,12 @@ name: Android CI
 on:
   workflow_dispatch:
   push:
-    branches: ["legacy"]
+    branches: ["main"]
     paths:
       - "app/**"
       - ".github/workflows/android.yml"
   pull_request:
-    branches: ["legacy"]
+    branches: ["main"]
     paths:
       - "app/**"
       - ".github/workflows/android.yml"
