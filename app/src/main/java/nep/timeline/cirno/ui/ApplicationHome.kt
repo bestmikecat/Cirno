@@ -205,7 +205,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             )
                         }
 
-                        if (!isBuiltinWhitelistApp && !isSystemApp) {
+                        if (!isBuiltinWhitelistApp && (!isSystemApp || black.value)) {
                             SwitchPreference(
                                 title = stringResource(R.string.background_play),
                                 checked = backgroundPlay.value,
