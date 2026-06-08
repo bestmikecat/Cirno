@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.entity.AppRecord;
+import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.threads.FreezerHandler;
 import nep.timeline.cirno.utils.FrozenRW;
 import nep.timeline.cirno.virtuals.ProcessRecord;
@@ -45,6 +46,7 @@ public class ProcessService {
         boolean shouldThaw;
         int thawUid;
         int thawPid;
+        String processName;
         synchronized (lock) {
             Map<Integer, ProcessRecord> records = PROCESS_NAME_MAP.get(name);
             if (records == null)
@@ -57,6 +59,7 @@ public class ProcessService {
             shouldThaw = processRecord.isFrozen();
             thawUid = processRecord.getRunningUid();
             thawPid = processRecord.getPid();
+            processName = processRecord.getProcessName();
             appRecord = processRecord.getAppRecord();
             if (appRecord != null) {
                 appRecord.getProcessRecords().remove(processRecord);
@@ -68,6 +71,12 @@ public class ProcessService {
         }
         if (thawOnRemove && shouldThaw)
             FrozenRW.thaw(thawUid, thawPid);
+        else if (!thawOnRemove && thawPid > 0)
+            FrozenRW.thawQuietly(thawUid, thawPid);
+        if (!thawOnRemove) {
+            String packageName = appRecord == null ? processRecord.getPackageName() : appRecord.getPackageNameWithUser();
+            Log.i(packageName + " 进程 " + processName + "(pid=" + thawPid + ") 被取消管理");
+        }
         return appRecord;
     }
 

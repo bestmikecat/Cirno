@@ -27,19 +27,23 @@ public class FrozenRW {
     }
 
     private static boolean writeFrozen(int uid, int pid, int frozenState) {
+        return writeFrozen(uid, pid, frozenState, true);
+    }
+
+    private static boolean writeFrozen(int uid, int pid, int frozenState, boolean logFailure) {
         if (useFrozenMode()) {
             String path = frozenState == 1 ? cgroupV2FrozenProcs : cgroupV2UnfrozenProcs;
-            return RWUtils.writeFrozen(path, pid);
+            return RWUtils.writeFrozen(path, pid, logFailure);
         }
 
         if (!cgroupV2SysAppIsolated) {
-            return RWUtils.writeFrozen(cgroupV2 + "/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
+            return RWUtils.writeFrozen(cgroupV2 + "/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState, logFailure);
         }
 
         if (uid < Process.FIRST_APPLICATION_UID)
-            return RWUtils.writeFrozen(cgroupV2 + "/system/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
+            return RWUtils.writeFrozen(cgroupV2 + "/system/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState, logFailure);
         else
-            return RWUtils.writeFrozen(cgroupV2 + "/apps/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState);
+            return RWUtils.writeFrozen(cgroupV2 + "/apps/uid_" + uid + "/pid_" + pid + "/cgroup.freeze", frozenState, logFailure);
     }
 
     public static boolean frozen(int uid, int pid) {
@@ -48,5 +52,9 @@ public class FrozenRW {
 
     public static boolean thaw(int uid, int pid) {
         return writeFrozen(uid, pid, 0);
+    }
+
+    public static boolean thawQuietly(int uid, int pid) {
+        return writeFrozen(uid, pid, 0, false);
     }
 }

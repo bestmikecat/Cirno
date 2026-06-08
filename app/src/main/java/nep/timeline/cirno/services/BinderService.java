@@ -220,19 +220,14 @@ public class BinderService {
                                         }
                                         case "Signal" -> {
                                             int dstPid = getIntParam(params, "dst_pid");
-                                            int signal = getIntParam(params, "signal");
                                             if (dstPid <= 0)
                                                 return;
                                             ProcessRecord processRecord = ProcessService.getProcessRecordByPid(dstPid);
                                             if (processRecord == null)
                                                 return;
-                                            AppRecord appRecord = processRecord.getAppRecord();
-                                            if (appRecord == null)
-                                                return;
                                             AppRecord removedAppRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord);
                                             if (removedAppRecord != null)
                                                 MonitorBinderHub.refreshRunningApps();
-                                            Log.i(appRecord.getPackageNameWithUser() + " 收到信号 " + signal + "(pid=" + dstPid + ")，移除进程记录并跳过解冻");
                                         }
                                         case "Network" -> {
                                             int targetUid = getIntParam(params, "target");

@@ -2,9 +2,7 @@ package nep.timeline.cirno.hooks.android.xiaomi;
 
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.reflect.CakeReflection;
-import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.MethodHook;
-import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.MonitorBinderHub;
 import nep.timeline.cirno.services.ProcessService;
@@ -55,10 +53,8 @@ public class ReportSignalHook extends MethodHook {
                 if (processRecord == null)
                     return;
 
-                AppRecord appRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord);
-                if (appRecord != null)
+                if (ProcessService.removeProcessRecordWithoutThaw(processRecord) != null)
                     MonitorBinderHub.refreshRunningApps();
-                Log.i(processRecord.getPackageName() + " 收到小米信号(pid=" + pid + ")，移除进程记录并跳过解冻");
             }
         };
     }

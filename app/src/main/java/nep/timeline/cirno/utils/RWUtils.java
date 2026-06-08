@@ -56,11 +56,18 @@ public class RWUtils {
     }
 
     public static boolean writeFrozen(String path, int value) {
+        return writeFrozen(path, value, true);
+    }
+
+    public static boolean writeFrozen(String path, int value, boolean logFailure) {
         try (FileOutputStream outputStream = new FileOutputStream(path)) {
             outputStream.write(Integer.toString(value).getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
             return true;
         } catch (IOException e) {
+            if (!logFailure)
+                return false;
+
             String label = "";
             Matcher m = Pattern.compile("uid_(\\d+)").matcher(path);
             if (m.find()) {
