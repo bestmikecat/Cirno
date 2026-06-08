@@ -79,11 +79,17 @@ fun AdaptiveTopAppBar(
     actions: @Composable RowScope.() -> Unit = {},
     bottomContent: @Composable () -> Unit = {},
 ) {
+    val barColor = if (BackgroundManager.currentUri != null && color != Color.Transparent) {
+        color.copy(alpha = BackgroundManager.topAppBarAlpha)
+    } else {
+        color
+    }
+
     if (isWideScreen || BackgroundManager.forceSmallTop) {
         SmallTopAppBar(
             title = title,
             subtitle = subtitle,
-            color = color,
+            color = barColor,
             scrollBehavior = scrollBehavior,
             defaultWindowInsetsPadding = false,
             navigationIcon = navigationIcon,
@@ -94,7 +100,7 @@ fun AdaptiveTopAppBar(
         TopAppBar(
             title = title,
             subtitle = subtitle,
-            color = color,
+            color = barColor,
             scrollBehavior = scrollBehavior,
             navigationIcon = navigationIcon,
             actions = actions,
