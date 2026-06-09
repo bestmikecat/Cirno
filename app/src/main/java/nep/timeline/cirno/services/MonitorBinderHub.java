@@ -275,8 +275,8 @@ public final class MonitorBinderHub {
             ActivityManagerService.getContext().sendStickyBroadcast(intent);
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
             lastPublishedAtMs = now;
-        } catch (Throwable ignored) {
-            Log.w("MonitorBinder publish failed", ignored);
+        } catch (Throwable e) {
+            Log.w("MonitorBinder publish failed", e);
         }
     }
 

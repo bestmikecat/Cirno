@@ -81,7 +81,8 @@ public class BinderService {
             msg.putInt(100);
             msg.put(payload);
             client.sendMessage(bytes, 0, bytes.length);
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            Log.w("无法注册内核网络消息 uid=" + uid, e);
         }
     }
 
@@ -135,7 +136,8 @@ public class BinderService {
                             procRemoveBuf.putInt(100);
                             procRemoveBuf.put(message);
                             netlinkClient.sendMessage(bytes, 0, bytes.length);
-                        } catch (Throwable ignored) {
+                        } catch (Throwable e) {
+                            Log.w("无法发送proc_remove消息", e);
                         }
 
                         try {
@@ -154,7 +156,8 @@ public class BinderService {
                             cmdMsgBuf.putInt(100);
                             cmdMsgBuf.put(payload);
                             netlinkClient.sendMessage(bytes, 0, bytes.length);
-                        } catch (Throwable ignored) {
+                        } catch (Throwable e) {
+                            Log.w("无法发送内核1消息", e);
                         }
 
                         Handlers.rekernel.postDelayed(() -> {

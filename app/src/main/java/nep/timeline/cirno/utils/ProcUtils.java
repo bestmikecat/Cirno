@@ -19,8 +19,8 @@ public class ProcUtils {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line = reader.readLine();
             return line == null ? null : line.trim();
-        } catch (IOException ignored) {
-            return null;
+        } catch (IOException e) {
+            Log.w("Failed to read wchan for pid " + pid, e);
         }
     }
 }

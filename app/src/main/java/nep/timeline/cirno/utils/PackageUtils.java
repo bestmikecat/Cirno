@@ -193,7 +193,8 @@ public class PackageUtils {
             if (result != null && result.isSuccess()) {
                 return result.getOut();
             }
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            Log.e("Root command failed: " + command, e);
         }
         return new ArrayList<>();
     }
@@ -202,12 +203,14 @@ public class PackageUtils {
         try {
             Method method = pm.getClass().getMethod("getApplicationInfoAsUser", String.class, int.class, int.class);
             return (ApplicationInfo) method.invoke(pm, packageName, PackageManager.GET_META_DATA, userId);
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            Log.e("Failed to get application info as user " + userId, e);
         }
 
         try {
             return pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA);
-        } catch (Throwable ignored) {
+        } catch (Throwable e) {
+            Log.w("Failed to get application info", e);
         }
 
         ApplicationInfo info = new ApplicationInfo();
