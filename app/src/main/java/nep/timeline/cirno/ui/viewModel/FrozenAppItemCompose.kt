@@ -43,7 +43,7 @@ fun FrozenAppItemCompose(
         withStyle(SpanStyle(color = subtitleColor)) {
             append(app.applicationProcessCount.toString() + stringResource(R.string.process))
             if (app.frozenProcessCount > 0) {
-                append(" " + app.frozenProcessCount.toString() + stringResource(R.string.is_frozen) + " ")
+                append(" " + app.frozenProcessCount.toString() + stringResource(R.string.is_frozen) + "  ")
                 withStyle(SpanStyle(color = Color(0xFFFF8C00))) {
                     append("V2")
                 }
@@ -62,7 +62,7 @@ fun FrozenAppItemCompose(
         title = app.appName,
         titleFontSize = 15.sp,
         subtitleAnnotated = subtitleText,
-        subtitleFontSize = 12.sp,
+        subtitleFontSize = 11.sp,
         rightText = getMemSize(app.rss),
         rightTextColor = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         leftAction = {
@@ -100,7 +100,7 @@ fun FrozenAppItemCompose(
                 }
             }
         ),
-        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
     )
 }
 
