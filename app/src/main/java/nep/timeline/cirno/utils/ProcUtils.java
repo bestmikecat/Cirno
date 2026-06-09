@@ -23,6 +23,7 @@ public class ProcUtils {
             return line == null ? null : line.trim();
         } catch (IOException e) {
             Log.w("Failed to read wchan for pid " + pid, e);
+            return "";
         }
     }
 }
