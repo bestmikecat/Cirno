@@ -29,18 +29,18 @@ public class ProcessService {
     }
 
     public static AppRecord removeProcessRecord(ProcessRecord processRecord) {
-        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), true);
+        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), true, null);
     }
 
-    public static AppRecord removeProcessRecordWithoutThaw(ProcessRecord processRecord) {
-        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), false);
+    public static AppRecord removeProcessRecordWithoutThaw(ProcessRecord processRecord, String path) {
+        return removeProcessRecord(processRecord.getProcessName(), processRecord.getRunningUid(), false, path);
     }
 
     public static AppRecord removeProcessRecord(String name, int uid) {
-        return removeProcessRecord(name, uid, true);
+        return removeProcessRecord(name, uid, true, null);
     }
 
-    private static AppRecord removeProcessRecord(String name, int uid, boolean thawOnRemove) {
+    private static AppRecord removeProcessRecord(String name, int uid, boolean thawOnRemove, String path) {
         ProcessRecord processRecord;
         AppRecord appRecord;
         boolean shouldThaw;
@@ -75,7 +75,7 @@ public class ProcessService {
             FrozenRW.thawQuietly(thawUid, thawPid);
         if (!thawOnRemove) {
             String packageName = appRecord == null ? processRecord.getPackageName() : appRecord.getPackageNameWithUser();
-            Log.i(packageName + " 进程 " + processName + "(pid=" + thawPid + ") 被取消管理");
+            Log.i(packageName + " 进程 " + processName + "(pid=" + thawPid + ") 被取消管理，路径: " + path);
         }
         return appRecord;
     }

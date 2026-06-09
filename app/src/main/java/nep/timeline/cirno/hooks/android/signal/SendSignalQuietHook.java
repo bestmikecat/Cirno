@@ -43,7 +43,7 @@ public class SendSignalQuietHook extends MethodHook {
                 if (processRecord == null || processRecord.isDeathProcess())
                     return;
 
-                AppRecord appRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord);
+                AppRecord appRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord, "Process.sendSignalQuiet(SIGKILL)");
                 if (appRecord != null)
                     MonitorBinderHub.refreshRunningApps();
             }
