@@ -8,7 +8,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.kongzue.dialogx.DialogX
@@ -32,29 +36,38 @@ fun FrozenAppItemCompose(
 ) {
     val message = stringResource(R.string.system_not_flagged_but_frozen)
     val scope = rememberCoroutineScope()
+    val subtitleColor = MiuixTheme.colorScheme.onSurfaceVariantSummary
+
+    val subtitleText = buildAnnotatedString {
+        withStyle(SpanStyle(color = subtitleColor)) {
+            append(app.applicationProcessCount.toString() + stringResource(R.string.process))
+            if (app.frozenProcessCount > 0) {
+                append(" " + app.frozenProcessCount.toString() + stringResource(R.string.is_frozen) + " ")
+                withStyle(SpanStyle(color = Color(0xFFFF8C00))) {
+                    append("V2")
+                }
+            }
+        }
+        
+        if (app.frozenType != null && app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN")) {
+            append(" ")
+            withStyle(SpanStyle(color = Color(0xFFD13636))) {
+                append(stringResource(R.string.frozen_wrong))
+            }
+        }
+    }
 
     CustomBasicComponent(
         title = app.appName,
-        subtitle = buildString {
-            append(app.applicationProcessCount.toString() + " " + stringResource(R.string.process))
-            if (app.frozenProcessCount > 0)
-                append(" " + app.frozenProcessCount.toString() + " " + stringResource(R.string.is_frozen))
-        },
-        summary = getMemSize(app.rss),
+        subtitleAnnotated = subtitleText,
+        rightText = getMemSize(app.rss),
+        rightTextColor = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         leftAction = {
             Image(
                 painter = rememberDrawablePainter(drawable = app.appIcon),
                 contentDescription = app.appName,
                 modifier = Modifier.size(58.dp).padding(end = 16.dp)
             )
-        },
-        rightActions = {
-            if (app.frozenType != null)
-                StatusTag(
-                    label = if (app.frozenType.equals("SYSTEM_NOT_FLAGGED_BUT_FROZEN")) stringResource(R.string.frozen_wrong) else (app.frozenType + " " + stringResource(R.string.freezing)),
-                    backgroundColor = MiuixTheme.colorScheme.onPrimaryVariant,
-                    contentColor = MiuixTheme.colorScheme.primaryVariant
-                )
         },
         modifier = Modifier.combinedClickable(
             onLongClick = {

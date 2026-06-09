@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.BasicComponentDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -30,9 +32,12 @@ fun CustomBasicComponent(
     titleColor: Color = MiuixTheme.colorScheme.onSurface,
     subtitle: String? = null,
     subtitleColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+    subtitleAnnotated: AnnotatedString? = null,
     summary: String? = null,
     summaryColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     leftAction: @Composable (() -> Unit?)? = null,
+    rightText: String? = null,
+    rightTextColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     rightActions: @Composable RowScope.() -> Unit = {},
     onClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
@@ -68,12 +73,19 @@ fun CustomBasicComponent(
                     color = titleColor
                 )
             }
-            subtitle?.let {
+            if (subtitleAnnotated != null) {
                 Text(
-                    text = it,
+                    text = subtitleAnnotated,
                     style = MiuixTheme.textStyles.subtitle,
-                    color = subtitleColor
                 )
+            } else {
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MiuixTheme.textStyles.subtitle,
+                        color = subtitleColor
+                    )
+                }
             }
             summary?.let {
                 Text(
@@ -83,9 +95,18 @@ fun CustomBasicComponent(
                 )
             }
         }
-        Box(
-            modifier = Modifier.padding(start = 16.dp)
+        Column(
+            modifier = Modifier.padding(start = 16.dp),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center
         ) {
+            rightText?.let {
+                Text(
+                    text = it,
+                    fontSize = 14.sp,
+                    color = rightTextColor
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
