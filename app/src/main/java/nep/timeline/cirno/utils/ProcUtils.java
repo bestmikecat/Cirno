@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import nep.timeline.cirno.log.Log;
+
 public class ProcUtils {
     private ProcUtils() {}
 
