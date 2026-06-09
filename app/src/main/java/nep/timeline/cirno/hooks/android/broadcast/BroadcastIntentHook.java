@@ -26,7 +26,7 @@ public class BroadcastIntentHook {
             }
 
             if (clazz == null) {
-                Log.e("无法监听广播意图!");
+                Log.e("无法监听广播意图，未找到 ActivityManagerService 类");
                 return;
             }
 
@@ -36,7 +36,7 @@ public class BroadcastIntentHook {
                     targetMethod = method;
 
             if (targetMethod == null) {
-                Log.e("无法监听广播意图!");
+                Log.e("无法监听广播意图，未找到 broadcastIntentLocked 方法");
                 return;
             }
 
@@ -75,7 +75,6 @@ public class BroadcastIntentHook {
                         AppRecord appRecord = AppService.get(packageName, userId);
                         if (appRecord == null)
                             return;
-                        Log.d(packageName + " 等待消息通知");
                         appRecord.setWaitingNotification(true);
 
                         FreezerService.temporaryUnfreezeIfNeed(appRecord, "MESSAGE PUSH", 1000L * GlobalVars.globalSettings.wakeFreezeDelay);
@@ -85,7 +84,6 @@ public class BroadcastIntentHook {
 
             Log.i("监听广播意图");
         } catch (Throwable throwable) {
-            Log.e("无法监听广播意图, 异常:", throwable);
             Log.e("监听广播意图失败", throwable);
         }
     }

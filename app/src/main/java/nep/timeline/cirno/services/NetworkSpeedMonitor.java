@@ -57,7 +57,7 @@ public class NetworkSpeedMonitor {
                     sSnapshots.remove(record.getUid());
                     sSpeedCache.remove(record.getUid());
                     if (record.getAppState().setNetworkActive(false)) {
-                        Log.i("NetworkSpeedMonitor: 网络活动结束 app=" + record.getPackageNameWithUser() + " uid=" + record.getUid());
+                        Log.d("NetworkSpeedMonitor: 网络活动结束 app=" + record.getPackageNameWithUser() + " uid=" + record.getUid());
                     }
                     continue;
                 }
@@ -116,17 +116,17 @@ public class NetworkSpeedMonitor {
             }
             sSnapshots.put(uid, new long[]{totalRx, totalTx, now});
             if (Boolean.TRUE.equals(sReadFailed.remove(uid))) {
-                Log.i("NetworkSpeedMonitor: 读取恢复 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
+                Log.d("NetworkSpeedMonitor: 读取恢复 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
             }
             if (appState.setNetworkActive(active)) {
                 if (active) {
-                    Log.i("NetworkSpeedMonitor: 检测到网络活动 app=" + appRecord.getPackageNameWithUser()
+                    Log.d("NetworkSpeedMonitor: 检测到网络活动 app=" + appRecord.getPackageNameWithUser()
                             + " uid=" + uid
                             + " rx=" + formatSpeed(rxSpeed)
                             + " tx=" + formatSpeed(txSpeed)
                             + " threshold=" + formatSpeed(threshold));
                 } else {
-                    Log.i("NetworkSpeedMonitor: 网络活动结束 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
+                    Log.d("NetworkSpeedMonitor: 网络活动结束 app=" + appRecord.getPackageNameWithUser() + " uid=" + uid);
                 }
             }
         } catch (Throwable e) {

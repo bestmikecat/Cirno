@@ -75,7 +75,7 @@ public class ProcessService {
             FrozenRW.thawQuietly(thawUid, thawPid);
         if (!thawOnRemove) {
             String packageName = appRecord == null ? processRecord.getPackageName() : appRecord.getPackageNameWithUser();
-            Log.i(packageName + " 进程 " + processName + "(pid=" + thawPid + ") 被取消管理，路径: " + path);
+            Log.d(packageName + " 进程 " + processName + "(pid=" + thawPid + ") 被取消管理，路径: " + path);
         }
         return appRecord;
     }
