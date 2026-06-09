@@ -11,7 +11,7 @@ public class FreezeExemptionChecker {
      * 检查应用是否豁免于冻结。
      * 返回豁免原因，null 表示应被冻结。
      *
-     * 优先级：已冻结 → 等待通知 → 前台 → 黑名单(不豁免) → 白名单 → 输入法 → 系统应用 → 内建白名单 → 能力豁免
+     * 优先级：已冻结 → 等待通知 → 前台 → 黑名单(不豁免) → 无障碍 → 白名单 → 输入法 → 系统应用 → 内建白名单 → 能力豁免
      */
     public static FreezeExemption check(AppRecord appRecord) {
         if (appRecord == null || appRecord.isFrozen()) {
@@ -32,6 +32,10 @@ public class FreezeExemptionChecker {
 
         if (AppConfigs.isBlackApp(pkg, userId)) {
             return null;
+        }
+
+        if (AccessibilityServiceData.isEnabledAccessibilityApp(pkg)) {
+            return FreezeExemption.ACCESSIBILITY;
         }
 
         if (AppConfigs.isWhiteApp(pkg, userId)) {
