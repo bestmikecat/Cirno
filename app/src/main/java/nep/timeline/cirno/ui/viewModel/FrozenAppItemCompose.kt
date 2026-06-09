@@ -14,6 +14,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopTip
@@ -59,14 +60,16 @@ fun FrozenAppItemCompose(
 
     CustomBasicComponent(
         title = app.appName,
+        titleFontSize = 15.sp,
         subtitleAnnotated = subtitleText,
+        subtitleFontSize = 12.sp,
         rightText = getMemSize(app.rss),
         rightTextColor = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         leftAction = {
             Image(
                 painter = rememberDrawablePainter(drawable = app.appIcon),
                 contentDescription = app.appName,
-                modifier = Modifier.size(58.dp).padding(end = 16.dp)
+                modifier = Modifier.size(64.dp).padding(end = 16.dp)
             )
         },
         modifier = Modifier.combinedClickable(
@@ -97,7 +100,7 @@ fun FrozenAppItemCompose(
                 }
             }
         ),
-        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     )
 }
 

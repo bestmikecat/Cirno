@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import top.yukonga.miuix.kmp.basic.BasicComponentDefaults
@@ -30,9 +31,11 @@ fun CustomBasicComponent(
     insideMargin: PaddingValues = BasicComponentDefaults.InsideMargin,
     title: String? = null,
     titleColor: Color = MiuixTheme.colorScheme.onSurface,
+    titleFontSize: TextUnit = TextUnit.Unspecified,
     subtitle: String? = null,
     subtitleColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     subtitleAnnotated: AnnotatedString? = null,
+    subtitleFontSize: TextUnit = TextUnit.Unspecified,
     summary: String? = null,
     summaryColor: Color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     leftAction: @Composable (() -> Unit?)? = null,
@@ -70,6 +73,7 @@ fun CustomBasicComponent(
                 Text(
                     text = it,
                     style = MiuixTheme.textStyles.title4,
+                    fontSize = titleFontSize,
                     color = titleColor
                 )
             }
@@ -77,12 +81,14 @@ fun CustomBasicComponent(
                 Text(
                     text = subtitleAnnotated,
                     style = MiuixTheme.textStyles.subtitle,
+                    fontSize = subtitleFontSize,
                 )
             } else {
                 subtitle?.let {
                     Text(
                         text = it,
                         style = MiuixTheme.textStyles.subtitle,
+                        fontSize = subtitleFontSize,
                         color = subtitleColor
                     )
                 }
