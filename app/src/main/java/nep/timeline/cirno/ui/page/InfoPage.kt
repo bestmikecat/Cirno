@@ -183,17 +183,17 @@ private fun InfoContent(
             contentPadding = contentPadding,
         ) {
             item {
+                val xposedServiceStatus = XposedServiceStatus.state.value
+                val active = xposedServiceStatus.active
                 val statusBinderAvailable = binderState.statusBinderAvailable
-                val active = statusBinderAvailable
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
                 val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME
                 val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
-                val xposedServiceStatus = XposedServiceStatus.state.value
                 val configuredScopes = xposedServiceStatus.scope.toSet()
                 val androidScopeLabel = stringResource(R.string.scope_android)
                 val systemUiScopeLabel = stringResource(R.string.scope_systemui)
-                val missingScopes = if (xposedServiceStatus.active) {
+                val missingScopes = if (active) {
                     listOf("system", "com.android.systemui").filterNot { it in configuredScopes }
                 } else {
                     emptyList()

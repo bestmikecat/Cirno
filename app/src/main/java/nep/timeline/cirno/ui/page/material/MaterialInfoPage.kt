@@ -81,8 +81,9 @@ fun MaterialInfoPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
+            val xposedServiceStatus = XposedServiceStatus.state.value
+            val active = xposedServiceStatus.active
             val binderState = infoState.binderState
-            val active = binderState.statusBinderAvailable
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
@@ -124,9 +125,11 @@ fun MaterialInfoPage(
         }
 
         item {
+            val xposedServiceStatus = XposedServiceStatus.state.value
+            val active = xposedServiceStatus.active
             val binderState = infoState.binderState
-            val active = binderState.statusBinderAvailable
-            val versionMismatch = active && binderState.statusBinderAvailable &&
+            val statusBinderAvailable = binderState.statusBinderAvailable
+            val versionMismatch = active && statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             if (versionMismatch) {
@@ -138,20 +141,21 @@ fun MaterialInfoPage(
                 if (binderState.hasError) {
                     MaterialWarningCard(stringResource(R.string.internal_error))
                 }
-                if (active && binderState.statusBinderAvailable && addOnMissing) {
+                if (active && statusBinderAvailable && addOnMissing) {
                     MaterialWarningCard(stringResource(R.string.add_on_required_warning))
                 }
-                if (active && binderState.statusBinderAvailable && !binderState.freezerAvailable) {
+                if (active && statusBinderAvailable && !binderState.freezerAvailable) {
                     MaterialWarningCard(stringResource(R.string.freezer_v2_unavailable))
                 }
             }
         }
 
         item {
+            val xposedServiceStatus = XposedServiceStatus.state.value
+            val active = xposedServiceStatus.active
             val binderState = infoState.binderState
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
-            val working = !binderState.hasError && !addOnMissing
-            val xposedServiceStatus = XposedServiceStatus.state.value
+            val working = active && !binderState.hasError && !addOnMissing
             MaterialSurfaceCard(
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
