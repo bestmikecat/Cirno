@@ -55,7 +55,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
-    val hasReKernel = remember { mutableStateOf<Boolean?>(null) }
+    val packetAvailable = remember { mutableStateOf<Boolean?>(null) }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
     val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
@@ -113,8 +113,8 @@ fun ApplicationHome(activity: ApplicationActivity) {
     }
 
     LaunchedEffect(Unit) {
-        hasReKernel.value = withContext(Dispatchers.IO) {
-            HookStatusRepository.isReKernelAvailable()
+        packetAvailable.value = withContext(Dispatchers.IO) {
+            HookStatusRepository.isPacketAvailable()
         }
     }
 
@@ -150,7 +150,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
                         val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
 
-                        if (hasReKernel.value == false && networkMessage.value) {
+                        if (packetAvailable.value == false && networkMessage.value) {
                             networkMessage.value = false
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
                             saveApplicationSettingsAsync()
@@ -248,9 +248,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
                             SwitchPreference(
                                 title = stringResource(R.string.netreceive_unfreeze),
-                                summary = if (hasReKernel.value == true) null else stringResource(R.string.rekernel_required_summary),
+                                summary = if (packetAvailable.value == true) null else stringResource(R.string.packet_required_summary),
                                 checked = networkMessage.value,
-                                enabled = hasReKernel.value == true && !white.value,
+                                enabled = packetAvailable.value == true && !white.value,
                                 onCheckedChange = {
                                     if (white.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)

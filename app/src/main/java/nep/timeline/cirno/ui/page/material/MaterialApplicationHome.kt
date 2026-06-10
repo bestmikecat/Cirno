@@ -52,7 +52,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     val appName = activity.intent.getStringExtra("appName") ?: "App"
     val packageName = activity.intent.getStringExtra("packageName") ?: return
     val userId = activity.intent.getStringExtra("userId")?.toIntOrNull() ?: 0
-    val hasReKernel = remember { mutableStateOf<Boolean?>(null) }
+    val packetAvailable = remember { mutableStateOf<Boolean?>(null) }
     val isBuiltinWhitelistApp = CommonConstants.isWhitelistApps(packageName)
     val builtinWhitelistSummary = stringResource(R.string.builtin_whitelist_summary)
     val whitelistExemptionBlocked = stringResource(R.string.whitelist_exemption_blocked)
@@ -112,8 +112,8 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
         processListLoaded.value = true
     }
 
-    LaunchedEffect(hasReKernel.value, networkMessage.value) {
-        if (hasReKernel.value == false && networkMessage.value) {
+    LaunchedEffect(packetAvailable.value, networkMessage.value) {
+        if (packetAvailable.value == false && networkMessage.value) {
             networkMessage.value = false
             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
             saveApplicationSettingsAsync()
@@ -121,8 +121,8 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     }
 
     LaunchedEffect(Unit) {
-        hasReKernel.value = withContext(Dispatchers.IO) {
-            HookStatusRepository.isReKernelAvailable()
+        packetAvailable.value = withContext(Dispatchers.IO) {
+            HookStatusRepository.isPacketAvailable()
         }
     }
 
@@ -223,9 +223,9 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                     MaterialSwitchItem(
                         icon = Icons.Outlined.NotificationsActive,
                         title = stringResource(R.string.netreceive_unfreeze),
-                        summary = if (hasReKernel.value == true) null else stringResource(R.string.rekernel_required_summary),
+                        summary = if (packetAvailable.value == true) null else stringResource(R.string.packet_required_summary),
                         checked = networkMessage.value,
-                        enabled = hasReKernel.value == true && !white.value,
+                        enabled = packetAvailable.value == true && !white.value,
                     ) {
                         if (white.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)

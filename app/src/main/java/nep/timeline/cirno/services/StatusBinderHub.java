@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.binders.StatusInterface;
+import nep.timeline.cirno.reflect.CakeHooker;
+import nep.timeline.cirno.utils.SystemChecker;
 
 public final class StatusBinderHub {
     public static final String SIGNAL_DEVICE_TYPE = "device_type";
@@ -22,11 +24,11 @@ public final class StatusBinderHub {
         }
 
         @Override
-        public boolean isReKernelAvailable() {
+        public boolean isPacketAvailable() {
             if (BinderService.received) {
                 return true;
             }
-            return new File("/proc/rekernel").exists();
+            return new File("/proc/rekernel").exists() || SystemChecker.isOplus(CakeHooker.getHostClassLoader());
         }
 
         @Override

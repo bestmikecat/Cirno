@@ -8,7 +8,7 @@ public interface StatusInterface extends android.os.IInterface {
         }
 
         @Override
-        public boolean isReKernelAvailable() throws android.os.RemoteException {
+        public boolean isPacketAvailable() throws android.os.RemoteException {
             return false;
         }
 
@@ -62,8 +62,8 @@ public interface StatusInterface extends android.os.IInterface {
                     reply.writeString(result);
                     return true;
                 }
-                case TRANSACTION_isReKernelAvailable: {
-                    boolean result = this.isReKernelAvailable();
+                case TRANSACTION_isPacketAvailable: {
+                    boolean result = this.isPacketAvailable();
                     reply.writeNoException();
                     reply.writeInt(result ? 1 : 0);
                     return true;
@@ -107,12 +107,12 @@ public interface StatusInterface extends android.os.IInterface {
             }
 
             @Override
-            public boolean isReKernelAvailable() throws android.os.RemoteException {
+            public boolean isPacketAvailable() throws android.os.RemoteException {
                 android.os.Parcel data = android.os.Parcel.obtain();
                 android.os.Parcel reply = android.os.Parcel.obtain();
                 try {
                     data.writeInterfaceToken(DESCRIPTOR);
-                    mRemote.transact(Stub.TRANSACTION_isReKernelAvailable, data, reply, 0);
+                    mRemote.transact(Stub.TRANSACTION_isPacketAvailable, data, reply, 0);
                     reply.readException();
                     return reply.readInt() != 0;
                 } finally {
@@ -138,7 +138,7 @@ public interface StatusInterface extends android.os.IInterface {
         }
 
         static final int TRANSACTION_getSignal = android.os.IBinder.FIRST_CALL_TRANSACTION;
-        static final int TRANSACTION_isReKernelAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
+        static final int TRANSACTION_isPacketAvailable = android.os.IBinder.FIRST_CALL_TRANSACTION + 1;
         static final int TRANSACTION_getHookVersion = android.os.IBinder.FIRST_CALL_TRANSACTION + 2;
     }
 
@@ -146,7 +146,7 @@ public interface StatusInterface extends android.os.IInterface {
 
     String getSignal(String key) throws android.os.RemoteException;
 
-    boolean isReKernelAvailable() throws android.os.RemoteException;
+    boolean isPacketAvailable() throws android.os.RemoteException;
 
     String getHookVersion() throws android.os.RemoteException;
 }

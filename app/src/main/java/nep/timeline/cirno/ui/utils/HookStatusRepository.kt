@@ -29,11 +29,11 @@ object HookStatusRepository {
         }
     }
 
-    fun isReKernelAvailable(): Boolean {
+    fun isPacketAvailable(): Boolean {
         BinderService.register(AppContext.context)
         val status = StatusBinder.getInstance() ?: return false
         return try {
-            status.isReKernelAvailable
+            status.isPacketAvailable
         } catch (_: Throwable) {
             false
         }

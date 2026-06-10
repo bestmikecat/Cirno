@@ -25,7 +25,7 @@ public class StatusBinder extends StatusInterface.Stub {
     }
 
     @Override
-    public boolean isReKernelAvailable() {
+    public boolean isPacketAvailable() {
         throw new UnsupportedOperationException();
     }
 
