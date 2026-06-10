@@ -60,9 +60,7 @@ fun FrozenAppItemCompose(
 
     CustomBasicComponent(
         title = app.appName,
-        titleFontSize = 15.sp,
         subtitleAnnotated = subtitleText,
-        subtitleFontSize = 11.sp,
         rightText = getMemSize(app.rss),
         rightTextColor = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         leftAction = {
@@ -100,7 +98,7 @@ fun FrozenAppItemCompose(
                 }
             }
         ),
-        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
     )
 }
 
