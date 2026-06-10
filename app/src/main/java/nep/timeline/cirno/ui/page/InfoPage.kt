@@ -183,8 +183,8 @@ private fun InfoContent(
             contentPadding = contentPadding,
         ) {
             item {
-                val active = true
                 val statusBinderAvailable = binderState.statusBinderAvailable
+                val active = statusBinderAvailable
                 val hasError = binderState.hasError
                 val hookVersion = binderState.hookVersion
                 val versionMismatch = active && statusBinderAvailable && hookVersion != null && hookVersion != BuildConfig.VERSION_NAME

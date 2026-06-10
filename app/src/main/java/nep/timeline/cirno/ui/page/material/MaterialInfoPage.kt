@@ -81,8 +81,8 @@ fun MaterialInfoPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            val active = true
             val binderState = infoState.binderState
+            val active = binderState.statusBinderAvailable
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
             val working = active && !binderState.hasError && !addOnMissing
             val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
@@ -124,8 +124,8 @@ fun MaterialInfoPage(
         }
 
         item {
-            val active = true
             val binderState = infoState.binderState
+            val active = binderState.statusBinderAvailable
             val versionMismatch = active && binderState.statusBinderAvailable &&
                 binderState.hookVersion != null && binderState.hookVersion != BuildConfig.VERSION_NAME
             val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
