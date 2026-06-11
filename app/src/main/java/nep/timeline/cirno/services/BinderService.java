@@ -268,7 +268,7 @@ public class BinderService {
                     netlinkClient.close();
                 }
             } catch (ErrnoException | IOException e) {
-                Log.w("无法连接至ReKernel服务器");
+                Log.w("无法连接至ReKernel服务器", e);
                 isRunning.set(false);
             } catch (Throwable throwable) {
                 Log.w("ReKernel", throwable);
