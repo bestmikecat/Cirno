@@ -80,7 +80,7 @@ fun AdaptiveTopAppBar(
     bottomContent: @Composable () -> Unit = {},
 ) {
     val barColor = if (BackgroundManager.currentUri != null && color != Color.Transparent) {
-        color.copy(alpha = BackgroundManager.topAppBarAlpha)
+        color.copy(alpha = scrollBehavior.state.collapsedFraction * BackgroundManager.topAppBarAlpha)
     } else {
         color
     }
