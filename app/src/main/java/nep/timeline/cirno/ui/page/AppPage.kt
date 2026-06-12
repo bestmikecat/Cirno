@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -293,6 +292,8 @@ fun AppPage(
                                     else -> stringResource(R.string.app_info)
                                 }
                             )
+                        }
+
                         Box(modifier = Modifier.weight(1f)) {
                             LazyColumn(
                                 state = lazyListState,
