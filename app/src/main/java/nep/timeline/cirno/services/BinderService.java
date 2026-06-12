@@ -3,7 +3,6 @@ package nep.timeline.cirno.services;
 import android.system.ErrnoException;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -280,9 +279,6 @@ public class BinderService {
                     sNetlinkClient = null;
                     netlinkClient.close();
                 }
-            } catch (ErrnoException | IOException e) {
-                Log.w("无法连接至ReKernel服务器", e);
-                isRunning.set(false);
             } catch (Throwable throwable) {
                 Log.w("ReKernel", throwable);
                 isRunning.set(false);
