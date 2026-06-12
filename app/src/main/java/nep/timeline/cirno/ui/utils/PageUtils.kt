@@ -117,9 +117,10 @@ fun rememberBlurBackdrop(blurEnabled: Boolean = true, replaceBlurChecker: Boolea
     } else if (!blurEnabled) return null
 
     if (!isRenderEffectSupported()) return null
+    val surfaceColor = MiuixTheme.colorScheme.surface
 
     return rememberLayerBackdrop {
-        drawRect(MiuixTheme.colorScheme.surface)
+        drawRect(surfaceColor)
     }
 }
 
