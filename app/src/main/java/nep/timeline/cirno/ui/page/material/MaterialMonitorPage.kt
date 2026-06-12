@@ -132,8 +132,7 @@ fun MaterialMonitorPage(
                 )
             }
         },
-    ) {
-        item(key = "search") {
+        header = {
             AnimatedVisibility(visible = searchExpanded) {
                 OutlinedTextField(
                     value = searchValue,
@@ -158,8 +157,8 @@ fun MaterialMonitorPage(
                     ),
                 )
             }
-        }
-
+        },
+    ) {
         if (!updatedApps) {
             item(key = "loading") {
                 MaterialLoadingIndicator(

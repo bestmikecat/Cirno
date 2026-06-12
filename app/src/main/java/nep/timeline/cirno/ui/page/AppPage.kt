@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -43,6 +44,7 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -216,82 +218,92 @@ fun AppPage(
                     val lazyListState = rememberLazyListState()
                     val contentPadding =
                         pageContentPadding(innerPadding, padding, isWideScreen, extraTop = 12.dp)
+                    val listContentPadding = PaddingValues(
+                        start = contentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        top = 0.dp,
+                        end = contentPadding.calculateEndPadding(LayoutDirection.Ltr),
+                        bottom = contentPadding.calculateBottomPadding(),
+                    )
                     Box {
-                        LazyColumn(
-                            state = lazyListState,
-                            modifier = Modifier.pageScrollModifiers(
-                                scrollEndHaptic,
-                                true,
-                                scrollBehavior,
-                            ),
-                            contentPadding = contentPadding,
-                        ) {
-                            item(key = "appSearch") {
-                                SearchBar(
-                                    modifier = Modifier
-                                        .padding(
-                                            start = 12.dp,
-                                            end = 12.dp,
-                                            top = 12.dp,
-                                            bottom = 6.dp
-                                    ),
-                                    inputField = {
-                                        InputField(
-                                            query = searchValue,
-                                            onQueryChange = {
-                                                viewModel.updateByQuery(it, type)
-                                            },
-                                            onSearch = {
-                                                keyboardController?.hide()
-                                            },
-                                            expanded = expanded,
-                                            onExpandedChange = { expanded = it },
-                                            label = stringResource(R.string.search),
-                                            leadingIcon = {
-                                                Icon(
-                                                    modifier = Modifier
-                                                        .padding(start = 12.dp, end = 8.dp)
-                                                        .size(20.dp)
-                                                        .alpha(0.4f),
-                                                    imageVector = MiuixIcons.Basic.Search,
-                                                    tint = colorScheme.onSurfaceContainer,
-                                                    contentDescription = "Search"
-                                                )
-                                            }
-                                        )
-                                    },
-                                    outsideEndAction = {
-                                        Text(
-                                            modifier = Modifier
-                                                .padding(end = 12.dp)
-                                                .clickable(
-                                                    interactionSource = null,
-                                                    indication = null,
-                                                ) {
-                                                    expanded = false
-                                                    viewModel.updateByQuery("", type)
-                                                },
-                                            text = stringResource(R.string.cancel),
-                                            style = TextStyle(
-                                                fontSize = 17.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = colorScheme.primary,
-                                        )
-                                    },
-                                    expanded = expanded,
-                                    onExpandedChange = { expanded = it }
-                                ) {
-                                }
-
-                                SmallTitle(
-                                    text = when (type) {
-                                        2 -> stringResource(R.string.frozen_info)
-                                        else -> stringResource(R.string.app_info)
-                                    }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = 12.dp,
+                                    end = 12.dp,
+                                    top = contentPadding.calculateTopPadding(),
                                 )
+                        ) {
+                            SearchBar(
+                                modifier = Modifier.padding(bottom = 6.dp),
+                                inputField = {
+                                    InputField(
+                                        query = searchValue,
+                                        onQueryChange = {
+                                            viewModel.updateByQuery(it, type)
+                                        },
+                                        onSearch = {
+                                            keyboardController?.hide()
+                                        },
+                                        expanded = expanded,
+                                        onExpandedChange = { expanded = it },
+                                        label = stringResource(R.string.search),
+                                        leadingIcon = {
+                                            Icon(
+                                                modifier = Modifier
+                                                    .padding(start = 12.dp, end = 8.dp)
+                                                    .size(20.dp)
+                                                    .alpha(0.4f),
+                                                imageVector = MiuixIcons.Basic.Search,
+                                                tint = colorScheme.onSurfaceContainer,
+                                                contentDescription = "Search"
+                                            )
+                                        }
+                                    )
+                                },
+                                outsideEndAction = {
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(end = 12.dp)
+                                            .clickable(
+                                                interactionSource = null,
+                                                indication = null,
+                                            ) {
+                                                expanded = false
+                                                viewModel.updateByQuery("", type)
+                                            },
+                                        text = stringResource(R.string.cancel),
+                                        style = TextStyle(
+                                            fontSize = 17.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = colorScheme.primary,
+                                    )
+                                },
+                                expanded = expanded,
+                                onExpandedChange = { expanded = it }
+                            ) {
                             }
 
+                            SmallTitle(
+                                text = when (type) {
+                                    2 -> stringResource(R.string.frozen_info)
+                                    else -> stringResource(R.string.app_info)
+                                }
+                            )
+                        }
+
+                        LazyColumn(
+                            state = lazyListState,
+                            modifier = Modifier
+                                .pageScrollModifiers(
+                                    scrollEndHaptic,
+                                    true,
+                                    scrollBehavior,
+                                )
+                                .offset(y = contentPadding.calculateTopPadding()),
+                            contentPadding = listContentPadding,
+                        ) {
                             val appItems = filteredApps
                             val appCount = appItems.size
                             itemsIndexed(
@@ -328,7 +340,7 @@ fun AppPage(
                         VerticalScrollBar(
                             adapter = rememberScrollBarAdapter(lazyListState),
                             modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                            trackPadding = contentPadding,
+                            trackPadding = listContentPadding,
                         )
                     }
                 }

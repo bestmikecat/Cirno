@@ -62,6 +62,7 @@ fun MaterialPageScaffold(
     lazyListState: LazyListState = rememberLazyListState(),
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+    header: @Composable ColumnScope.() -> Unit = {},
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: LazyListScope.() -> Unit,
 ) {
@@ -79,18 +80,29 @@ fun MaterialPageScaffold(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top = innerPadding.calculateTopPadding() + 16.dp,
-                bottom = padding.calculateBottomPadding() + 20.dp,
-            ),
-            verticalArrangement = verticalArrangement,
-            content = content,
-        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = innerPadding.calculateTopPadding() + 16.dp,
+                    ),
+                content = header,
+            )
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    bottom = padding.calculateBottomPadding() + 20.dp,
+                ),
+                verticalArrangement = verticalArrangement,
+                content = content,
+            )
+        }
     }
 }
 
