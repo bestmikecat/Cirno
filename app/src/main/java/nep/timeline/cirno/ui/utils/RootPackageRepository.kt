@@ -54,7 +54,7 @@ object RootPackageRepository {
     private fun runRootCommand(command: String): List<String> {
         return try {
             val result = Shell.cmd(command).exec()
-            if (result != null && result.isSuccess) result.out else emptyList()
+            if (result.isSuccess) result.out else emptyList()
         } catch (_: Throwable) {
             emptyList()
         }
