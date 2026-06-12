@@ -73,6 +73,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
     val processListLoaded = remember { mutableStateOf(false) }
     val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
     val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
+    val userWhitelist = remember { mutableStateOf(AppConfigs.hasUserWhitelist(packageName, userId)) }
     val scope = rememberCoroutineScope()
 
     fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
@@ -165,6 +166,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 onCheckedChange = {
                                     if (isBuiltinWhitelistApp) return@SwitchPreference
                                     val prevWhite = white.value
+                                    val prevUserWhite = userWhitelist.value
                                     val prevBackground = backgroundPlay.value
                                     val prevLocation = locationUse.value
                                     val prevNetwork = networkMessage.value
@@ -172,6 +174,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                     val prevRecording = recording.value
 
                                     white.value = it
+                                    userWhitelist.value = it
                                     AppConfigs.setWhiteApp(packageName, userId, it)
                                     if (it) {
                                         backgroundPlay.value = false
@@ -188,6 +191,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
 
                                     saveApplicationSettingsAsync("白名单更新失败") { error ->
                                         white.value = prevWhite
+                                        userWhitelist.value = prevUserWhite
                                         AppConfigs.setWhiteApp(packageName, userId, prevWhite)
                                         backgroundPlay.value = prevBackground
                                         AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
@@ -209,9 +213,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.background_play),
                                 checked = backgroundPlay.value,
-                                enabled = !white.value,
+                                enabled = !userWhitelist.value,
                                 onCheckedChange = {
-                                    if (white.value && it) {
+                                    if (userWhitelist.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
@@ -229,9 +233,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.location_check),
                                 checked = locationUse.value,
-                                enabled = !white.value,
+                                enabled = !userWhitelist.value,
                                 onCheckedChange = {
-                                    if (white.value && it) {
+                                    if (userWhitelist.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
@@ -250,9 +254,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 title = stringResource(R.string.netreceive_unfreeze),
                                 summary = if (packetAvailable.value == true) null else stringResource(R.string.packet_required_summary),
                                 checked = networkMessage.value,
-                                enabled = packetAvailable.value == true && !white.value,
+                                enabled = packetAvailable.value == true && !userWhitelist.value,
                                 onCheckedChange = {
-                                    if (white.value && it) {
+                                    if (userWhitelist.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
@@ -270,9 +274,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.network_speed_check),
                                 checked = networkSpeed.value,
-                                enabled = !white.value,
+                                enabled = !userWhitelist.value,
                                 onCheckedChange = {
-                                    if (white.value && it) {
+                                    if (userWhitelist.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
@@ -290,9 +294,9 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             SwitchPreference(
                                 title = stringResource(R.string.recording_unfreeze),
                                 checked = recording.value,
-                                enabled = !white.value,
+                                enabled = !userWhitelist.value,
                                 onCheckedChange = {
-                                    if (white.value && it) {
+                                    if (userWhitelist.value && it) {
                                         WindowUtils.showToast(whitelistExemptionBlocked)
                                         return@SwitchPreference
                                     }
@@ -331,7 +335,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                     }
                 }
 
-                if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
+                if (processListLoaded.value && !isBuiltinWhitelistApp && !userWhitelist.value && isSystemApp == black.value) {
                     item {
                         SmallTitle(text = stringResource(R.string.process_freeze_control))
                         CirnoCard(modifier = Modifier.padding(12.dp)) {

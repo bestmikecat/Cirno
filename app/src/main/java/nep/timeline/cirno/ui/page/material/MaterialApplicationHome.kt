@@ -70,6 +70,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     val processListLoaded = remember { mutableStateOf(false) }
     val black = remember { mutableStateOf(AppConfigs.isBlackApp(packageName, userId)) }
     val white = remember { mutableStateOf(AppConfigs.isWhiteApp(packageName, userId)) }
+    val userWhitelist = remember { mutableStateOf(AppConfigs.hasUserWhitelist(packageName, userId)) }
     val backgroundPlay = remember { mutableStateOf(AppConfigs.isBackgroundPlayAllowed(packageName, userId)) }
     val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
     val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
@@ -152,6 +153,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                     ) {
                         if (isBuiltinWhitelistApp) return@MaterialSwitchItem
                         val prevWhite = white.value
+                        val prevUserWhite = userWhitelist.value
                         val prevBackground = backgroundPlay.value
                         val prevLocation = locationUse.value
                         val prevNetwork = networkMessage.value
@@ -159,6 +161,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                         val prevRecording = recording.value
 
                         white.value = it
+                        userWhitelist.value = it
                         AppConfigs.setWhiteApp(packageName, userId, it)
                         if (it) {
                             backgroundPlay.value = false
@@ -175,6 +178,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
 
                         saveApplicationSettingsAsync("白名单更新失败") { error ->
                             white.value = prevWhite
+                            userWhitelist.value = prevUserWhite
                             AppConfigs.setWhiteApp(packageName, userId, prevWhite)
                             backgroundPlay.value = prevBackground
                             AppConfigs.setBackgroundPlayAllowed(packageName, userId, prevBackground)
@@ -191,9 +195,9 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                     }
                 }
 
-                if (!isBuiltinWhitelistApp && !isSystemApp) {
-                    MaterialSwitchItem(Icons.Outlined.MusicNote, stringResource(R.string.background_play), null, backgroundPlay.value, !white.value) {
-                        if (white.value && it) {
+                if (!isBuiltinWhitelistApp && (!isSystemApp || black.value)) {
+                    MaterialSwitchItem(Icons.Outlined.MusicNote, stringResource(R.string.background_play), null, backgroundPlay.value, !userWhitelist.value) {
+                        if (userWhitelist.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)
                             return@MaterialSwitchItem
                         }
@@ -206,8 +210,8 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             WindowUtils.showToast(error)
                         }
                     }
-                    MaterialSwitchItem(Icons.Outlined.LocationOn, stringResource(R.string.location_check), null, locationUse.value, !white.value) {
-                        if (white.value && it) {
+                    MaterialSwitchItem(Icons.Outlined.LocationOn, stringResource(R.string.location_check), null, locationUse.value, !userWhitelist.value) {
+                        if (userWhitelist.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)
                             return@MaterialSwitchItem
                         }
@@ -225,9 +229,9 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                         title = stringResource(R.string.netreceive_unfreeze),
                         summary = if (packetAvailable.value == true) null else stringResource(R.string.packet_required_summary),
                         checked = networkMessage.value,
-                        enabled = packetAvailable.value == true && !white.value,
+                        enabled = packetAvailable.value == true && !userWhitelist.value,
                     ) {
-                        if (white.value && it) {
+                        if (userWhitelist.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)
                             return@MaterialSwitchItem
                         }
@@ -240,8 +244,8 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             WindowUtils.showToast(error)
                         }
                     }
-                    MaterialSwitchItem(Icons.Outlined.NetworkCheck, stringResource(R.string.network_speed_check), null, networkSpeed.value, !white.value) {
-                        if (white.value && it) {
+                    MaterialSwitchItem(Icons.Outlined.NetworkCheck, stringResource(R.string.network_speed_check), null, networkSpeed.value, !userWhitelist.value) {
+                        if (userWhitelist.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)
                             return@MaterialSwitchItem
                         }
@@ -254,8 +258,8 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             WindowUtils.showToast(error)
                         }
                     }
-                    MaterialSwitchItem(Icons.Outlined.GraphicEq, stringResource(R.string.recording_unfreeze), null, recording.value, !white.value) {
-                        if (white.value && it) {
+                    MaterialSwitchItem(Icons.Outlined.GraphicEq, stringResource(R.string.recording_unfreeze), null, recording.value, !userWhitelist.value) {
+                        if (userWhitelist.value && it) {
                             WindowUtils.showToast(whitelistExemptionBlocked)
                             return@MaterialSwitchItem
                         }
@@ -291,7 +295,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
             }
         }
 
-        if (processListLoaded.value && !isBuiltinWhitelistApp && !white.value && isSystemApp == black.value) {
+        if (processListLoaded.value && !isBuiltinWhitelistApp && !userWhitelist.value && isSystemApp == black.value) {
             item {
                 MaterialSettingsSection(title = stringResource(R.string.process_freeze_control)) {
                     if (processList.isEmpty()) {

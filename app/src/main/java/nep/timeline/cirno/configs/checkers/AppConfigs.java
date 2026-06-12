@@ -50,7 +50,7 @@ public class AppConfigs {
         if (pkg == null || pkg.isEmpty()) {
             return;
         }
-        if (enabled && capability.isExemption && isWhiteApp(pkg, userId)) {
+        if (enabled && capability.isExemption && hasUserWhitelist(pkg, userId)) {
             return;
         }
         Set<String> apps = getCapabilityApps(capability);
@@ -86,6 +86,10 @@ public class AppConfigs {
 
     public static boolean isWhiteApp(String pkg, int userId) {
         return CommonConstants.isWhitelistApps(pkg) || hasCapability(pkg, userId, Capability.WHITE_LIST);
+    }
+
+    public static boolean hasUserWhitelist(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.WHITE_LIST);
     }
 
     public static boolean isWhiteApp(String pkg) {
