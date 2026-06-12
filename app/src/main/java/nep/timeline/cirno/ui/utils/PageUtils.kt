@@ -145,8 +145,8 @@ fun BlurredBar(
                 colors = BlurColors(
                     blendColors = listOf(
                         BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy((scrollBehavior?.state?.collapsedFraction?.times(
-                            0.8f
-                        )) ?: 0.8f)),
+                            0.45f
+                        )) ?: 0f)),
                     ),
                 )
             )
