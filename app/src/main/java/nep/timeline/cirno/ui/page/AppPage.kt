@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -46,7 +46,6 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -220,13 +219,14 @@ fun AppPage(
                     val lazyListState = rememberLazyListState()
                     val contentPadding =
                         pageContentPadding(innerPadding, padding, isWideScreen, extraTop = 12.dp)
+                    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     val listContentPadding = PaddingValues(
-                        start = contentPadding.calculateStartPadding(LayoutDirection.Ltr),
+                        start = contentPadding.calculateStartPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
                         top = 0.dp,
-                        end = contentPadding.calculateEndPadding(LayoutDirection.Ltr),
-                        bottom = contentPadding.calculateBottomPadding(),
+                        end = contentPadding.calculateEndPadding(androidx.compose.ui.unit.LayoutDirection.Ltr),
+                        bottom = contentPadding.calculateBottomPadding() + navigationBarPadding,
                     )
-                    Box {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -293,57 +293,55 @@ fun AppPage(
                                     else -> stringResource(R.string.app_info)
                                 }
                             )
-                        }
-
-                        LazyColumn(
-                            state = lazyListState,
-                            modifier = Modifier
-                                .pageScrollModifiers(
+                        Box(modifier = Modifier.weight(1f)) {
+                            LazyColumn(
+                                state = lazyListState,
+                                modifier = Modifier.pageScrollModifiers(
                                     scrollEndHaptic,
                                     true,
                                     scrollBehavior,
-                                )
-                                .offset(y = contentPadding.calculateTopPadding()),
-                            contentPadding = listContentPadding,
-                        ) {
-                            val appItems = filteredApps
-                            val appCount = appItems.size
-                            itemsIndexed(
-                                items = appItems,
-                                key = { _, item -> item.packageName + "#" + item.userId }
-                            ) { i, item ->
-                                if (appCount == 1) {
-                                    CirnoCard(modifier = Modifier.padding(horizontal = 12.dp)) {
-                                        AppItemCompose(item)
-                                    }
-                                } else {
-                                    val isFirst = i == 0
-                                    val isLast = i == appCount - 1
-                                    val shape = when {
-                                        isFirst -> AppListTopShape
-                                        isLast -> AppListBottomShape
-                                        else -> RectangleShape
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp)
-                                            .clip(shape)
-                                            .cirnoCardBackground(shape, colorScheme.surfaceContainer),
-                                    ) {
-                                        AppItemCompose(item)
+                                ),
+                                contentPadding = listContentPadding,
+                            ) {
+                                val appItems = filteredApps
+                                val appCount = appItems.size
+                                itemsIndexed(
+                                    items = appItems,
+                                    key = { _, item -> item.packageName + "#" + item.userId }
+                                ) { i, item ->
+                                    if (appCount == 1) {
+                                        CirnoCard(modifier = Modifier.padding(horizontal = 12.dp)) {
+                                            AppItemCompose(item)
+                                        }
+                                    } else {
+                                        val isFirst = i == 0
+                                        val isLast = i == appCount - 1
+                                        val shape = when {
+                                            isFirst -> AppListTopShape
+                                            isLast -> AppListBottomShape
+                                            else -> RectangleShape
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp)
+                                                .clip(shape)
+                                                .cirnoCardBackground(shape, colorScheme.surfaceContainer),
+                                        ) {
+                                            AppItemCompose(item)
+                                        }
                                     }
                                 }
+
+                                item { Spacer(modifier = Modifier.height(12.dp)) }
                             }
 
-                            item { Spacer(modifier = Modifier.height(12.dp)) }
+                            VerticalScrollBar(
+                                adapter = rememberScrollBarAdapter(lazyListState),
+                                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                                trackPadding = listContentPadding,
+                            )
                         }
-
-                        VerticalScrollBar(
-                            adapter = rememberScrollBarAdapter(lazyListState),
-                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                            trackPadding = listContentPadding,
-                        )
                     }
                 }
             }
