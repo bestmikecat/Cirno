@@ -177,6 +177,7 @@ private fun SettingsContent(
             }
         )
     }
+    val hasCustomBackground = BackgroundManager.currentUri != null
 
     fun saveGlobalSettingsAsync(defaultError: String, onFailed: () -> Unit) {
         RootConfigSaveScope.saveGlobalSettingsAsync(
@@ -186,6 +187,9 @@ private fun SettingsContent(
     }
 
     fun syncLocalStateFromSettings() {
+        if (hasCustomBackground && globalSettings.blurUI) {
+            globalSettings.blurUI = false
+        }
         freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
@@ -257,13 +261,17 @@ private fun SettingsContent(
             }
             if (restored) {
                 globalSettings = GlobalVars.globalSettings ?: globalSettings
+                val shouldDisableBlur = hasCustomBackground && globalSettings.blurUI
                 syncLocalStateFromSettings()
+                if (shouldDisableBlur) {
+                    saveGlobalSettingsAsync("模糊效果更新失败") {}
+                }
                 updateAppState { state ->
                     state.copy(
                         uiStyle = globalSettings.uiStyle,
                         navigationStyle = globalSettings.navigationStyle,
                         colorMode = globalSettings.colorMode,
-                        blur = globalSettings.blurUI,
+                        blur = globalSettings.blurUI && !hasCustomBackground,
                     )
                 }
             }
@@ -280,6 +288,17 @@ private fun SettingsContent(
         scope.launch {
             val success = withContext(Dispatchers.IO) {
                 BackgroundManager.set(context, uri)
+            }
+            if (success && globalSettings.blurUI) {
+                val previous = globalSettings.blurUI
+                blurEnabled.intValue = 0
+                globalSettings.blurUI = false
+                updateAppState { state -> state.copy(blur = false) }
+                saveGlobalSettingsAsync("模糊效果更新失败") {
+                    globalSettings.blurUI = previous
+                    blurEnabled.intValue = if (previous) 1 else 0
+                    updateAppState { state -> state.copy(blur = previous) }
+                }
             }
             AppContext.showToast(if (success) customBackgroundUpdatedText else customBackgroundUpdateFailedText)
         }
@@ -454,7 +473,7 @@ private fun SettingsContent(
                             }
                         )
 
-                        if (isRenderEffectSupported()) {
+                        if (isRenderEffectSupported() && !hasCustomBackground) {
                             SwitchPreference(
                                 title = stringResource(R.string.blur_ui),
                                 summary = stringResource(R.string.blur_ui_desc),

@@ -433,18 +433,9 @@ private fun NavigationBar(
                         Modifier.textureBlur(
                             backdrop = backdrop,
                             colors = BlurColors(
-                                blendColors = if (BackgroundManager.currentUri != null) {
-                                    // 有自定义背景时，使用多层混合模式抑制色彩扩散
-                                    listOf(
-                                        BlendColorEntry(colorScheme.surface.copy(0.6f), BlurBlendMode.Luminosity),
-                                        BlendColorEntry(colorScheme.surface.copy(0.3f), BlurBlendMode.SrcOver),
-                                    )
-                                } else {
-                                    // 无背景时保持原样
-                                    listOf(
-                                        BlendColorEntry(colorScheme.surface.copy(0.8f)),
-                                    )
-                                }
+                                blendColors = listOf(
+                                    BlendColorEntry(colorScheme.surface.copy(0.8f)),
+                                )
                             )
                         )
                     } else {
@@ -490,18 +481,9 @@ private fun NavigationBar(
                             Modifier.textureBlur(
                                 backdrop = backdrop,
                                 colors = BlurColors(
-                                    blendColors = if (BackgroundManager.currentUri != null) {
-                                        // 有自定义背景时，使用多层混合模式抑制色彩扩散
-                                        listOf(
-                                            BlendColorEntry(colorScheme.surface.copy(0.6f), BlurBlendMode.Luminosity),
-                                            BlendColorEntry(colorScheme.surface.copy(0.3f), BlurBlendMode.SrcOver),
-                                        )
-                                    } else {
-                                        // 无背景时保持原样
-                                        listOf(
-                                            BlendColorEntry(colorScheme.surface.copy(0.8f)),
-                                        )
-                                    }
+                                    blendColors = listOf(
+                                        BlendColorEntry(colorScheme.surface.copy(0.8f)),
+                                    )
                                 )
                             )
                         } else {

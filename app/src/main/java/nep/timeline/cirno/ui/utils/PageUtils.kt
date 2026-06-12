@@ -80,7 +80,7 @@ fun AdaptiveTopAppBar(
     bottomContent: @Composable () -> Unit = {},
 ) {
     val barColor = if (BackgroundManager.currentUri != null && color != Color.Transparent) {
-        color.copy(alpha = scrollBehavior.state.collapsedFraction * BackgroundManager.topAppBarAlpha)
+        color.copy(alpha = BackgroundManager.topAppBarAlpha)
     } else {
         color
     }
@@ -145,8 +145,8 @@ fun BlurredBar(
                 colors = BlurColors(
                     blendColors = listOf(
                         BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy((scrollBehavior?.state?.collapsedFraction?.times(
-                            0.45f
-                        )) ?: 0f)),
+                            0.8f
+                        )) ?: 0.8f)),
                     ),
                 )
             )
