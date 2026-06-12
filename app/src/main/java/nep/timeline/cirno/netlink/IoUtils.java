@@ -12,6 +12,9 @@ public class IoUtils {
     public static void setsockoptInt(ClassLoader classLoader, FileDescriptor fileDescriptor, int level, int option, int value) {
         Class<?> libcore = CakeReflection.findClass("libcore.io.Libcore", classLoader);
         Object os = CakeReflection.getStaticObjectField(libcore, "os");
+        if (os == null) {
+            throw new IllegalStateException("libcore.io.Libcore.os is null");
+        }
         CakeReflection.callMethod(os, "setsockoptInt", fileDescriptor, level, option, value);
     }
 }

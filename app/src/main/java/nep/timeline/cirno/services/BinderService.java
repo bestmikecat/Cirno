@@ -112,7 +112,14 @@ public class BinderService {
                     } else netlinkUnit = NETLINK_UNIT_DEFAULT;
                 }
 
-                NetlinkClient netlinkClient = new NetlinkClient(classLoader, netlinkUnit);
+                NetlinkClient netlinkClient;
+                try {
+                    netlinkClient = new NetlinkClient(classLoader, netlinkUnit);
+                } catch (Throwable e) {
+                    Log.w("初始化ReKernel客户端失败, netlinkUnit=" + netlinkUnit, e);
+                    isRunning.set(false);
+                    return;
+                }
                 sNetlinkClient = netlinkClient;
                 try {
                     if (!netlinkClient.getMDescriptor().valid()) {
@@ -121,7 +128,13 @@ public class BinderService {
                         return;
                     }
 
-                    netlinkClient.bind((SocketAddress) new NetlinkSocketAddress(100).toInstance(classLoader));
+                    try {
+                        netlinkClient.bind((SocketAddress) new NetlinkSocketAddress(100).toInstance(classLoader));
+                    } catch (Throwable e) {
+                        Log.w("绑定ReKernel客户端失败, netlinkUnit=" + netlinkUnit + ", portId=100", e);
+                        isRunning.set(false);
+                        return;
+                    }
 
                     if (rekernelFound) {
                         try {
@@ -260,7 +273,7 @@ public class BinderService {
                                  NumberFormatException ignored) {
 
                         } catch (Exception e) {
-                            Log.e("ReKernel", e);
+                            Log.e("ReKernel接收消息失败, netlinkUnit=" + netlinkUnit, e);
                         }
                     }
                 } finally {

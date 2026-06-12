@@ -42,6 +42,9 @@ public final class CakeReflection {
     }
 
     public static Object getObjectField(Object obj, String fieldName) {
+        if (obj == null) {
+            throw new NullPointerException("Cannot read field '" + fieldName + "' from null object");
+        }
         try {
             return findField(obj.getClass(), fieldName).get(obj);
         } catch (IllegalAccessException e) {
@@ -50,6 +53,9 @@ public final class CakeReflection {
     }
 
     public static int getIntField(Object obj, String fieldName) {
+        if (obj == null) {
+            throw new NullPointerException("Cannot read int field '" + fieldName + "' from null object");
+        }
         try {
             return findField(obj.getClass(), fieldName).getInt(obj);
         } catch (IllegalAccessException e) {
@@ -58,6 +64,9 @@ public final class CakeReflection {
     }
 
     public static boolean getBooleanField(Object obj, String fieldName) {
+        if (obj == null) {
+            throw new NullPointerException("Cannot read boolean field '" + fieldName + "' from null object");
+        }
         try {
             return findField(obj.getClass(), fieldName).getBoolean(obj);
         } catch (IllegalAccessException e) {
@@ -98,6 +107,9 @@ public final class CakeReflection {
     }
 
     public static Object callMethod(Object obj, String methodName, Object... args) {
+        if (obj == null) {
+            throw new NullPointerException("Cannot call method '" + methodName + "' on null object");
+        }
         try {
             return findMethodBestMatch(obj.getClass(), methodName, args).invoke(obj, args);
         } catch (IllegalAccessException e) {
@@ -118,6 +130,9 @@ public final class CakeReflection {
     }
 
     public static Object newInstance(Class<?> clazz, Object... args) {
+        if (clazz == null) {
+            throw new NullPointerException("Cannot instantiate null class");
+        }
         try {
             return findConstructorBestMatch(clazz, args).newInstance(args);
         } catch (IllegalAccessException e) {
@@ -296,4 +311,3 @@ public final class CakeReflection {
         return parameter;
     }
 }
-
