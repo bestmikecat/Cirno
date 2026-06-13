@@ -437,23 +437,23 @@ private fun AboutContent(
                         ),
                     ) {
                         ArrowPreference(
-                            title = "QQ Group",
+                            title = stringResource(R.string.about_qq_group),
                             onClick = { uriHandler.openUri("https://qm.qq.com/q/jPqwiLpHs6") },
                         )
                         ArrowPreference(
-                            title = "Telegram Group",
+                            title = stringResource(R.string.about_telegram_channel),
                             onClick = { uriHandler.openUri("https://t.me/cirnoadk") },
                         )
                         ArrowPreference(
-                            title = "Coolapk",
+                            title = stringResource(R.string.about_coolapk),
                             onClick = { uriHandler.openUri("https://www.coolapk.com/u/31449483") },
                         )
                         ArrowPreference(
-                            title = "GitHub",
+                            title = stringResource(R.string.about_github_source),
                             onClick = { uriHandler.openUri("https://github.com/Adkimsm/Cirno") },
                         )
                         ArrowPreference(
-                            title = "Original Project",
+                            title = stringResource(R.string.about_original_project),
                             onClick = { uriHandler.openUri("https://github.com/Freezer-Team/Cirno") },
                         )
                     }

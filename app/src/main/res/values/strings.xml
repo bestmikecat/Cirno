@@ -65,6 +65,8 @@
   <string name="about_github_source">View source on GitHub</string>
   <string name="about_telegram_channel">Join our Telegram channel</string>
   <string name="about_qq_group">Join our QQ group</string>
+  <string name="about_coolapk">View Coolapk profile</string>
+  <string name="about_original_project">View original project</string>
   <string name="home_logs">Logs</string>
   <string name="home_logs_desc">View module log output</string>
   <string name="logs_empty">No log data</string>

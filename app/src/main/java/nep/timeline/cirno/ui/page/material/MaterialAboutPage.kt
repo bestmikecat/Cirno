@@ -16,6 +16,8 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChatBubble
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Forum
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -105,9 +107,9 @@ fun MaterialAboutPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 MaterialNavigationCard(
-                    title = stringResource(R.string.about_github_source),
-                    icon = { MaterialIcon(Icons.Outlined.Code) },
-                    onClick = { uriHandler.openUri("https://github.com/Adkimsm/Cirno") },
+                    title = stringResource(R.string.about_qq_group),
+                    icon = { MaterialIcon(Icons.Outlined.Forum) },
+                    onClick = { uriHandler.openUri("https://qm.qq.com/q/jPqwiLpHs6") },
                 )
                 MaterialNavigationCard(
                     title = stringResource(R.string.about_telegram_channel),
@@ -115,9 +117,19 @@ fun MaterialAboutPage(
                     onClick = { uriHandler.openUri("https://t.me/cirnoadk") },
                 )
                 MaterialNavigationCard(
-                    title = stringResource(R.string.about_qq_group),
-                    icon = { MaterialIcon(Icons.Outlined.Forum) },
-                    onClick = { uriHandler.openUri("https://qm.qq.com/q/jPqwiLpHs6") },
+                    title = stringResource(R.string.about_coolapk),
+                    icon = { MaterialIcon(Icons.Outlined.Storefront) },
+                    onClick = { uriHandler.openUri("https://www.coolapk.com/u/31449483") },
+                )
+                MaterialNavigationCard(
+                    title = stringResource(R.string.about_github_source),
+                    icon = { MaterialIcon(Icons.Outlined.Code) },
+                    onClick = { uriHandler.openUri("https://github.com/Adkimsm/Cirno") },
+                )
+                MaterialNavigationCard(
+                    title = stringResource(R.string.about_original_project),
+                    icon = { MaterialIcon(Icons.Outlined.Info) },
+                    onClick = { uriHandler.openUri("https://github.com/Freezer-Team/Cirno") },
                 )
             }
         }
