@@ -20,6 +20,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -251,8 +252,8 @@ private fun ThemePaletteStyle.toMaterialKolorStyle(): com.materialkolor.PaletteS
     else -> com.materialkolor.PaletteStyle.TonalSpot
 }
 
-private fun ThemeColorSpec.toMaterialKolorSpec(): com.materialkolor.spec.SpecVersion = when (this) {
-    ThemeColorSpec.Spec2021 -> com.materialkolor.spec.SpecVersion.SPEC_2021
-    ThemeColorSpec.Spec2025 -> com.materialkolor.spec.SpecVersion.SPEC_2025
-    else -> com.materialkolor.spec.SpecVersion.SPEC_2021
+private fun ThemeColorSpec.toMaterialKolorSpec(): ColorSpec.SpecVersion = when (this) {
+    ThemeColorSpec.Spec2021 -> ColorSpec.SpecVersion.SPEC_2021
+    ThemeColorSpec.Spec2025 -> ColorSpec.SpecVersion.SPEC_2025
+    else -> ColorSpec.SpecVersion.SPEC_2021
 }
