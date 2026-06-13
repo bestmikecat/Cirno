@@ -162,21 +162,30 @@ fun AppTheme(
         else -> isSystemInDarkTheme()
     }
     val materialColors = if (monetEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val baseScheme = remember(useDarkMaterial, context) {
-            if (useDarkMaterial) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        if (keyColor == null) {
+            val baseScheme = remember(useDarkMaterial, context) {
+                if (useDarkMaterial) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            rememberDynamicColorScheme(
+                seedColor = Color.Unspecified,
+                isDark = useDarkMaterial,
+                style = style.toMaterialKolorStyle(),
+                specVersion = spec.toMaterialKolorSpec(),
+                primary = baseScheme.primary,
+                secondary = baseScheme.secondary,
+                tertiary = baseScheme.tertiary,
+                neutral = baseScheme.surface,
+                neutralVariant = baseScheme.surfaceVariant,
+                error = baseScheme.error,
+            )
+        } else {
+            rememberDynamicColorScheme(
+                seedColor = keyColor,
+                isDark = useDarkMaterial,
+                style = style.toMaterialKolorStyle(),
+                specVersion = spec.toMaterialKolorSpec(),
+            )
         }
-        rememberDynamicColorScheme(
-            seedColor = keyColor ?: Color.Unspecified,
-            isDark = useDarkMaterial,
-            style = style.toMaterialKolorStyle(),
-            specVersion = spec.toMaterialKolorSpec(),
-            primary = if (keyColor == null) baseScheme.primary else Color.Unspecified,
-            secondary = if (keyColor == null) baseScheme.secondary else Color.Unspecified,
-            tertiary = if (keyColor == null) baseScheme.tertiary else Color.Unspecified,
-            neutral = if (keyColor == null) baseScheme.surface else Color.Unspecified,
-            neutralVariant = if (keyColor == null) baseScheme.surfaceVariant else Color.Unspecified,
-            error = if (keyColor == null) baseScheme.error else Color.Unspecified,
-        )
     } else {
         remember(colorMode, useDarkMaterial) {
             if (useDarkMaterial) WarmDarkColorScheme else WarmLightColorScheme
