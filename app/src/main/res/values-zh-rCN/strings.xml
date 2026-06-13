@@ -104,6 +104,10 @@
   <string name="theme_monet_system">莫奈跟随系统</string>
   <string name="theme_monet_light">莫奈浅色</string>
   <string name="theme_monet_dark">莫奈深色</string>
+  <string name="theme_key_color">强调色</string>
+  <string name="theme_key_color_default">跟随系统</string>
+  <string name="theme_color_spec">色彩标准</string>
+  <string name="theme_palette_style">色彩风格</string>
   <string name="blur_ui">模糊</string>
   <string name="blur_ui_desc">为顶部栏和导航栏启用模糊效果</string>
   <string name="custom_background">自定义背景图</string>

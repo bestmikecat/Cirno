@@ -104,6 +104,10 @@
   <string name="theme_monet_system">Monet follow system</string>
   <string name="theme_monet_light">Monet light</string>
   <string name="theme_monet_dark">Monet dark</string>
+  <string name="theme_key_color">Accent color</string>
+  <string name="theme_key_color_default">Follow system</string>
+  <string name="theme_color_spec">Color spec</string>
+  <string name="theme_palette_style">Palette style</string>
   <string name="blur_ui">Blur</string>
   <string name="blur_ui_desc">Enable the blur effect for the top and navigation bars</string>
   <string name="custom_background">Custom background</string>

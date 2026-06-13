@@ -18,6 +18,9 @@ class AppUiStateViewModel : ViewModel() {
                 uiStyle = settings.uiStyle,
                 navigationStyle = settings.navigationStyle,
                 colorMode = settings.colorMode,
+                themeKeyColor = settings.themeKeyColor,
+                themeColorSpec = settings.themeColorSpec,
+                themePaletteStyle = settings.themePaletteStyle,
                 blur = settings.blurUI,
             )
         } else {

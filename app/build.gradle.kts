@@ -71,6 +71,7 @@ dependencies {
     implementation("com.kongzue.dialogx:DialogX:0.0.49")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.materialkolor)
     implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.2")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.9.2")
     implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.2")

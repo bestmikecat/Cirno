@@ -20,6 +20,9 @@ fun App(
     AppTheme(
         uiStyle = appState.uiStyle,
         colorMode = appState.colorMode,
+        keyColor = keyColorFor(appState.themeKeyColor),
+        paletteStyle = appState.themePaletteStyle,
+        colorSpec = appState.themeColorSpec,
         smoothRounding = false,
     ) {
         CompositionLocalProvider(

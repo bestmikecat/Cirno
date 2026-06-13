@@ -20,6 +20,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
+import com.materialkolor.rememberDynamicColorScheme
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeColorSpec
@@ -143,6 +144,7 @@ fun AppTheme(
     val spec = ThemeColorSpec.entries.getOrNull(colorSpec) ?: ThemeColorSpec.Spec2021
     val style = ThemePaletteStyle.entries.getOrNull(paletteStyle) ?: ThemePaletteStyle.Content
     val context = LocalContext.current
+    val monetEnabled = colorMode in 3..5
     val controller = remember(colorMode, keyColor, spec, style) {
         when (colorMode) {
             1 -> ThemeController(ColorSchemeMode.Light)
@@ -158,13 +160,25 @@ fun AppTheme(
         1, 4 -> false
         else -> isSystemInDarkTheme()
     }
-    val materialColors = remember(colorMode, useDarkMaterial, context) {
-        val useDynamic = colorMode in 3..5 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        when {
-            useDynamic && useDarkMaterial -> dynamicDarkColorScheme(context)
-            useDynamic -> dynamicLightColorScheme(context)
-            useDarkMaterial -> WarmDarkColorScheme
-            else -> WarmLightColorScheme
+    val materialColors = if (monetEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val baseScheme = remember(useDarkMaterial, context) {
+            if (useDarkMaterial) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        rememberDynamicColorScheme(
+            seedColor = keyColor ?: Color.Unspecified,
+            isDark = useDarkMaterial,
+            style = style.toMaterialKolorStyle(),
+            specVersion = spec.toMaterialKolorSpec(),
+            primary = if (keyColor == null) baseScheme.primary else Color.Unspecified,
+            secondary = if (keyColor == null) baseScheme.secondary else Color.Unspecified,
+            tertiary = if (keyColor == null) baseScheme.tertiary else Color.Unspecified,
+            neutral = if (keyColor == null) baseScheme.surface else Color.Unspecified,
+            neutralVariant = if (keyColor == null) baseScheme.surfaceVariant else Color.Unspecified,
+            error = if (keyColor == null) baseScheme.error else Color.Unspecified,
+        )
+    } else {
+        remember(colorMode, useDarkMaterial) {
+            if (useDarkMaterial) WarmDarkColorScheme else WarmLightColorScheme
         }
     }
     CompositionLocalProvider(
@@ -204,3 +218,39 @@ val KeyColors: List<Pair<String, Color>> = listOf(
 )
 
 fun keyColorFor(index: Int): Color? = if (index <= 0) null else KeyColors.getOrNull(index - 1)?.second
+
+fun themeColorSpecLabel(spec: ThemeColorSpec): String = when (spec) {
+    ThemeColorSpec.Spec2021 -> "2021"
+    ThemeColorSpec.Spec2025 -> "2025"
+}
+
+fun themePaletteStyleLabel(style: ThemePaletteStyle): String = when (style) {
+    ThemePaletteStyle.TonalSpot -> "Tonal spot"
+    ThemePaletteStyle.Neutral -> "Neutral"
+    ThemePaletteStyle.Vibrant -> "Vibrant"
+    ThemePaletteStyle.Expressive -> "Expressive"
+    ThemePaletteStyle.Rainbow -> "Rainbow"
+    ThemePaletteStyle.FruitSalad -> "Fruit salad"
+    ThemePaletteStyle.Monochrome -> "Monochrome"
+    ThemePaletteStyle.Clock -> "Clock"
+    ThemePaletteStyle.ClockVibrant -> "Clock vibrant"
+    ThemePaletteStyle.Content -> "Content"
+}
+
+private fun ThemePaletteStyle.toMaterialKolorStyle(): com.materialkolor.PaletteStyle = when (this) {
+    ThemePaletteStyle.TonalSpot -> com.materialkolor.PaletteStyle.TonalSpot
+    ThemePaletteStyle.Neutral -> com.materialkolor.PaletteStyle.Neutral
+    ThemePaletteStyle.Vibrant -> com.materialkolor.PaletteStyle.Vibrant
+    ThemePaletteStyle.Expressive -> com.materialkolor.PaletteStyle.Expressive
+    ThemePaletteStyle.Rainbow -> com.materialkolor.PaletteStyle.Rainbow
+    ThemePaletteStyle.FruitSalad -> com.materialkolor.PaletteStyle.FruitSalad
+    ThemePaletteStyle.Monochrome -> com.materialkolor.PaletteStyle.Monochrome
+    ThemePaletteStyle.Clock -> com.materialkolor.PaletteStyle.TonalSpot
+    ThemePaletteStyle.ClockVibrant -> com.materialkolor.PaletteStyle.Vibrant
+    ThemePaletteStyle.Content -> com.materialkolor.PaletteStyle.Content
+}
+
+private fun ThemeColorSpec.toMaterialKolorSpec(): com.materialkolor.spec.SpecVersion = when (this) {
+    ThemeColorSpec.Spec2021 -> com.materialkolor.spec.SpecVersion.SPEC_2021
+    ThemeColorSpec.Spec2025 -> com.materialkolor.spec.SpecVersion.SPEC_2025
+}

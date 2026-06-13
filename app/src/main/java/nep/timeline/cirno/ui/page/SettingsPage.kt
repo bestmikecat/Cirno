@@ -23,10 +23,13 @@ import androidx.compose.ui.unit.dp
 import nep.timeline.cirno.GlobalVars
 import nep.timeline.cirno.R
 import nep.timeline.cirno.configs.settings.GlobalSettings
+import nep.timeline.cirno.ui.app.KeyColors
 import nep.timeline.cirno.ui.app.LocalIsWideScreen
 import nep.timeline.cirno.ui.app.LocalUpdateAppState
 import nep.timeline.cirno.ui.app.UI_STYLE_MATERIAL
 import nep.timeline.cirno.ui.app.UI_STYLE_MIUIX
+import nep.timeline.cirno.ui.app.themeColorSpecLabel
+import nep.timeline.cirno.ui.app.themePaletteStyleLabel
 import nep.timeline.cirno.ui.utils.AdaptiveTopAppBar
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.BackgroundManager
@@ -58,6 +61,8 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 
 @Composable
 fun SettingsPage(
@@ -156,12 +161,18 @@ private fun SettingsContent(
         stringResource(R.string.theme_monet_light),
         stringResource(R.string.theme_monet_dark),
     )
+    val keyColorItems = listOf(stringResource(R.string.theme_key_color_default)) + KeyColors.map { it.first }
+    val colorSpecItems = ThemeColorSpec.entries.map(::themeColorSpecLabel)
+    val paletteStyleItems = ThemePaletteStyle.entries.map(::themePaletteStyleLabel)
     val uiStyleIndex = remember { mutableIntStateOf(globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)) }
     val freezerModeIndex = remember {
         mutableIntStateOf(if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0)
     }
     val navIndex = remember { mutableIntStateOf(globalSettings.navigationStyle.coerceIn(0, 2)) }
     val themeIndex = remember { mutableIntStateOf(globalSettings.colorMode.coerceIn(0, 5)) }
+    val keyColorIndex = remember { mutableIntStateOf(globalSettings.themeKeyColor.coerceIn(0, KeyColors.size)) }
+    val colorSpecIndex = remember { mutableIntStateOf(globalSettings.themeColorSpec.coerceIn(0, ThemeColorSpec.entries.lastIndex)) }
+    val paletteStyleIndex = remember { mutableIntStateOf(globalSettings.themePaletteStyle.coerceIn(0, ThemePaletteStyle.entries.lastIndex)) }
     val blurEnabled = remember { mutableIntStateOf(if (globalSettings.blurUI) 1 else 0) }
     val levelItems = listOf(
         stringResource(R.string.log_close),
@@ -197,6 +208,9 @@ private fun SettingsContent(
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         navIndex.intValue = globalSettings.navigationStyle.coerceIn(0, 2)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
+        keyColorIndex.intValue = globalSettings.themeKeyColor.coerceIn(0, KeyColors.size)
+        colorSpecIndex.intValue = globalSettings.themeColorSpec.coerceIn(0, ThemeColorSpec.entries.lastIndex)
+        paletteStyleIndex.intValue = globalSettings.themePaletteStyle.coerceIn(0, ThemePaletteStyle.entries.lastIndex)
         blurEnabled.intValue = if (globalSettings.blurUI) 1 else 0
         levelIndex.intValue = when (globalSettings.logLevel) {
             GlobalSettings.LOG_LEVEL_NONE -> 0
@@ -271,6 +285,9 @@ private fun SettingsContent(
                         uiStyle = globalSettings.uiStyle,
                         navigationStyle = globalSettings.navigationStyle,
                         colorMode = globalSettings.colorMode,
+                        themeKeyColor = globalSettings.themeKeyColor,
+                        themeColorSpec = globalSettings.themeColorSpec,
+                        themePaletteStyle = globalSettings.themePaletteStyle,
                         blur = globalSettings.blurUI && !hasCustomBackground,
                     )
                 }
@@ -472,6 +489,59 @@ private fun SettingsContent(
                                 }
                             }
                         )
+
+                        if (themeIndex.intValue in 3..5) {
+                            OverlayDropdownPreference(
+                                title = stringResource(R.string.theme_key_color),
+                                items = keyColorItems,
+                                selectedIndex = keyColorIndex.intValue,
+                                onSelectedIndexChange = {
+                                    val previous = globalSettings.themeKeyColor
+                                    keyColorIndex.intValue = it
+                                    globalSettings.themeKeyColor = it
+                                    updateAppState { state -> state.copy(themeKeyColor = it) }
+                                    saveGlobalSettingsAsync("主题强调色更新失败") {
+                                        globalSettings.themeKeyColor = previous
+                                        keyColorIndex.intValue = previous.coerceIn(0, KeyColors.size)
+                                        updateAppState { state -> state.copy(themeKeyColor = previous) }
+                                    }
+                                }
+                            )
+
+                            OverlayDropdownPreference(
+                                title = stringResource(R.string.theme_color_spec),
+                                items = colorSpecItems,
+                                selectedIndex = colorSpecIndex.intValue,
+                                onSelectedIndexChange = {
+                                    val previous = globalSettings.themeColorSpec
+                                    colorSpecIndex.intValue = it
+                                    globalSettings.themeColorSpec = it
+                                    updateAppState { state -> state.copy(themeColorSpec = it) }
+                                    saveGlobalSettingsAsync("主题色彩标准更新失败") {
+                                        globalSettings.themeColorSpec = previous
+                                        colorSpecIndex.intValue = previous.coerceIn(0, ThemeColorSpec.entries.lastIndex)
+                                        updateAppState { state -> state.copy(themeColorSpec = previous) }
+                                    }
+                                }
+                            )
+
+                            OverlayDropdownPreference(
+                                title = stringResource(R.string.theme_palette_style),
+                                items = paletteStyleItems,
+                                selectedIndex = paletteStyleIndex.intValue,
+                                onSelectedIndexChange = {
+                                    val previous = globalSettings.themePaletteStyle
+                                    paletteStyleIndex.intValue = it
+                                    globalSettings.themePaletteStyle = it
+                                    updateAppState { state -> state.copy(themePaletteStyle = it) }
+                                    saveGlobalSettingsAsync("主题色彩风格更新失败") {
+                                        globalSettings.themePaletteStyle = previous
+                                        paletteStyleIndex.intValue = previous.coerceIn(0, ThemePaletteStyle.entries.lastIndex)
+                                        updateAppState { state -> state.copy(themePaletteStyle = previous) }
+                                    }
+                                }
+                            )
+                        }
 
                         if (isRenderEffectSupported() && !hasCustomBackground) {
                             SwitchPreference(

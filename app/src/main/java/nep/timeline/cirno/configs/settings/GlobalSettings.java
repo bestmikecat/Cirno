@@ -17,6 +17,9 @@ public class GlobalSettings {
     public int uiStyle;
     public int navigationStyle;
     public int colorMode;
+    public int themeKeyColor;
+    public int themeColorSpec;
+    public int themePaletteStyle;
     public boolean blurUI = true;
 
     public static GlobalSettings ensureInitialized(GlobalSettings settings) {
