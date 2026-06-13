@@ -222,6 +222,7 @@ fun keyColorFor(index: Int): Color? = if (index <= 0) null else KeyColors.getOrN
 fun themeColorSpecLabel(spec: ThemeColorSpec): String = when (spec) {
     ThemeColorSpec.Spec2021 -> "2021"
     ThemeColorSpec.Spec2025 -> "2025"
+    else -> spec.name
 }
 
 fun themePaletteStyleLabel(style: ThemePaletteStyle): String = when (style) {
@@ -232,9 +233,9 @@ fun themePaletteStyleLabel(style: ThemePaletteStyle): String = when (style) {
     ThemePaletteStyle.Rainbow -> "Rainbow"
     ThemePaletteStyle.FruitSalad -> "Fruit salad"
     ThemePaletteStyle.Monochrome -> "Monochrome"
-    ThemePaletteStyle.Clock -> "Clock"
-    ThemePaletteStyle.ClockVibrant -> "Clock vibrant"
+    ThemePaletteStyle.Fidelity -> "Fidelity"
     ThemePaletteStyle.Content -> "Content"
+    else -> style.name
 }
 
 private fun ThemePaletteStyle.toMaterialKolorStyle(): com.materialkolor.PaletteStyle = when (this) {
@@ -245,12 +246,13 @@ private fun ThemePaletteStyle.toMaterialKolorStyle(): com.materialkolor.PaletteS
     ThemePaletteStyle.Rainbow -> com.materialkolor.PaletteStyle.Rainbow
     ThemePaletteStyle.FruitSalad -> com.materialkolor.PaletteStyle.FruitSalad
     ThemePaletteStyle.Monochrome -> com.materialkolor.PaletteStyle.Monochrome
-    ThemePaletteStyle.Clock -> com.materialkolor.PaletteStyle.TonalSpot
-    ThemePaletteStyle.ClockVibrant -> com.materialkolor.PaletteStyle.Vibrant
+    ThemePaletteStyle.Fidelity -> com.materialkolor.PaletteStyle.Fidelity
     ThemePaletteStyle.Content -> com.materialkolor.PaletteStyle.Content
+    else -> com.materialkolor.PaletteStyle.TonalSpot
 }
 
 private fun ThemeColorSpec.toMaterialKolorSpec(): com.materialkolor.spec.SpecVersion = when (this) {
     ThemeColorSpec.Spec2021 -> com.materialkolor.spec.SpecVersion.SPEC_2021
     ThemeColorSpec.Spec2025 -> com.materialkolor.spec.SpecVersion.SPEC_2025
+    else -> com.materialkolor.spec.SpecVersion.SPEC_2021
 }
