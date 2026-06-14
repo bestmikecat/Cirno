@@ -24,6 +24,7 @@ public class FreezerService {
 
         FreezeExemption exemption = FreezeExemptionChecker.check(appRecord);
         if (exemption != null) {
+            Log.d("跳过冻结 app=" + appRecord.getPackageNameWithUser() + " reason=" + exemption.reason);
             return;
         }
 

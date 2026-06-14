@@ -1,7 +1,6 @@
 package nep.timeline.cirno.hooks.android.autofill;
 
 import android.content.pm.ServiceInfo;
-import android.service.autofill.AutofillServiceInfo;
 
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.framework.MethodHook;
@@ -61,33 +60,55 @@ public class AutofillManagerServiceImplHook extends MethodHook {
 
                     Object result = callback.getResult();
                     if (!(result instanceof Long sessionResult)) {
-                        return;
-                    }
-
-                    if (sessionResult == INVALID_SESSION_ID || sessionResult == FAILED_SESSION_ID) {
-                        return;
-                    }
-
-                    Object infoObject = CakeReflection.getObjectField(callback.getThisObject(), "mInfo");
-                    if (!(infoObject instanceof AutofillServiceInfo autofillServiceInfo)) {
-                        return;
-                    }
-
-                    ServiceInfo serviceInfo = autofillServiceInfo.getServiceInfo();
-                    if (serviceInfo == null || serviceInfo.packageName == null || serviceInfo.packageName.isEmpty()) {
+                        Log.w("Autofill startSession 忽略，返回值类型异常 result=" + result);
                         return;
                     }
 
                     int userId = CakeReflection.getIntField(callback.getThisObject(), "mUserId");
+                    Log.d("Autofill startSession 命中 result=" + sessionResult
+                            + " userId=" + userId
+                            + " args=" + callback.getArgs().length);
+
+                    if (sessionResult == INVALID_SESSION_ID || sessionResult == FAILED_SESSION_ID) {
+                        Log.d("Autofill startSession 忽略，无效结果 result=" + sessionResult + " userId=" + userId);
+                        return;
+                    }
+
+                    Object infoObject = CakeReflection.getObjectField(callback.getThisObject(), "mInfo");
+                    if (infoObject == null) {
+                        Log.w("Autofill provider 解析失败: mInfo is null, userId=" + userId);
+                        return;
+                    }
+
+                    Object serviceInfoObject = CakeReflection.callMethod(infoObject, "getServiceInfo");
+                    if (!(serviceInfoObject instanceof ServiceInfo serviceInfo)) {
+                        Log.w("Autofill provider 解析失败: getServiceInfo returned " + serviceInfoObject + ", userId=" + userId);
+                        return;
+                    }
+
+                    if (serviceInfo == null || serviceInfo.packageName == null || serviceInfo.packageName.isEmpty()) {
+                        Log.w("Autofill provider 解析失败: packageName empty, userId=" + userId);
+                        return;
+                    }
+
                     AppRecord appRecord = AppService.get(serviceInfo.packageName, userId);
-                    if (appRecord == null || appRecord.equals(AutofillData.currentAutofillApp)) {
+                    if (appRecord == null) {
+                        Log.w("Autofill provider 未找到 AppRecord pkg=" + serviceInfo.packageName + " userId=" + userId);
+                        return;
+                    }
+
+                    if (appRecord.equals(AutofillData.currentAutofillApp)) {
+                        Log.d("Autofill provider 未变化 app=" + appRecord.getPackageNameWithUser());
                         return;
                     }
 
                     AppRecord oldApp = AutofillData.currentAutofillApp;
                     AutofillData.currentAutofillApp = appRecord;
+                    Log.i("Autofill provider 切换 old=" + formatApp(oldApp) + " new=" + appRecord.getPackageNameWithUser());
+                    Log.i("Autofill provider 解冻 app=" + appRecord.getPackageNameWithUser());
                     FreezerService.thaw(appRecord);
                     if (oldApp != null) {
+                        Log.i("Autofill provider 回收旧豁免 app=" + oldApp.getPackageNameWithUser());
                         FreezerHandler.sendFreezeMessage(oldApp);
                     }
                 } catch (Throwable e) {
@@ -95,5 +116,9 @@ public class AutofillManagerServiceImplHook extends MethodHook {
                 }
             }
         };
+    }
+
+    private static String formatApp(AppRecord appRecord) {
+        return appRecord == null ? "null" : appRecord.getPackageNameWithUser();
     }
 }

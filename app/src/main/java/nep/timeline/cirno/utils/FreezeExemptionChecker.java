@@ -5,6 +5,7 @@ import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.entity.AppState;
+import nep.timeline.cirno.log.Log;
 
 public class FreezeExemptionChecker {
     /**
@@ -47,6 +48,7 @@ public class FreezeExemptionChecker {
         }
 
         if (appRecord.equals(AutofillData.currentAutofillApp)) {
+            Log.d("冻结豁免命中 AUTOFILL app=" + appRecord.getPackageNameWithUser());
             return FreezeExemption.AUTOFILL;
         }
 
