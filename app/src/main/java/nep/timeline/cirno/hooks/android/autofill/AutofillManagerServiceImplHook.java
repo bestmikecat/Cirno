@@ -58,7 +58,12 @@ public class AutofillManagerServiceImplHook extends MethodHook {
                 try {
                     AutofillData.instance = callback.getThisObject();
 
-                    Object result = callback.getResult();
+                    if (callback.throwable != null) {
+                        Log.w("Autofill startSession 原方法异常", callback.throwable);
+                        return;
+                    }
+
+                    Object result = callback.result;
                     if (!(result instanceof Long sessionResult)) {
                         Log.w("Autofill startSession 忽略，返回值类型异常 result=" + result);
                         return;
