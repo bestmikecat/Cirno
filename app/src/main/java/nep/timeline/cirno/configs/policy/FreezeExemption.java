@@ -8,6 +8,7 @@ public enum FreezeExemption {
     WHITELIST("WHITELIST", "\uD83E\uDEE1 白名单"),
     BLACKLIST("BLACKLIST", "\u26D4 黑名单"),
     INPUT("INPUT", "\u2328 输入法"),
+    AUTOFILL("AUTOFILL", "自动填充服务"),
     ACCESSIBILITY("ACCESSIBILITY", "无障碍服务"),
     SYSTEM("SYSTEM", "\uD83D\uDD12 系统应用"),
     WAITING_PUSH_RESPONSE("WAITING_PUSH_RESPONSE", "\uD83D\uDCF0 等待推送响应"),

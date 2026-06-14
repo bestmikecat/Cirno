@@ -7,6 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
+import nep.timeline.cirno.utils.AutofillData;
 import nep.timeline.cirno.utils.InputMethodData;
 import nep.timeline.cirno.utils.PKGUtils;
 import nep.timeline.cirno.virtuals.ProcessRecord;
@@ -31,7 +32,7 @@ public class AppRecord {
     }
 
     public boolean isSystem() {
-        return packageName == null || equals(InputMethodData.currentInputMethodApp) || PKGUtils.isSystemApp(applicationInfo) || CommonConstants.isWhitelistApps(packageName);
+        return packageName == null || equals(InputMethodData.currentInputMethodApp) || equals(AutofillData.currentAutofillApp) || PKGUtils.isSystemApp(applicationInfo) || CommonConstants.isWhitelistApps(packageName);
     }
 
     public String getPackageName() {

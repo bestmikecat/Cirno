@@ -14,6 +14,7 @@ import nep.timeline.cirno.hooks.android.anr.ANRHook;
 import nep.timeline.cirno.hooks.android.audio.AudioStateHook;
 import nep.timeline.cirno.hooks.android.audio.PlayerBanHook;
 import nep.timeline.cirno.hooks.android.audio.SendMediaButtonHook;
+import nep.timeline.cirno.hooks.android.autofill.AutofillManagerServiceImplHook;
 import nep.timeline.cirno.hooks.android.binder.HansKernelUnfreezeHook;
 import nep.timeline.cirno.hooks.android.binder.MilletBinderTransHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
@@ -62,6 +63,8 @@ public class AndroidHooks {
         new ListenerUnregisterHook(classLoader);
         // InputMethod
         new InputMethodManagerService(classLoader);
+        // Autofill
+        new AutofillManagerServiceImplHook(classLoader);
         // Network
         new NetworkManagerHook(classLoader);
         // Alarms
