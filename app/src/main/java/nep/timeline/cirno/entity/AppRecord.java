@@ -32,7 +32,7 @@ public class AppRecord {
     }
 
     public boolean isSystem() {
-        return packageName == null || equals(InputMethodData.currentInputMethodApp) || equals(AutofillData.currentAutofillApp) || PKGUtils.isSystemApp(applicationInfo) || CommonConstants.isWhitelistApps(packageName);
+        return packageName == null || equals(InputMethodData.currentInputMethodApp) || AutofillData.hasActiveSession(this) || PKGUtils.isSystemApp(applicationInfo) || CommonConstants.isWhitelistApps(packageName);
     }
 
     public String getPackageName() {

@@ -47,7 +47,7 @@ public class FreezeExemptionChecker {
             return FreezeExemption.INPUT;
         }
 
-        if (appRecord.equals(AutofillData.currentAutofillApp)) {
+        if (AutofillData.hasActiveSession(appRecord)) {
             Log.d("冻结豁免命中 AUTOFILL app=" + appRecord.getPackageNameWithUser());
             return FreezeExemption.AUTOFILL;
         }

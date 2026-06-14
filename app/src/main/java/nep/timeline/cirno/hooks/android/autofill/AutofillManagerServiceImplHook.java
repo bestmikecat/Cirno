@@ -70,12 +70,14 @@ public class AutofillManagerServiceImplHook extends MethodHook {
                     }
 
                     int userId = CakeReflection.getIntField(callback.getThisObject(), "mUserId");
-                    Log.d("Autofill startSession 命中 result=" + sessionResult
+                    int sessionId = (int) (sessionResult & 0xffffffffL);
+                    Log.d("Autofill startSession 命中 sessionId=" + sessionId
+                            + " result=" + sessionResult
                             + " userId=" + userId
                             + " args=" + callback.getArgs().length);
 
-                    if (sessionResult == INVALID_SESSION_ID || sessionResult == FAILED_SESSION_ID) {
-                        Log.d("Autofill startSession 忽略，无效结果 result=" + sessionResult + " userId=" + userId);
+                    if (sessionId == 0 || sessionId == FAILED_SESSION_ID) {
+                        Log.d("Autofill startSession 忽略，无效 sessionId=" + sessionId + " userId=" + userId);
                         return;
                     }
 
@@ -102,6 +104,10 @@ public class AutofillManagerServiceImplHook extends MethodHook {
                         return;
                     }
 
+                    boolean newSession = AutofillData.putSession(userId, sessionId, appRecord);
+                    Log.i("Autofill session " + (newSession ? "开始" : "更新") + " sessionId=" + sessionId
+                            + " app=" + appRecord.getPackageNameWithUser() + " activeSessions=" + AutofillData.getSessionCount());
+
                     if (appRecord.equals(AutofillData.currentAutofillApp)) {
                         Log.d("Autofill provider 未变化 app=" + appRecord.getPackageNameWithUser());
                         return;
@@ -112,7 +118,7 @@ public class AutofillManagerServiceImplHook extends MethodHook {
                     Log.i("Autofill provider 切换 old=" + formatApp(oldApp) + " new=" + appRecord.getPackageNameWithUser());
                     Log.i("Autofill provider 解冻 app=" + appRecord.getPackageNameWithUser());
                     FreezerService.thaw(appRecord);
-                    if (oldApp != null) {
+                    if (oldApp != null && !AutofillData.hasActiveSession(oldApp)) {
                         Log.i("Autofill provider 回收旧豁免 app=" + oldApp.getPackageNameWithUser());
                         FreezerHandler.sendFreezeMessage(oldApp);
                     }
