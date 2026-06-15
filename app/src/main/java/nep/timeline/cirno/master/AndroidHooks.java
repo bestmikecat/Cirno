@@ -16,6 +16,8 @@ import nep.timeline.cirno.hooks.android.audio.PlayerBanHook;
 import nep.timeline.cirno.hooks.android.audio.SendMediaButtonHook;
 import nep.timeline.cirno.hooks.android.autofill.AutofillManagerServiceImplHook;
 import nep.timeline.cirno.hooks.android.autofill.AutofillSessionRemoveHook;
+import nep.timeline.cirno.hooks.android.credentials.CredentialManagerServiceImplHook;
+import nep.timeline.cirno.hooks.android.credentials.CredentialRequestSessionFinishHook;
 import nep.timeline.cirno.hooks.android.binder.HansKernelUnfreezeHook;
 import nep.timeline.cirno.hooks.android.binder.MilletBinderTransHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
@@ -67,6 +69,9 @@ public class AndroidHooks {
         // Autofill
         new AutofillManagerServiceImplHook(classLoader);
         new AutofillSessionRemoveHook(classLoader);
+        // Credential
+        new CredentialManagerServiceImplHook(classLoader);
+        new CredentialRequestSessionFinishHook(classLoader);
         // Network
         new NetworkManagerHook(classLoader);
         // Alarms
