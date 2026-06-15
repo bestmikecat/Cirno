@@ -16,6 +16,8 @@ import nep.timeline.cirno.hooks.android.audio.PlayerBanHook;
 import nep.timeline.cirno.hooks.android.audio.SendMediaButtonHook;
 import nep.timeline.cirno.hooks.android.autofill.AutofillManagerServiceImplHook;
 import nep.timeline.cirno.hooks.android.autofill.AutofillSessionRemoveHook;
+import nep.timeline.cirno.hooks.android.camera.CameraBinderDiedHook;
+import nep.timeline.cirno.hooks.android.camera.CameraStateHook;
 import nep.timeline.cirno.hooks.android.credentials.CredentialManagerServiceImplHook;
 import nep.timeline.cirno.hooks.android.credentials.CredentialRequestSessionFinishHook;
 import nep.timeline.cirno.hooks.android.binder.HansKernelUnfreezeHook;
@@ -97,6 +99,9 @@ public class AndroidHooks {
         // Recorder
         new RecorderEventHook(classLoader);
         new ReleaseRecorderHook(classLoader);
+        // Camera
+        new CameraStateHook(classLoader);
+        new CameraBinderDiedHook(classLoader);
         // Vpn
         new VpnStateHook(classLoader);
         // Intent

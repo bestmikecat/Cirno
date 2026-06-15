@@ -11,10 +11,12 @@ public class AppState {
     private final Set<IBinder> locationListeners = new HashSet<>();
     private final Set<Integer> interfaceIds = new HashSet<>();
     private final Set<Integer> recodingIds = new HashSet<>();
+    private final Set<String> cameraIds = new HashSet<>();
     private volatile boolean visible = false;
     private volatile boolean location = false;
     private volatile boolean audio = false;
     private volatile boolean recording = false;
+    private volatile boolean camera = false;
     private volatile boolean vpn = false;
     private volatile boolean networkActive = false;
 
@@ -120,6 +122,28 @@ public class AppState {
         return true;
     }
 
+    public synchronized boolean addCameraId(String cameraId) {
+        if (cameraId == null || !cameraIds.add(cameraId) || camera)
+            return false;
+        camera = true;
+        return true;
+    }
+
+    public synchronized boolean removeCameraId(String cameraId) {
+        if (cameraId == null || !cameraIds.remove(cameraId) || !cameraIds.isEmpty() || !camera)
+            return false;
+        camera = false;
+        return true;
+    }
+
+    public synchronized boolean clearCameraIds() {
+        if (cameraIds.isEmpty() && !camera)
+            return false;
+        cameraIds.clear();
+        camera = false;
+        return true;
+    }
+
     public boolean isVisible() {
         return visible;
     }
@@ -134,6 +158,10 @@ public class AppState {
 
     public boolean isRecording() {
         return recording;
+    }
+
+    public boolean isCamera() {
+        return camera;
     }
 
     public boolean isVpn() {

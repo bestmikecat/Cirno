@@ -16,6 +16,7 @@ public enum FreezeExemption {
     AUDIO("AUDIO", "\uD83C\uDFB5 播放音频中"),
     LOCATION("LOCATION", "\uD83D\uDCCD 定位中"),
     RECORDING("RECORDING", "\uD83C\uDF99\uFE0F 录音中"),
+    CAMERA("CAMERA", "使用摄像头中"),
     VPN("VPN", "\uD83C\uDF10 使用VPN服务中"),
     NETWORK_SPEED("NETWORK_SPEED", "\uD83D\uDEDC 网速传输中"),
     WAITING_FROZEN("WAITING_FROZEN", "\u23F3 等待冻结"),
