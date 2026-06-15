@@ -6,8 +6,7 @@ public enum Capability {
     ALLOW_BACKGROUND_AUDIO(true),
     ALLOW_LOCATION(true),
     ALLOW_NETWORK_MESSAGE(true),
-    ALLOW_NETWORK_SPEED(true),
-    ALLOW_RECORDING(true);
+    ALLOW_NETWORK_SPEED(true);
 
     public final boolean isExemption;
 

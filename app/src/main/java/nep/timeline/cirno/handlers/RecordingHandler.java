@@ -1,6 +1,5 @@
 package nep.timeline.cirno.handlers;
 
-import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.FreezerService;
@@ -16,9 +15,7 @@ public class RecordingHandler {
             if (!appRecord.getAppState().addRecordingId(riid))
                 return;
             Log.d("应用 " + appRecord.getPackageNameWithUser() + " 开始录音");
-            if (AppConfigs.isRecordingAllowed(appRecord.getPackageName(), appRecord.getUserId())) {
-                FreezerService.thaw(appRecord);
-            }
+            FreezerService.thaw(appRecord);
             return;
         }
 

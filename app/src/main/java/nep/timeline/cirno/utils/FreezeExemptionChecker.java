@@ -72,7 +72,7 @@ public class FreezeExemptionChecker {
             if (AppConfigs.isLocationUseAllowed(pkg, userId) && appState.isLocation()) {
                 return FreezeExemption.LOCATION;
             }
-            if (AppConfigs.isRecordingAllowed(pkg, userId) && appState.isRecording()) {
+            if (appState.isRecording()) {
                 return FreezeExemption.RECORDING;
             }
             if (appState.isVpn()) {

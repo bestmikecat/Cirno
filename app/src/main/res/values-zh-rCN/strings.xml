@@ -42,7 +42,6 @@
   <string name="foreground_service">前台服务</string>
   <string name="netreceive_unfreeze">网络解冻</string>
   <string name="network_speed_check">网速识别</string>
-  <string name="recording_unfreeze">录音解冻</string>
   <string name="network_speed_threshold">网速识别阈值</string>
   <string name="battery_opt">电池优化</string>
   <string name="version">版本</string>

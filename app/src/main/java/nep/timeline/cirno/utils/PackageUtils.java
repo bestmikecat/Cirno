@@ -118,7 +118,6 @@ public class PackageUtils {
                 item.locationCheck = AppConfigs.isLocationUseAllowed(pkg, item.userId) ? 1 : 0;
                 item.networkCheck = AppConfigs.isNetworkMessageAllowed(pkg, item.userId);
                 item.networkSpeedEnabled = AppConfigs.isNetworkSpeedAllowed(pkg, item.userId);
-                item.recordingAllowed = AppConfigs.isRecordingAllowed(pkg, item.userId);
             item.processConfig = !AppConfigs.getExcludedProcesses(pkg, item.userId).isEmpty();
             item.socket = item.networkCheck;
             item.netReceive = item.networkCheck;
@@ -139,7 +138,7 @@ public class PackageUtils {
             return 0;
         }
         if (item.backgroundPlay || item.locationCheck != 0 || item.networkCheck
-                || item.networkSpeedEnabled || item.processConfig || item.recordingAllowed) {
+                || item.networkSpeedEnabled || item.processConfig) {
             return 1;
         }
         if (item.black) {

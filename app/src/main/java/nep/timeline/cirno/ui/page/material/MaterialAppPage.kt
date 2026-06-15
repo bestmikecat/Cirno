@@ -281,7 +281,6 @@ private fun MaterialAppBadge(app: AppItem) {
         app.locationCheck != 0 -> stringResource(R.string.location_check)
         app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
         app.networkSpeedEnabled -> stringResource(R.string.network_speed_check)
-        app.recordingAllowed -> stringResource(R.string.recording_unfreeze)
         app.processConfig -> stringResource(R.string.process)
         app.backgroundLevel == 1 -> stringResource(R.string.direct_app)
         app.backgroundLevel == 2 -> stringResource(R.string.foreground_service)
@@ -319,5 +318,5 @@ private fun sortConfiguredApps(apps: List<AppItem>): List<AppItem> = apps
     .map { it.value }
 
 private fun AppItem.hasMaterialBadgeConfig(): Boolean = black || white || backgroundPlay || locationCheck != 0
-    || networkCheck || networkSpeedEnabled || recordingAllowed || processConfig || backgroundLevel == 1
+    || networkCheck || networkSpeedEnabled || processConfig || backgroundLevel == 1
     || backgroundLevel == 2 || idle

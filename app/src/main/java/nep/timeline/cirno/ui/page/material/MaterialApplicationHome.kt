@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.NetworkCheck
@@ -75,7 +74,6 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
     val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
     val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
-    val recording = remember { mutableStateOf(AppConfigs.isRecordingAllowed(packageName, userId)) }
     val scope = rememberCoroutineScope()
 
     fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
@@ -158,7 +156,6 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                         val prevLocation = locationUse.value
                         val prevNetwork = networkMessage.value
                         val prevNetworkSpeed = networkSpeed.value
-                        val prevRecording = recording.value
 
                         white.value = it
                         userWhitelist.value = it
@@ -172,8 +169,6 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, false)
                             networkSpeed.value = false
                             AppConfigs.setNetworkSpeedAllowed(packageName, userId, false)
-                            recording.value = false
-                            AppConfigs.setRecordingAllowed(packageName, userId, false)
                         }
 
                         saveApplicationSettingsAsync("白名单更新失败") { error ->
@@ -188,8 +183,6 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             AppConfigs.setNetworkMessageAllowed(packageName, userId, prevNetwork)
                             networkSpeed.value = prevNetworkSpeed
                             AppConfigs.setNetworkSpeedAllowed(packageName, userId, prevNetworkSpeed)
-                            recording.value = prevRecording
-                            AppConfigs.setRecordingAllowed(packageName, userId, prevRecording)
                             WindowUtils.showToast(error)
                         }
                     }
@@ -255,20 +248,6 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                         saveApplicationSettingsAsync("网速识别配置更新失败") { error ->
                             networkSpeed.value = previous
                             AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
-                            WindowUtils.showToast(error)
-                        }
-                    }
-                    MaterialSwitchItem(Icons.Outlined.GraphicEq, stringResource(R.string.recording_unfreeze), null, recording.value, !userWhitelist.value) {
-                        if (userWhitelist.value && it) {
-                            WindowUtils.showToast(whitelistExemptionBlocked)
-                            return@MaterialSwitchItem
-                        }
-                        val previous = recording.value
-                        recording.value = it
-                        AppConfigs.setRecordingAllowed(packageName, userId, it)
-                        saveApplicationSettingsAsync("录音解冻配置更新失败") { error ->
-                            recording.value = previous
-                            AppConfigs.setRecordingAllowed(packageName, userId, previous)
                             WindowUtils.showToast(error)
                         }
                     }
