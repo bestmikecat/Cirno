@@ -33,9 +33,17 @@ public class ProcessRemoveHook extends MethodHook {
             public void call(CakeHooker.BeforeHookCallback callback) {
                 String name = (String) callback.getArgs()[0];
                 int uid = (int) callback.getArgs()[1];
+                Object systemProcessRecord = callback.getArgs()[2];
+                
                 AppRecord appRecord = ProcessService.removeProcessRecord(name, uid);
-                if (appRecord != null)
-                    MonitorBinderHub.refreshRunningApps();
+                
+                if (systemProcessRecord != null) {
+                    try {
+                        int pid = nep.timeline.cirno.reflect.CakeReflection.getIntField(systemProcessRecord, "mPid");
+                        MonitorBinderHub.onProcessRemoved(pid);
+                    } catch (Throwable ignored) {
+                    }
+                }
             }
         };
     }

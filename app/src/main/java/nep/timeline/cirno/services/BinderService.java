@@ -241,9 +241,7 @@ public class BinderService {
                                             ProcessRecord processRecord = ProcessService.getProcessRecordByPid(dstPid);
                                             if (processRecord == null)
                                                 return;
-                                            AppRecord removedAppRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord, "ReKernel Signal(signal=" + signal + ")");
-                                            if (removedAppRecord != null)
-                                                MonitorBinderHub.refreshRunningApps();
+                                            ProcessService.removeProcessRecordWithoutThaw(processRecord, "ReKernel Signal(signal=" + signal + ")");
                                         }
                                         case "Network" -> {
                                             int targetUid = getIntParam(params, "target");

@@ -66,9 +66,8 @@ public class HansKernelUnfreezeHook extends MethodHook {
                         ProcessRecord processRecord = ProcessService.getProcessRecordByPid(targetPid);
                         if (processRecord == null)
                             return;
-                        AppRecord removedAppRecord = ProcessService.removeProcessRecordWithoutThaw(processRecord, "HansKernel Signal(signal=" + code + ")");
-                        if (removedAppRecord != null)
-                            MonitorBinderHub.refreshRunningApps();
+                        if (ProcessService.removeProcessRecordWithoutThaw(processRecord, "HansKernel Signal(signal=" + code + ")") != null)
+                            MonitorBinderHub.onProcessRemoved(targetPid);
                     }
                     case PACKET_TYPE -> {
                         List<AppRecord> appRecords = AppService.getByUid(targetUid);

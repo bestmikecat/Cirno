@@ -54,7 +54,7 @@ public class ReportSignalHook extends MethodHook {
                     return;
 
                 if (ProcessService.removeProcessRecordWithoutThaw(processRecord, "MIUI Greeze reportSignal") != null)
-                    MonitorBinderHub.refreshRunningApps();
+                    MonitorBinderHub.onProcessRemoved(pid);
             }
         };
     }
