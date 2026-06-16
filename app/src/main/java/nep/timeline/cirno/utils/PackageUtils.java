@@ -326,6 +326,7 @@ public class PackageUtils {
             item.isFrozen = snapshot.isFrozen;
             item.frozenType = item.isFrozen ? "V2" : null;
             item.rss = snapshot.rss;
+            item.cpuUsage = snapshot.cpuUsage;
             item.notFrozenReason = item.isFrozen ? null : snapshot.reason;
             item.processConfig = !AppConfigs.getExcludedProcesses(runningApp.packageName, runningApp.userId).isEmpty();
             item.networkSpeedEnabled = AppConfigs.isNetworkSpeedAllowed(runningApp.packageName, runningApp.userId);
@@ -433,6 +434,7 @@ public class PackageUtils {
             return snapshot;
         }
         snapshot.rss = parseIntBetween(value, "RSS[", "]", 0);
+        snapshot.cpuUsage = parseFloatBetween(value, "CPU[", "]", 0f);
         if (value.startsWith("V2(")) {
             int slash = value.indexOf('/');
             int close = value.indexOf(')');
@@ -479,6 +481,18 @@ public class PackageUtils {
         return fallback;
     }
 
+    private static float parseFloatBetween(String source, String start, String end, float fallback) {
+        String v = parseStringBetween(source, start, end, null);
+        if (v == null) {
+            return fallback;
+        }
+        try {
+            return Float.parseFloat(v.trim());
+        } catch (NumberFormatException ignored) {
+        }
+        return fallback;
+    }
+
     private static final class RunningApp {
         private final String packageName;
         private final int userId;
@@ -495,5 +509,6 @@ public class PackageUtils {
         private int processCount;
         private int frozenCount;
         private long rss;
+        private float cpuUsage;
     }
 }

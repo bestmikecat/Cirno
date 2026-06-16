@@ -185,6 +185,7 @@ public final class MonitorBinderHub {
             int processCount = 0;
             int frozenCount = 0;
             long rss = 0L;
+            float cpuUsage = 0f;
             for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
                 if (processRecord == null || processRecord.isDeathProcess()) {
                     continue;
@@ -195,12 +196,15 @@ public final class MonitorBinderHub {
                 }
                 processRecord.updateCachedRss();
                 rss += processRecord.getCachedRssKb();
+                processRecord.updateCachedCpuUsage();
+                cpuUsage += processRecord.getCachedCpuUsage();
             }
             if (processCount <= 0) {
                 return "NOT_FROZEN[UNKNOWN]";
             }
+            String cpuString = String.format(java.util.Locale.ROOT, "%.2f", cpuUsage);
             if (frozenCount > 0) {
-                return "V2(" + frozenCount + "/" + processCount + "),RSS[" + rss + "]";
+                return "V2(" + frozenCount + "/" + processCount + "),RSS[" + rss + "],CPU[" + cpuString + "]";
             }
             FreezeExemption exemption = FreezeExemptionChecker.check(appRecord);
             String reason;
@@ -211,7 +215,7 @@ public final class MonitorBinderHub {
             } else {
                 reason = REASON_UNKNOWN;
             }
-            return "NOT_FROZEN[" + reason + "],PROCESS_COUNT[" + processCount + "],FROZEN_COUNT[" + frozenCount + "],RSS[" + rss + "]";
+            return "NOT_FROZEN[" + reason + "],PROCESS_COUNT[" + processCount + "],FROZEN_COUNT[" + frozenCount + "],RSS[" + rss + "],CPU[" + cpuString + "]";
         }
 
         @Override

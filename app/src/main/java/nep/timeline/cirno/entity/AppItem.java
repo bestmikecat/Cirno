@@ -35,6 +35,7 @@ public class AppItem {
     public String frozenType;
     public String notFrozenReason;
     public long rss;
+    public float cpuUsage;
     public int applicationProcessCount;
     public int frozenProcessCount;
     public boolean processConfig;

@@ -24,12 +24,14 @@ import nep.timeline.cirno.entity.AppItem
 import nep.timeline.cirno.provide.ApplicationBinder
 import nep.timeline.cirno.ui.custom.CustomBasicComponent
 import nep.timeline.cirno.ui.utils.AppContext
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.Locale
 
 @Composable
 fun FrozenAppItemCompose(
@@ -61,13 +63,20 @@ fun FrozenAppItemCompose(
     CustomBasicComponent(
         title = app.appName,
         subtitleAnnotated = subtitleText,
-        rightText = getMemSize(app.rss),
+        rightText = String.format(Locale.ROOT, "%.2f%%", app.cpuUsage),
         rightTextColor = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         leftAction = {
             Image(
                 painter = rememberDrawablePainter(drawable = app.appIcon),
                 contentDescription = app.appName,
                 modifier = Modifier.size(64.dp).padding(end = 16.dp)
+            )
+        },
+        rightActions = {
+            Text(
+                text = getMemSize(app.rss),
+                fontSize = 14.sp,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
         },
         modifier = Modifier.combinedClickable(
