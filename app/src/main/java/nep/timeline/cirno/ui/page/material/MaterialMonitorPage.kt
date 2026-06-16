@@ -2,7 +2,6 @@ package nep.timeline.cirno.ui.page.material
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,12 +40,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -197,6 +199,26 @@ private fun MaterialMonitorListItem(app: AppItem) {
     val systemNotFlaggedText = stringResource(R.string.system_not_flagged_but_frozen)
     val networkSpeedFailedText = "网速获取失败"
     val frozenText = app.frozenType + " " + stringResource(R.string.freezing)
+    val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val subtitleText = buildAnnotatedString {
+        withStyle(SpanStyle(color = subtitleColor)) {
+            append(app.applicationProcessCount.toString() + stringResource(R.string.process))
+            if (app.frozenProcessCount > 0) {
+                append(" " + app.frozenProcessCount.toString() + stringResource(R.string.is_frozen) + "  ")
+                withStyle(SpanStyle(color = Color(0xFFFF8C00))) {
+                    append("V2")
+                }
+            }
+        }
+        if (app.frozenType != null && app.frozenType == "SYSTEM_NOT_FLAGGED_BUT_FROZEN") {
+            append(" ")
+            withStyle(SpanStyle(color = Color(0xFFD13636))) {
+                append(stringResource(R.string.frozen_wrong))
+            }
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth().combinedClickable(
             onClick = {
@@ -225,10 +247,8 @@ private fun MaterialMonitorListItem(app: AppItem) {
             Image(
                 painter = rememberDrawablePainter(drawable = app.appIcon),
                 contentDescription = app.appName,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(64.dp).padding(end = 16.dp),
             )
-            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = app.appName,
@@ -240,40 +260,37 @@ private fun MaterialMonitorListItem(app: AppItem) {
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = app.packageName + if (app.userId != 0) "#" + app.userId else "",
+                    text = subtitleText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            MaterialMonitorBadge(app = app)
+            Column(
+                modifier = Modifier.padding(start = 16.dp),
+                horizontalAlignment = Alignment.End,
+            ) {
+                Text(
+                    text = String.format(Locale.ROOT, "%.2f%%", app.cpuUsage),
+                    fontSize = 14.sp,
+                    color = subtitleColor,
+                )
+                Text(
+                    text = getMemSize(app.rss),
+                    fontSize = 14.sp,
+                    color = subtitleColor,
+                )
+            }
         }
     }
 }
 
-@Composable
-private fun MaterialMonitorBadge(app: AppItem) {
-    val label = if (app.isFrozen && app.frozenType != null) app.frozenType + " " + stringResource(R.string.freezing) else null
-    if (label == null) return
-
-    Spacer(modifier = Modifier.width(12.dp))
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onPrimary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+private fun getMemSize(mem: Long): String {
+    val bigDecimal = BigDecimal(mem)
+    if (mem < 1000) return mem.toString() + "KB"
+    if (mem < 1024000) return bigDecimal.divide(BigDecimal(1024), 0, RoundingMode.HALF_UP)
+        .toString() + "MB"
+    return bigDecimal.divide(BigDecimal(1048576), 2, RoundingMode.HALF_UP).toString() + "GB"
 }
 
 private fun sortMonitorApps(apps: List<AppItem>, ascending: Boolean): List<AppItem> = apps.sortedWith(
