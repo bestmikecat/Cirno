@@ -12,6 +12,7 @@ public class GlobalSettings {
     public int freezeDelay = 5;
     public int wakeFreezeDelay = 30;
     public int networkSpeedThreshold = 102400;
+    public boolean bootFreezeAll = false;
     public String logLevel = LOG_LEVEL_INFO;
 
     public int uiStyle;

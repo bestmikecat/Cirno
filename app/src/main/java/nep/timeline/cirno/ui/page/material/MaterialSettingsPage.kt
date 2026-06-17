@@ -75,6 +75,7 @@ fun MaterialSettingsPage(
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
+    val bootFreezeAll = remember { mutableIntStateOf(if (globalSettings.bootFreezeAll) 1 else 0) }
     val freezerModeItems = listOf(stringResource(R.string.freezer_mode_uid), stringResource(R.string.freezer_mode_frozen))
     val uiStyleItems = listOf(stringResource(R.string.ui_style_miuix), stringResource(R.string.ui_style_material))
     val themeItems = listOf(
@@ -115,6 +116,7 @@ fun MaterialSettingsPage(
         freezeDelay.floatValue = globalSettings.freezeDelay.toFloat()
         wakeFreezeDelay.floatValue = globalSettings.wakeFreezeDelay.toFloat()
         networkSpeedThreshold.floatValue = globalSettings.networkSpeedThreshold.toFloat()
+        bootFreezeAll.intValue = if (globalSettings.bootFreezeAll) 1 else 0
         freezerModeIndex.intValue = if (globalSettings.freezerMode == GlobalSettings.FREEZER_MODE_FROZEN) 1 else 0
         uiStyleIndex.intValue = globalSettings.uiStyle.coerceIn(UI_STYLE_MIUIX, UI_STYLE_MATERIAL)
         themeIndex.intValue = globalSettings.colorMode.coerceIn(0, 5)
@@ -284,6 +286,21 @@ fun MaterialSettingsPage(
                                 networkSpeedThreshold.floatValue = previous.toFloat()
                             }
                         },
+                    )
+                    MaterialSwitchItem(
+                        icon = Icons.Outlined.AcUnit,
+                        title = stringResource(R.string.boot_freeze_all),
+                        summary = null,
+                        checked = bootFreezeAll.intValue == 1,
+                        onCheckedChange = {
+                            val previous = globalSettings.bootFreezeAll
+                            bootFreezeAll.intValue = if (it) 1 else 0
+                            globalSettings.bootFreezeAll = it
+                            saveGlobalSettingsAsync("开机冻结更新失败") {
+                                globalSettings.bootFreezeAll = previous
+                                bootFreezeAll.intValue = if (previous) 1 else 0
+                            }
+                        }
                     )
                 }
             }

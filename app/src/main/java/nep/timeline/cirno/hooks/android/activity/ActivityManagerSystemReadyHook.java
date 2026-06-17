@@ -1,8 +1,10 @@
 package nep.timeline.cirno.hooks.android.activity;
 
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.framework.MethodHook;
+import nep.timeline.cirno.services.BootFreezeService;
 import nep.timeline.cirno.services.MonitorBinderHub;
 import nep.timeline.cirno.services.NetworkSpeedMonitor;
 import nep.timeline.cirno.utils.ReflectUtils;
@@ -37,6 +39,9 @@ public class ActivityManagerSystemReadyHook extends MethodHook {
                 MonitorBinderHub.setBootCompleted();
                 MonitorBinderHub.publish("ActivityManagerService.systemReady");
                 NetworkSpeedMonitor.init();
+                if (GlobalVars.globalSettings != null && GlobalVars.globalSettings.bootFreezeAll) {
+                    BootFreezeService.freezeAll();
+                }
             }
         };
     }

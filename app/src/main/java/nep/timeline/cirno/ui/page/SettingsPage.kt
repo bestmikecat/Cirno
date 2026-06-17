@@ -140,6 +140,7 @@ private fun SettingsContent(
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
     val networkSpeedThreshold = remember { mutableFloatStateOf(globalSettings.networkSpeedThreshold.toFloat()) }
+    val bootFreezeAll = remember { mutableIntStateOf(if (globalSettings.bootFreezeAll) 1 else 0) }
     val freezerModeItems = listOf(
         stringResource(R.string.freezer_mode_uid),
         stringResource(R.string.freezer_mode_frozen),
@@ -427,6 +428,19 @@ private fun SettingsContent(
                             valueRange = 102400f..2097152f,
                             steps = 99,
                             modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp),
+                        )
+                        SwitchPreference(
+                            title = stringResource(R.string.boot_freeze_all),
+                            checked = bootFreezeAll.intValue == 1,
+                            onCheckedChange = {
+                                val previous = globalSettings.bootFreezeAll
+                                bootFreezeAll.intValue = if (it) 1 else 0
+                                globalSettings.bootFreezeAll = it
+                                saveGlobalSettingsAsync("开机冻结更新失败") {
+                                    globalSettings.bootFreezeAll = previous
+                                    bootFreezeAll.intValue = if (previous) 1 else 0
+                                }
+                            }
                         )
                     }
                 }
