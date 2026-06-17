@@ -28,28 +28,6 @@ public class FreezerService {
             return;
         }
 
-        if (AppConfigs.isBlackApp(appRecord.getPackageName(), appRecord.getUserId())) {
-            boolean hasFrozenProcess = false;
-            for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
-                if (processRecord.isDeathProcess()) {
-                    continue;
-                }
-                if (processRecord.isFrozen()) {
-                    hasFrozenProcess = true;
-                    continue;
-                }
-                if (AppConfigs.isProcessExcludedFromFreeze(appRecord.getPackageName(), appRecord.getUserId(), processRecord.getProcessName())) {
-                    continue;
-                }
-                if (FrozenRW.frozen(processRecord.getRunningUid(), processRecord.getPid())) {
-                    processRecord.setFrozen(true);
-                    hasFrozenProcess = true;
-                }
-            }
-            appRecord.setFrozen(hasFrozenProcess);
-            return;
-        }
-
         boolean hasFrozenProcess = false;
         for (ProcessRecord processRecord : appRecord.getProcessRecords()) {
             if (processRecord.isDeathProcess())
