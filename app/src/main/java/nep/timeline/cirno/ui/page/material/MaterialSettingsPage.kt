@@ -288,7 +288,7 @@ fun MaterialSettingsPage(
                         },
                     )
                     MaterialSwitchItem(
-                        icon = Icons.Outlined.AcUnit,
+                        icon = Icons.Outlined.Update,
                         title = stringResource(R.string.boot_freeze_all),
                         summary = null,
                         checked = bootFreezeAll.intValue == 1,
