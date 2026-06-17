@@ -22,6 +22,8 @@ import nep.timeline.cirno.hooks.android.credentials.CredentialManagerServiceImpl
 import nep.timeline.cirno.hooks.android.credentials.CredentialRequestSessionFinishHook;
 import nep.timeline.cirno.hooks.android.binder.HansKernelUnfreezeHook;
 import nep.timeline.cirno.hooks.android.binder.MilletBinderTransHook;
+import nep.timeline.cirno.hooks.android.optimizer.CacheEnableFreezerHook;
+import nep.timeline.cirno.hooks.android.optimizer.CacheUseFreezerHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastIntentHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastSkipHook;
@@ -93,6 +95,9 @@ public class AndroidHooks {
         // Process
         new ProcessAddHook(classLoader);
         new ProcessRemoveHook(classLoader);
+        // Optimizer
+        new CacheEnableFreezerHook(classLoader);
+        new CacheUseFreezerHook(classLoader);
         // Binder
         new HansKernelUnfreezeHook(classLoader);
         new MilletBinderTransHook(classLoader);

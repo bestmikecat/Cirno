@@ -74,6 +74,19 @@ public final class CakeReflection {
         }
     }
 
+    /**
+     * Sets the value of an object field in the given object instance.
+     * A class reference is not sufficient! See also {@link #findField}.
+     */
+    public static void setObjectField(Object obj, String fieldName, Object value) {
+        try {
+            findField(obj.getClass(), fieldName).set(obj, value);
+        } catch (IllegalAccessException e) {
+            // should not happen
+            throw new IllegalAccessError(e.getMessage());
+        }
+    }
+
     public static void setStaticBooleanField(Class<?> clazz, String fieldName, boolean value) {
         try {
             findField(clazz, fieldName).setBoolean(null, value);
@@ -309,5 +322,27 @@ public final class CakeReflection {
             }
         }
         return parameter;
+    }
+
+    /**
+     * Thrown when a method invocation fails. Unlike {@link java.lang.reflect.InvocationTargetException},
+     * this is an unchecked exception that wraps the target exception.
+     */
+    public static final class InvocationTargetError extends Error {
+        private static final long serialVersionUID = -1070936889459514629L;
+
+        /**
+         * @hide
+         */
+        public InvocationTargetError(Throwable cause) {
+            super(cause);
+        }
+
+        /**
+         * @hide
+         */
+        public InvocationTargetError(String detailMessage, Throwable cause) {
+            super(detailMessage, cause);
+        }
     }
 }
