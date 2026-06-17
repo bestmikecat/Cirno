@@ -253,22 +253,20 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                     }
                 }
 
-                if (isSystemApp || isBuiltinWhitelistApp) {
-                    MaterialSwitchItem(
-                        icon = Icons.Outlined.Block,
-                        title = stringResource(R.string.black_app),
-                        summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
-                        checked = black.value,
-                    ) {
-                        val prevBlack = black.value
-                        black.value = it
-                        AppConfigs.setBlackApp(packageName, userId, it)
+                MaterialSwitchItem(
+                    icon = Icons.Outlined.Block,
+                    title = stringResource(R.string.black_app),
+                    summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
+                    checked = black.value,
+                ) {
+                    val prevBlack = black.value
+                    black.value = it
+                    AppConfigs.setBlackApp(packageName, userId, it)
 
-                        saveApplicationSettingsAsync("黑名单更新失败") { error ->
-                            black.value = prevBlack
-                            AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                            WindowUtils.showToast(error)
-                        }
+                    saveApplicationSettingsAsync("黑名单更新失败") { error ->
+                        black.value = prevBlack
+                        AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                        WindowUtils.showToast(error)
                     }
                 }
             }

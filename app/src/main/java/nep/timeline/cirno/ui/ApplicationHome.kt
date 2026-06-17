@@ -286,25 +286,23 @@ fun ApplicationHome(activity: ApplicationActivity) {
                             )
                         }
 
-                        if (isSystemApp || isBuiltinWhitelistApp) {
-                            SwitchPreference(
-                                title = stringResource(R.string.black_app),
-                                summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
-                                checked = black.value,
-                                onCheckedChange = {
-                                    val prevBlack = black.value
+                        SwitchPreference(
+                            title = stringResource(R.string.black_app),
+                            summary = if (isBuiltinWhitelistApp) stringResource(R.string.builtin_whitelist_blacklist_blocked) else null,
+                            checked = black.value,
+                            onCheckedChange = {
+                                val prevBlack = black.value
 
-                                    black.value = it
-                                    AppConfigs.setBlackApp(packageName, userId, it)
+                                black.value = it
+                                AppConfigs.setBlackApp(packageName, userId, it)
 
-                                    saveApplicationSettingsAsync("黑名单更新失败") { error ->
-                                        black.value = prevBlack
-                                        AppConfigs.setBlackApp(packageName, userId, prevBlack)
-                                        WindowUtils.showToast(error)
-                                    }
+                                saveApplicationSettingsAsync("黑名单更新失败") { error ->
+                                    black.value = prevBlack
+                                    AppConfigs.setBlackApp(packageName, userId, prevBlack)
+                                    WindowUtils.showToast(error)
                                 }
-                            )
-                        }
+                            }
+                        )
 
                     }
                 }
