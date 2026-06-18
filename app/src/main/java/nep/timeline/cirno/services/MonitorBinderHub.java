@@ -530,6 +530,11 @@ public final class MonitorBinderHub {
 
     @SuppressLint("MissingPermission")
     public static void publish(String reason) {
+        publish(reason, null);
+    }
+
+    @SuppressLint("MissingPermission")
+    public static void publish(String reason, String token) {
         try {
             if (!bootCompleted) {
                 return;
@@ -538,13 +543,17 @@ public final class MonitorBinderHub {
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
                 return;
             }
-            Intent intent = new Intent(GlobalVars.TAG + "-Binder");
+            Intent intent = new Intent(GlobalVars.ACTION_BINDER);
+            intent.setPackage(GlobalVars.PACKAGE_NAME);
             Bundle extras = new Bundle();
             extras.putBinder("Application", applicationBinder);
             extras.putBinder("FrozenState", frozenStateBinder);
             extras.putBinder("Status", StatusBinderHub.statusBinder);
             intent.putExtras(extras);
-            ActivityManagerService.getContext().sendStickyBroadcastAsUser(intent, UserHandle.SYSTEM);
+            if (token != null) {
+                intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, token);
+            }
+            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.SYSTEM);
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
             lastPublishedAtMs = now;
         } catch (Throwable e) {

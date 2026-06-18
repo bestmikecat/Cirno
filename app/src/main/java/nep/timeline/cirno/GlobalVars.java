@@ -5,6 +5,10 @@ import nep.timeline.cirno.configs.settings.GlobalSettings;
 
 public class GlobalVars {
     public static final String TAG = "Cirno";
+    public static final String PACKAGE_NAME = "nep.timeline.cirno";
+    public static final String ACTION_BINDER = TAG + "-Binder";
+    public static final String ACTION_BINDER_REQUEST = TAG + "-Binder-Request";
+    public static final String EXTRA_BINDER_TOKEN = "binder_token";
     public static final String CONFIG = "Cirno";
     public final static String CONFIG_DIR = "/data/system/" + GlobalVars.CONFIG;
     public final static String LOG_DIR = CONFIG_DIR + "/log";
