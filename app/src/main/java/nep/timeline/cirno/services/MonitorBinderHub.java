@@ -553,7 +553,7 @@ public final class MonitorBinderHub {
             if (token != null) {
                 intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, token);
             }
-            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.SYSTEM);
+            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
             lastPublishedAtMs = now;
         } catch (Throwable e) {
