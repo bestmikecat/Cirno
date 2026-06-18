@@ -17,7 +17,7 @@ configure<ApplicationExtension> {
 
     defaultConfig {
         minSdk = 31
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 8
         versionName = "${versionCode}-${buildTime}"
 
