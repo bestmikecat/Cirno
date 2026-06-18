@@ -160,7 +160,9 @@ public class FreezerService {
             retried = true;
         }
 
-        appRecord.setFrozen(hasFrozenProcess(appRecord));
+        boolean frozen = hasFrozenProcess(appRecord);
+        Log.d(appRecord.getPackageNameWithUser() + " retry=" + retryCount + " stillFrozen=" + frozen);
+        appRecord.setFrozen(frozen);
 
         if (retried) {
             int nextRetryCount = retryCount + 1;
