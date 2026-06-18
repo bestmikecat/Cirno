@@ -10,6 +10,7 @@ import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.UserHandle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -543,7 +544,7 @@ public final class MonitorBinderHub {
             extras.putBinder("FrozenState", frozenStateBinder);
             extras.putBinder("Status", StatusBinderHub.statusBinder);
             intent.putExtras(extras);
-            ActivityManagerService.getContext().sendStickyBroadcast(intent);
+            ActivityManagerService.getContext().sendStickyBroadcastAsUser(intent, UserHandle.SYSTEM);
             long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
             lastPublishedAtMs = now;
         } catch (Throwable e) {
