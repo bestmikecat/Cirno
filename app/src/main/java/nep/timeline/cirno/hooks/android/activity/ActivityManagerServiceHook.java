@@ -35,7 +35,7 @@ public class ActivityManagerServiceHook extends MethodHook {
 
             @Override
             public void call(CakeHooker.AfterHookCallback callback) {
-                MonitorBinderHub.init();
+                MonitorBinderHub.publish("ActivityManagerService.setSystemProcess");
             }
         };
     }

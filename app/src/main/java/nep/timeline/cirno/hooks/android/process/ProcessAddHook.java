@@ -35,6 +35,7 @@ public class ProcessAddHook extends MethodHook {
                     return;
                 ProcessService.addProcessRecord(record);
                 MonitorBinderHub.onProcessAdded(record);
+                MonitorBinderHub.publish("ProcessList.addProcessNameLocked");
             }
         };
     }

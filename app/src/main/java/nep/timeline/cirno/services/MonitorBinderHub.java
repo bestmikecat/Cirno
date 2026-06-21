@@ -1,12 +1,16 @@
 package nep.timeline.cirno.services;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
+import android.os.Bundle;
 import android.os.SystemClock;
+import android.os.UserHandle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,6 +23,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.IApplicationInterface;
 import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.configs.policy.FreezeExemption;
@@ -30,6 +35,8 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
+    private static volatile long lastPublishedAtMs = 0L;
+    private static volatile boolean bootCompleted = false;
     private static final java.util.concurrent.ConcurrentHashMap<String, List<String>> PROCESS_NAME_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
     
     // System snapshot for running apps
@@ -39,6 +46,10 @@ public final class MonitorBinderHub {
     private static final Object snapshotLock = new Object();
 
     private MonitorBinderHub() {
+    }
+
+    public static void setBootCompleted() {
+        bootCompleted = true;
     }
 
     // Inner classes for system snapshot
@@ -510,23 +521,43 @@ public final class MonitorBinderHub {
         }
     };
 
-    public static void init() {
-        if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-            Log.w("MonitorBinderHub: AMS not ready, skip init");
-            return;
-        }
-        BinderManager manager = new BinderManager(
-                StatusBinderHub.statusBinder,
-                applicationBinder,
-                frozenStateBinder
-        );
+    @SuppressLint("MissingPermission")
+    public static void publish() {
+        publish("unspecified");
+    }
+
+    @SuppressLint("MissingPermission")
+    public static void publish(String reason) {
+        publish(reason, null);
+    }
+
+    @SuppressLint("MissingPermission")
+    public static void publish(String reason, String token) {
         try {
-            Class<?> smClass = Class.forName("android.os.ServiceManager");
-            java.lang.reflect.Method addService = smClass.getMethod("addService", String.class, android.os.IBinder.class);
-            addService.invoke(null, "cirno", manager);
-            Log.i("MonitorBinderHub: registered to ServiceManager as 'cirno'");
+            if (!bootCompleted) {
+                return;
+            }
+            long now = SystemClock.uptimeMillis();
+            if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
+                return;
+            }
+            Intent intent = new Intent(GlobalVars.ACTION_BINDER);
+            intent.setPackage(GlobalVars.PACKAGE_NAME);
+            Bundle extras = new Bundle();
+            BinderManager manager = new BinderManager(
+                    StatusBinderHub.statusBinder,
+                    applicationBinder,
+                    frozenStateBinder
+            );
+            extras.putBinder("Manager", manager);
+            intent.putExtras(extras);
+            if (token != null) {
+                intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, token);
+            }
+            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
+            lastPublishedAtMs = now;
         } catch (Throwable e) {
-            Log.e("MonitorBinderHub: failed to register to ServiceManager", e);
+            Log.w("MonitorBinderHub publish failed", e);
         }
     }
 

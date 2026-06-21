@@ -1,141 +1,147 @@
 package nep.timeline.cirno.binder;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
-
-import java.lang.reflect.Method;
 
 import nep.timeline.cirno.IBinderManager;
 import nep.timeline.cirno.IStatusInterface;
 import nep.timeline.cirno.IApplicationInterface;
 import nep.timeline.cirno.IFrozenStateInterface;
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.log.Log;
 
 public class BinderService {
-    private static final String SERVICE_NAME = "cirno";
-    private static final long RETRY_POLL_MS = 200L;
-    private static final int MAX_RETRY_COUNT = 15;
+    private static IBinderManager sManager;
+    private static volatile boolean receiverRegistered = false;
+    private static final String requestToken = java.util.UUID.randomUUID().toString();
 
-    private static volatile IBinderManager sManager;
-    private static volatile IStatusInterface sStatusBinder;
-    private static volatile IApplicationInterface sApplicationBinder;
-    private static volatile IFrozenStateInterface sFrozenStateBinder;
-
-    public static void register(android.content.Context appContext) {
-        fetchManager();
-    }
-
-    private static void fetchManager() {
-        try {
-            Class<?> smClass = Class.forName("android.os.ServiceManager");
-            Method getService = smClass.getMethod("getService", String.class);
-            IBinder binder = (IBinder) getService.invoke(null, SERVICE_NAME);
+    private static final BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null || !GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
+                return;
+            }
+            if (!requestToken.equals(intent.getStringExtra(GlobalVars.EXTRA_BINDER_TOKEN))) {
+                Log.w("BinderService: ignored broadcast with invalid token");
+                return;
+            }
+            Bundle extras = intent.getExtras();
+            if (extras == null) {
+                Log.w("BinderService: broadcast has no extras");
+                return;
+            }
+            IBinder binder = extras.getBinder("Manager");
             if (binder == null) {
-                Log.w("BinderService: manager not found in ServiceManager");
+                Log.w("BinderService: manager binder missing in broadcast");
                 return;
             }
             sManager = IBinderManager.Stub.asInterface(binder);
-            Log.i("BinderService: obtained manager from ServiceManager");
+            Log.i("BinderService: obtained manager from broadcast");
+        }
+    };
 
-            sStatusBinder = sManager.getStatusBinder();
-            sApplicationBinder = sManager.getApplicationBinder();
-            sFrozenStateBinder = sManager.getFrozenStateBinder();
-            Log.i("BinderService: pre-fetched all binders");
+    public static void register(Context appContext) {
+        if (appContext == null) {
+            return;
+        }
+        try {
+            registerReceiverIfNeeded(appContext);
+            requestBinders(appContext);
         } catch (Throwable e) {
-            Log.e("BinderService: failed to get manager from ServiceManager", e);
+            Log.e("BinderService: register failed", e);
         }
     }
 
-    private static boolean isManagerAlive() {
-        IBinderManager mgr = sManager;
-        return mgr != null && mgr.asBinder().pingBinder();
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private static void registerReceiverIfNeeded(Context context) {
+        if (receiverRegistered) {
+            return;
+        }
+        synchronized (BinderService.class) {
+            if (receiverRegistered) {
+                return;
+            }
+            IntentFilter filter = new IntentFilter(GlobalVars.ACTION_BINDER);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                context.registerReceiver(receiver, filter);
+            }
+            receiverRegistered = true;
+            Log.i("BinderService: receiver registered");
+        }
+    }
+
+    private static void requestBinders(Context context) {
+        Intent intent = new Intent(GlobalVars.ACTION_BINDER_REQUEST);
+        intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, requestToken);
+        intent.setPackage("android");
+        context.sendBroadcast(intent);
+    }
+
+    private static IStatusInterface fetchStatusBinder() {
+        if (sManager != null) {
+            try {
+                return sManager.getStatusBinder();
+            } catch (Throwable e) {
+                Log.w("BinderService: failed to get status binder", e);
+                sManager = null;
+            }
+        }
+        return null;
+    }
+
+    private static IApplicationInterface fetchApplicationBinder() {
+        if (sManager != null) {
+            try {
+                return sManager.getApplicationBinder();
+            } catch (Throwable e) {
+                Log.w("BinderService: failed to get application binder", e);
+                sManager = null;
+            }
+        }
+        return null;
+    }
+
+    private static IFrozenStateInterface fetchFrozenStateBinder() {
+        if (sManager != null) {
+            try {
+                return sManager.getFrozenStateBinder();
+            } catch (Throwable e) {
+                Log.w("BinderService: failed to get frozen state binder", e);
+                sManager = null;
+            }
+        }
+        return null;
     }
 
     public static IStatusInterface getStatusBinder() {
-        if (sStatusBinder != null && sStatusBinder.asBinder().pingBinder()) {
-            return sStatusBinder;
+        IStatusInterface binder = fetchStatusBinder();
+        if (binder == null) {
+            Log.w("BinderService: status binder missing");
         }
-        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
-            if (!isManagerAlive()) {
-                sManager = null;
-                fetchManager();
-            }
-            if (sManager != null) {
-                try {
-                    sStatusBinder = sManager.getStatusBinder();
-                    if (sStatusBinder != null) {
-                        Log.i("BinderService: status binder obtained after retry " + (i + 1));
-                        return sStatusBinder;
-                    }
-                } catch (Throwable e) {
-                    Log.w("BinderService: status retry " + (i + 1) + " failed", e);
-                    sManager = null;
-                }
-            }
-            sleep(RETRY_POLL_MS);
-        }
-        Log.w("BinderService: failed to get status binder after " + MAX_RETRY_COUNT + " retries");
-        return null;
+        return binder;
     }
 
     public static IApplicationInterface getApplicationBinder() {
-        if (sApplicationBinder != null && sApplicationBinder.asBinder().pingBinder()) {
-            return sApplicationBinder;
+        IApplicationInterface binder = fetchApplicationBinder();
+        if (binder == null) {
+            Log.w("BinderService: application binder missing");
         }
-        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
-            if (!isManagerAlive()) {
-                sManager = null;
-                fetchManager();
-            }
-            if (sManager != null) {
-                try {
-                    sApplicationBinder = sManager.getApplicationBinder();
-                    if (sApplicationBinder != null) {
-                        Log.i("BinderService: application binder obtained after retry " + (i + 1));
-                        return sApplicationBinder;
-                    }
-                } catch (Throwable e) {
-                    Log.w("BinderService: application retry " + (i + 1) + " failed", e);
-                    sManager = null;
-                }
-            }
-            sleep(RETRY_POLL_MS);
-        }
-        Log.w("BinderService: failed to get application binder after " + MAX_RETRY_COUNT + " retries");
-        return null;
+        return binder;
     }
 
     public static IFrozenStateInterface getFrozenStateBinder() {
-        if (sFrozenStateBinder != null && sFrozenStateBinder.asBinder().pingBinder()) {
-            return sFrozenStateBinder;
+        IFrozenStateInterface binder = fetchFrozenStateBinder();
+        if (binder == null) {
+            Log.w("BinderService: frozen state binder missing");
         }
-        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
-            if (!isManagerAlive()) {
-                sManager = null;
-                fetchManager();
-            }
-            if (sManager != null) {
-                try {
-                    sFrozenStateBinder = sManager.getFrozenStateBinder();
-                    if (sFrozenStateBinder != null) {
-                        Log.i("BinderService: frozen state binder obtained after retry " + (i + 1));
-                        return sFrozenStateBinder;
-                    }
-                } catch (Throwable e) {
-                    Log.w("BinderService: frozen state retry " + (i + 1) + " failed", e);
-                    sManager = null;
-                }
-            }
-            sleep(RETRY_POLL_MS);
-        }
-        Log.w("BinderService: failed to get frozen state binder after " + MAX_RETRY_COUNT + " retries");
-        return null;
-    }
-
-    private static void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        return binder;
     }
 }
