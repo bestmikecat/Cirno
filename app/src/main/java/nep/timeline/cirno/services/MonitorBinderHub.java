@@ -521,7 +521,9 @@ public final class MonitorBinderHub {
                 frozenStateBinder
         );
         try {
-            android.os.ServiceManager.addService("cirno", manager);
+            Class<?> smClass = Class.forName("android.os.ServiceManager");
+            java.lang.reflect.Method addService = smClass.getMethod("addService", String.class, android.os.IBinder.class);
+            addService.invoke(null, "cirno", manager);
             Log.i("MonitorBinderHub: registered to ServiceManager as 'cirno'");
         } catch (Throwable e) {
             Log.e("MonitorBinderHub: failed to register to ServiceManager", e);
