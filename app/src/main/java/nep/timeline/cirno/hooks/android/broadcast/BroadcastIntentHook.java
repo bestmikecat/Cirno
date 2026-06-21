@@ -20,11 +20,6 @@ public class BroadcastIntentHook {
     public BroadcastIntentHook(ClassLoader classLoader) {
         try {
             Class<?> clazz = CakeReflection.findClassIfExists("com.android.server.am.ActivityManagerService", classLoader);
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                Class<?> controller = CakeReflection.findClassIfExists("com.android.server.am.BroadcastController", classLoader);
-                if (controller != null)
-                    clazz = controller;
-            }
 
             if (clazz == null) {
                 Log.e("无法监听广播意图，未找到 ActivityManagerService 类");
@@ -33,7 +28,7 @@ public class BroadcastIntentHook {
 
             Method targetMethod = null;
             for (Method method : clazz.getDeclaredMethods())
-                if (method.getName().equals("broadcastIntentLocked") && (targetMethod == null || targetMethod.getParameterTypes().length < method.getParameterTypes().length))
+                if (method.getName().equals("broadcastIntentLocked") && (targetMethod == null || targetMethod.getParameterTypes().length > method.getParameterTypes().length))
                     targetMethod = method;
 
             if (targetMethod == null) {
@@ -47,10 +42,8 @@ public class BroadcastIntentHook {
                     int intentArgsIndex = 3;
 
                     int userIdIndex = 19;
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2 && Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2)
                         userIdIndex = 20;
-                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU)
-                        userIdIndex = 21;
 
                     Intent intent = (Intent) callback.getArgs()[intentArgsIndex];
                     int userId = (int) callback.getArgs()[userIdIndex];
