@@ -535,10 +535,12 @@ public final class MonitorBinderHub {
     public static void publish(String reason, String token) {
         try {
             if (!bootCompleted) {
+                Log.w("MonitorBinderHub: publish skipped - boot not completed, reason=" + reason);
                 return;
             }
             long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
+                Log.w("MonitorBinderHub: publish skipped - AMS not ready, reason=" + reason);
                 return;
             }
             Intent intent = new Intent(GlobalVars.ACTION_BINDER);
@@ -556,6 +558,7 @@ public final class MonitorBinderHub {
             }
             ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
             lastPublishedAtMs = now;
+            Log.i("MonitorBinderHub: publish sent, reason=" + reason + ", token=" + token);
         } catch (Throwable e) {
             Log.w("MonitorBinderHub publish failed", e);
         }

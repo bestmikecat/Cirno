@@ -31,6 +31,7 @@ public class BinderService {
                 Log.w("BinderService: ignored broadcast with invalid token");
                 return;
             }
+            Log.i("BinderService: broadcast received, token_match=true");
             Bundle extras = intent.getExtras();
             if (extras == null) {
                 Log.w("BinderService: broadcast has no extras");
@@ -86,37 +87,43 @@ public class BinderService {
     }
 
     private static IStatusInterface fetchStatusBinder() {
-        if (sManager != null) {
-            try {
-                return sManager.getStatusBinder();
-            } catch (Throwable e) {
-                Log.w("BinderService: failed to get status binder", e);
-                sManager = null;
-            }
+        if (sManager == null) {
+            Log.w("BinderService: manager is null, binder not yet received");
+            return null;
+        }
+        try {
+            return sManager.getStatusBinder();
+        } catch (Throwable e) {
+            Log.w("BinderService: failed to get status binder", e);
+            sManager = null;
         }
         return null;
     }
 
     private static IApplicationInterface fetchApplicationBinder() {
-        if (sManager != null) {
-            try {
-                return sManager.getApplicationBinder();
-            } catch (Throwable e) {
-                Log.w("BinderService: failed to get application binder", e);
-                sManager = null;
-            }
+        if (sManager == null) {
+            Log.w("BinderService: manager is null, binder not yet received");
+            return null;
+        }
+        try {
+            return sManager.getApplicationBinder();
+        } catch (Throwable e) {
+            Log.w("BinderService: failed to get application binder", e);
+            sManager = null;
         }
         return null;
     }
 
     private static IFrozenStateInterface fetchFrozenStateBinder() {
-        if (sManager != null) {
-            try {
-                return sManager.getFrozenStateBinder();
-            } catch (Throwable e) {
-                Log.w("BinderService: failed to get frozen state binder", e);
-                sManager = null;
-            }
+        if (sManager == null) {
+            Log.w("BinderService: manager is null, binder not yet received");
+            return null;
+        }
+        try {
+            return sManager.getFrozenStateBinder();
+        } catch (Throwable e) {
+            Log.w("BinderService: failed to get frozen state binder", e);
+            sManager = null;
         }
         return null;
     }

@@ -66,6 +66,7 @@ public class BroadcastIntentHook {
                         }
 
                         if (GlobalVars.ACTION_BINDER_REQUEST.equals(action)) {
+                            Log.i("BroadcastIntentHook: binder request received, token=" + intent.getStringExtra(GlobalVars.EXTRA_BINDER_TOKEN));
                             MonitorBinderHub.publish("Binder request broadcast", intent.getStringExtra(GlobalVars.EXTRA_BINDER_TOKEN));
                             return;
                         }

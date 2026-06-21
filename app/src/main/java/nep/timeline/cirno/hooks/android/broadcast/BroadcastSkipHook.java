@@ -57,6 +57,7 @@ public class BroadcastSkipHook extends MethodHook {
                     if (record != null) {
                         Intent intent = (Intent) CakeReflection.getObjectField(record, "intent");
                         if (intent != null && GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
+                            Log.d("BroadcastSkipHook: exempted ACTION_BINDER broadcast");
                             return;
                         }
                     }
