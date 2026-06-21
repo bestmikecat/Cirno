@@ -29,8 +29,8 @@ import java.util.regex.Pattern;
 
 import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.binder.BinderService;
-import nep.timeline.cirno.binders.ApplicationInterface;
-import nep.timeline.cirno.binders.FrozenStateInterface;
+import nep.timeline.cirno.IApplicationInterface;
+import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
 import nep.timeline.cirno.log.Log;
@@ -226,8 +226,8 @@ public class PackageUtils {
         }
 
         PackageManager pm = context.getPackageManager();
-        ApplicationInterface applicationInterface = ApplicationBinder.getInstance();
-        FrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
+        IApplicationInterface applicationInterface = ApplicationBinder.getInstance();
+        IFrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
         if (applicationInterface == null || frozenStateInterface == null) {
             nep.timeline.cirno.binder.BinderService.register(context);
             applicationInterface = ApplicationBinder.getInstance();

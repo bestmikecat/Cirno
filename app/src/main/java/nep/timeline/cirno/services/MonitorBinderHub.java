@@ -1,16 +1,12 @@
 package nep.timeline.cirno.services;
 
-import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
-import android.os.Bundle;
 import android.os.SystemClock;
-import android.os.UserHandle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,13 +17,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import android.os.Parcel;
-
 import com.google.gson.Gson;
 
-import nep.timeline.cirno.GlobalVars;
-import nep.timeline.cirno.binders.ApplicationInterface;
-import nep.timeline.cirno.binders.FrozenStateInterface;
+import nep.timeline.cirno.IApplicationInterface;
+import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
@@ -37,8 +30,6 @@ import nep.timeline.cirno.virtuals.ProcessRecord;
 
 public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
-    private static volatile long lastPublishedAtMs = 0L;
-    private static volatile boolean bootCompleted = false;
     private static final java.util.concurrent.ConcurrentHashMap<String, List<String>> PROCESS_NAME_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
     
     // System snapshot for running apps
@@ -48,10 +39,6 @@ public final class MonitorBinderHub {
     private static final Object snapshotLock = new Object();
 
     private MonitorBinderHub() {
-    }
-
-    public static void setBootCompleted() {
-        bootCompleted = true;
     }
 
     // Inner classes for system snapshot
@@ -356,7 +343,7 @@ public final class MonitorBinderHub {
         return 0L;
     }
 
-    private static final ApplicationInterface.Stub applicationBinder = new ApplicationInterface.Stub() {
+    private static final IApplicationInterface.Stub applicationBinder = new IApplicationInterface.Stub() {
         @Override
         public List<String> getRunningApplication() {
             return getOrUpdateSystemSnapshot().runningApps;
@@ -440,7 +427,7 @@ public final class MonitorBinderHub {
         }
     };
 
-    private static final FrozenStateInterface.Stub frozenStateBinder = new FrozenStateInterface.Stub() {
+    private static final IFrozenStateInterface.Stub frozenStateBinder = new IFrozenStateInterface.Stub() {
         @Override
         public String isFrozen(String packageName, int userId) {
             if (packageName == null || packageName.isEmpty()) {
@@ -523,41 +510,21 @@ public final class MonitorBinderHub {
         }
     };
 
-    @SuppressLint("MissingPermission")
-    public static void publish() {
-        publish("unspecified");
-    }
-
-    @SuppressLint("MissingPermission")
-    public static void publish(String reason) {
-        publish(reason, null);
-    }
-
-    @SuppressLint("MissingPermission")
-    public static void publish(String reason, String token) {
+    public static void init() {
+        if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
+            Log.w("MonitorBinderHub: AMS not ready, skip init");
+            return;
+        }
+        BinderManager manager = new BinderManager(
+                StatusBinderHub.statusBinder,
+                applicationBinder,
+                frozenStateBinder
+        );
         try {
-            if (!bootCompleted) {
-                return;
-            }
-            long now = SystemClock.uptimeMillis();
-            if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-                return;
-            }
-            Intent intent = new Intent(GlobalVars.ACTION_BINDER);
-            intent.setPackage(GlobalVars.PACKAGE_NAME);
-            Bundle extras = new Bundle();
-            extras.putBinder("Application", applicationBinder);
-            extras.putBinder("FrozenState", frozenStateBinder);
-            extras.putBinder("Status", StatusBinderHub.statusBinder);
-            intent.putExtras(extras);
-            if (token != null) {
-                intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, token);
-            }
-            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
-            long delta = lastPublishedAtMs == 0L ? -1L : (now - lastPublishedAtMs);
-            lastPublishedAtMs = now;
+            android.os.ServiceManager.addService("cirno", manager);
+            Log.i("MonitorBinderHub: registered to ServiceManager as 'cirno'");
         } catch (Throwable e) {
-            Log.w("MonitorBinder publish failed", e);
+            Log.e("MonitorBinderHub: failed to register to ServiceManager", e);
         }
     }
 

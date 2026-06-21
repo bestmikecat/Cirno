@@ -1,202 +1,141 @@
 package nep.timeline.cirno.binder;
 
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.lang.reflect.Method;
 
-import nep.timeline.cirno.GlobalVars;
+import nep.timeline.cirno.IBinderManager;
+import nep.timeline.cirno.IStatusInterface;
+import nep.timeline.cirno.IApplicationInterface;
+import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.log.Log;
 
 public class BinderService {
-    private static final Map<String, IBinder> binders = new HashMap<>();
-    private static final long REQUEST_INTERVAL_MS = 1000L;
-    private static final long RETRY_POLL_MS = 100L;
-    private static final long RETRY_TIMEOUT_MS = 2000L;
-    private static final int MAX_RETRY_ROUNDS = 3;
-    private static final String requestToken = UUID.randomUUID().toString();
-    private static volatile boolean receiverRegistered = false;
-    private static volatile long lastRequestAtMs = 0L;
-    private static volatile Context sAppContext;
-    private static final Object retryLock = new Object();
-    private static volatile boolean isRetrying = false;
-    private static final BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent == null || !GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
-                return;
-            }
-            if (!requestToken.equals(intent.getStringExtra(GlobalVars.EXTRA_BINDER_TOKEN))) {
-                Log.w("Binder register: ignored broadcast with invalid token");
-                return;
-            }
-            cacheBinders(intent.getExtras());
-        }
-    };
+    private static final String SERVICE_NAME = "cirno";
+    private static final long RETRY_POLL_MS = 200L;
+    private static final int MAX_RETRY_COUNT = 15;
 
-    public static IBinder getBinder(String name) {
-        synchronized (binders) {
-            IBinder binder = binders.get(name);
-            if (binder != null) {
-                return binder;
-            }
-        }
+    private static volatile IBinderManager sManager;
+    private static volatile IStatusInterface sStatusBinder;
+    private static volatile IApplicationInterface sApplicationBinder;
+    private static volatile IFrozenStateInterface sFrozenStateBinder;
 
-        Context context = sAppContext;
-        if (context == null) {
-            Log.w("Binder get: " + name + " miss, no context for retry");
-            return null;
-        }
-
-        synchronized (retryLock) {
-            if (isRetrying) {
-                return waitForBinder(name);
-            }
-
-            isRetrying = true;
-            try {
-                for (int round = 0; round < MAX_RETRY_ROUNDS; round++) {
-                    Log.i("Binder get: " + name + " miss, retry " + (round + 1) + "/" + MAX_RETRY_ROUNDS);
-                    requestBindersImmediate(context);
-
-                    long deadline = android.os.SystemClock.uptimeMillis() + RETRY_TIMEOUT_MS;
-                    while (android.os.SystemClock.uptimeMillis() < deadline) {
-                        synchronized (binders) {
-                            IBinder binder = binders.get(name);
-                            if (binder != null) {
-                                Log.i("Binder get: " + name + " obtained after retry " + (round + 1));
-                                return binder;
-                            }
-                            try {
-                                binders.wait(RETRY_POLL_MS);
-                            } catch (InterruptedException ignored) {
-                                Thread.currentThread().interrupt();
-                                return null;
-                            }
-                        }
-                    }
-                }
-            } finally {
-                isRetrying = false;
-                synchronized (binders) {
-                    binders.notifyAll();
-                }
-            }
-        }
-
-        Log.w("Binder get: " + name + " failed after " + MAX_RETRY_ROUNDS + " retries");
-        return null;
+    public static void register(android.content.Context appContext) {
+        fetchManager();
     }
 
-    private static IBinder waitForBinder(String name) {
-        long deadline = android.os.SystemClock.uptimeMillis() + RETRY_TIMEOUT_MS * MAX_RETRY_ROUNDS;
-        while (android.os.SystemClock.uptimeMillis() < deadline) {
-            synchronized (binders) {
-                IBinder binder = binders.get(name);
-                if (binder != null) {
-                    return binder;
-                }
-                try {
-                    binders.wait(RETRY_POLL_MS);
-                } catch (InterruptedException ignored) {
-                    Thread.currentThread().interrupt();
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static int binderCount() {
-        synchronized (binders) {
-            return binders.size();
-        }
-    }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    public static void register(Context context) {
-        if (context == null) {
-            Log.w("Binder register skipped: context is null");
-            return;
-        }
-        Context appContext = context.getApplicationContext();
-        if (appContext == null) {
-            appContext = context;
-        }
-        sAppContext = appContext;
+    private static void fetchManager() {
         try {
-            registerReceiverIfNeeded(appContext);
-            requestBinders(appContext);
-        } catch (Throwable throwable) {
-            Log.e("Binder register failed: registerReceiver", throwable);
-        }
-    }
-
-    private static void registerReceiverIfNeeded(Context context) {
-        if (receiverRegistered) {
-            return;
-        }
-        synchronized (BinderService.class) {
-            if (receiverRegistered) {
+            Class<?> smClass = Class.forName("android.os.ServiceManager");
+            Method getService = smClass.getMethod("getService", String.class);
+            IBinder binder = (IBinder) getService.invoke(null, SERVICE_NAME);
+            if (binder == null) {
+                Log.w("BinderService: manager not found in ServiceManager");
                 return;
             }
-            IntentFilter filter = new IntentFilter(GlobalVars.ACTION_BINDER);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
-            } else {
-                context.registerReceiver(receiver, filter);
+            sManager = IBinderManager.Stub.asInterface(binder);
+            Log.i("BinderService: obtained manager from ServiceManager");
+
+            sStatusBinder = sManager.getStatusBinder();
+            sApplicationBinder = sManager.getApplicationBinder();
+            sFrozenStateBinder = sManager.getFrozenStateBinder();
+            Log.i("BinderService: pre-fetched all binders");
+        } catch (Throwable e) {
+            Log.e("BinderService: failed to get manager from ServiceManager", e);
+        }
+    }
+
+    private static boolean isManagerAlive() {
+        IBinderManager mgr = sManager;
+        return mgr != null && mgr.asBinder().pingBinder();
+    }
+
+    public static IStatusInterface getStatusBinder() {
+        if (sStatusBinder != null && sStatusBinder.asBinder().pingBinder()) {
+            return sStatusBinder;
+        }
+        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+            if (!isManagerAlive()) {
+                sManager = null;
+                fetchManager();
             }
-            receiverRegistered = true;
-            Log.i("Binder register: receiver registered");
-        }
-    }
-
-    private static void requestBinders(Context context) {
-        long now = android.os.SystemClock.uptimeMillis();
-        if (now - lastRequestAtMs < REQUEST_INTERVAL_MS) {
-            return;
-        }
-        lastRequestAtMs = now;
-        Intent intent = new Intent(GlobalVars.ACTION_BINDER_REQUEST);
-        intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, requestToken);
-        intent.setPackage("android");
-        context.sendBroadcast(intent);
-    }
-
-    private static void requestBindersImmediate(Context context) {
-        Intent intent = new Intent(GlobalVars.ACTION_BINDER_REQUEST);
-        intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, requestToken);
-        intent.setPackage("android");
-        context.sendBroadcast(intent);
-        Log.i("Binder request: immediate sent");
-    }
-
-    private static void cacheBinders(Bundle extras) {
-        if (extras == null) {
-            Log.i("Binder register: broadcast has no extras");
-            return;
-        }
-        int count = 0;
-        int valid = 0;
-        synchronized (binders) {
-            for (String name : extras.keySet()) {
-                IBinder binder = extras.getBinder(name);
-                binders.put(name, binder);
-                count++;
-                if (binder != null) {
-                    valid++;
+            if (sManager != null) {
+                try {
+                    sStatusBinder = sManager.getStatusBinder();
+                    if (sStatusBinder != null) {
+                        Log.i("BinderService: status binder obtained after retry " + (i + 1));
+                        return sStatusBinder;
+                    }
+                } catch (Throwable e) {
+                    Log.w("BinderService: status retry " + (i + 1) + " failed", e);
+                    sManager = null;
                 }
             }
-            binders.notifyAll();
+            sleep(RETRY_POLL_MS);
         }
-        Log.i("Binder register: cached " + valid + "/" + count + " binder(s), total=" + binderCount());
+        Log.w("BinderService: failed to get status binder after " + MAX_RETRY_COUNT + " retries");
+        return null;
+    }
+
+    public static IApplicationInterface getApplicationBinder() {
+        if (sApplicationBinder != null && sApplicationBinder.asBinder().pingBinder()) {
+            return sApplicationBinder;
+        }
+        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+            if (!isManagerAlive()) {
+                sManager = null;
+                fetchManager();
+            }
+            if (sManager != null) {
+                try {
+                    sApplicationBinder = sManager.getApplicationBinder();
+                    if (sApplicationBinder != null) {
+                        Log.i("BinderService: application binder obtained after retry " + (i + 1));
+                        return sApplicationBinder;
+                    }
+                } catch (Throwable e) {
+                    Log.w("BinderService: application retry " + (i + 1) + " failed", e);
+                    sManager = null;
+                }
+            }
+            sleep(RETRY_POLL_MS);
+        }
+        Log.w("BinderService: failed to get application binder after " + MAX_RETRY_COUNT + " retries");
+        return null;
+    }
+
+    public static IFrozenStateInterface getFrozenStateBinder() {
+        if (sFrozenStateBinder != null && sFrozenStateBinder.asBinder().pingBinder()) {
+            return sFrozenStateBinder;
+        }
+        for (int i = 0; i < MAX_RETRY_COUNT; i++) {
+            if (!isManagerAlive()) {
+                sManager = null;
+                fetchManager();
+            }
+            if (sManager != null) {
+                try {
+                    sFrozenStateBinder = sManager.getFrozenStateBinder();
+                    if (sFrozenStateBinder != null) {
+                        Log.i("BinderService: frozen state binder obtained after retry " + (i + 1));
+                        return sFrozenStateBinder;
+                    }
+                } catch (Throwable e) {
+                    Log.w("BinderService: frozen state retry " + (i + 1) + " failed", e);
+                    sManager = null;
+                }
+            }
+            sleep(RETRY_POLL_MS);
+        }
+        Log.w("BinderService: failed to get frozen state binder after " + MAX_RETRY_COUNT + " retries");
+        return null;
+    }
+
+    private static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
