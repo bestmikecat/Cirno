@@ -38,6 +38,8 @@ public final class MonitorBinderHub {
     private static final String REASON_UNKNOWN = "UNKNOWN";
     private static volatile long lastPublishedAtMs = 0L;
     private static volatile boolean bootCompleted = false;
+    private static volatile boolean loggedSkippedBoot = false;
+    private static volatile boolean loggedSkippedAms = false;
     private static final java.util.concurrent.ConcurrentHashMap<String, List<String>> PROCESS_NAME_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
     
     // System snapshot for running apps
@@ -530,19 +532,20 @@ public final class MonitorBinderHub {
 
     @SuppressLint("MissingPermission")
     public static void publish(String reason) {
-        publish(reason, null);
-    }
-
-    @SuppressLint("MissingPermission")
-    public static void publish(String reason, String token) {
         try {
             if (!bootCompleted) {
-                Log.w("MonitorBinderHub: publish skipped - boot not completed, reason=" + reason);
+                if (!loggedSkippedBoot) {
+                    Log.d("MonitorBinderHub: publish skipped - boot not completed");
+                    loggedSkippedBoot = true;
+                }
                 return;
             }
             long now = SystemClock.uptimeMillis();
             if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-                Log.w("MonitorBinderHub: publish skipped - AMS not ready, reason=" + reason);
+                if (!loggedSkippedAms) {
+                    Log.d("MonitorBinderHub: publish skipped - AMS not ready");
+                    loggedSkippedAms = true;
+                }
                 return;
             }
             Intent intent = new Intent(GlobalVars.ACTION_BINDER);
@@ -555,12 +558,9 @@ public final class MonitorBinderHub {
             );
             extras.putBinder("Manager", manager);
             intent.putExtras(extras);
-            if (token != null) {
-                intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, token);
-            }
             ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
             lastPublishedAtMs = now;
-            Log.i("MonitorBinderHub: publish sent, reason=" + reason + ", token=" + token);
+            Log.d("MonitorBinderHub: publish sent, reason=" + reason);
         } catch (Throwable e) {
             Log.w("MonitorBinderHub publish failed", e);
         }

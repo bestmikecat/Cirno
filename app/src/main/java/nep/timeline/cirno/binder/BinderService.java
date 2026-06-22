@@ -26,7 +26,7 @@ public class BinderService {
             if (intent == null || !GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
                 return;
             }
-            Log.i("BinderService: broadcast received");
+            Log.d("BinderService: broadcast received");
             Bundle extras = intent.getExtras();
             if (extras == null) {
                 Log.w("BinderService: broadcast has no extras");
@@ -70,7 +70,7 @@ public class BinderService {
                 context.registerReceiver(receiver, filter);
             }
             receiverRegistered = true;
-            Log.i("BinderService: receiver registered");
+            Log.d("BinderService: receiver registered");
         }
     }
 
@@ -82,7 +82,7 @@ public class BinderService {
 
     private static IStatusInterface fetchStatusBinder() {
         if (sManager == null) {
-            Log.w("BinderService: manager is null, binder not yet received");
+            Log.d("BinderService: manager is null, binder not yet received");
             return null;
         }
         try {
@@ -96,7 +96,7 @@ public class BinderService {
 
     private static IApplicationInterface fetchApplicationBinder() {
         if (sManager == null) {
-            Log.w("BinderService: manager is null, binder not yet received");
+            Log.d("BinderService: manager is null, binder not yet received");
             return null;
         }
         try {
@@ -110,7 +110,7 @@ public class BinderService {
 
     private static IFrozenStateInterface fetchFrozenStateBinder() {
         if (sManager == null) {
-            Log.w("BinderService: manager is null, binder not yet received");
+            Log.d("BinderService: manager is null, binder not yet received");
             return null;
         }
         try {
@@ -125,7 +125,7 @@ public class BinderService {
     public static IStatusInterface getStatusBinder() {
         IStatusInterface binder = fetchStatusBinder();
         if (binder == null) {
-            Log.w("BinderService: status binder missing");
+            Log.d("BinderService: status binder missing");
         }
         return binder;
     }
@@ -133,7 +133,7 @@ public class BinderService {
     public static IApplicationInterface getApplicationBinder() {
         IApplicationInterface binder = fetchApplicationBinder();
         if (binder == null) {
-            Log.w("BinderService: application binder missing");
+            Log.d("BinderService: application binder missing");
         }
         return binder;
     }
@@ -141,7 +141,7 @@ public class BinderService {
     public static IFrozenStateInterface getFrozenStateBinder() {
         IFrozenStateInterface binder = fetchFrozenStateBinder();
         if (binder == null) {
-            Log.w("BinderService: frozen state binder missing");
+            Log.d("BinderService: frozen state binder missing");
         }
         return binder;
     }
