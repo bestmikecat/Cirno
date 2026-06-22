@@ -19,7 +19,6 @@ import nep.timeline.cirno.log.Log;
 public class BinderService {
     private static IBinderManager sManager;
     private static volatile boolean receiverRegistered = false;
-    private static final String requestToken = java.util.UUID.randomUUID().toString();
 
     private static final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -27,11 +26,7 @@ public class BinderService {
             if (intent == null || !GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
                 return;
             }
-            if (!requestToken.equals(intent.getStringExtra(GlobalVars.EXTRA_BINDER_TOKEN))) {
-                Log.w("BinderService: ignored broadcast with invalid token");
-                return;
-            }
-            Log.i("BinderService: broadcast received, token_match=true");
+            Log.i("BinderService: broadcast received");
             Bundle extras = intent.getExtras();
             if (extras == null) {
                 Log.w("BinderService: broadcast has no extras");
@@ -81,7 +76,6 @@ public class BinderService {
 
     private static void requestBinders(Context context) {
         Intent intent = new Intent(GlobalVars.ACTION_BINDER_REQUEST);
-        intent.putExtra(GlobalVars.EXTRA_BINDER_TOKEN, requestToken);
         intent.setPackage("android");
         context.sendBroadcast(intent);
     }

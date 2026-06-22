@@ -30,6 +30,7 @@ import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.reflect.CakeReflection;
+import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.FreezeExemptionChecker;
 import nep.timeline.cirno.virtuals.ProcessRecord;
 
@@ -50,6 +51,7 @@ public final class MonitorBinderHub {
 
     public static void setBootCompleted() {
         bootCompleted = true;
+        scheduleRebroadcast();
     }
 
     // Inner classes for system snapshot
@@ -562,6 +564,14 @@ public final class MonitorBinderHub {
         } catch (Throwable e) {
             Log.w("MonitorBinderHub publish failed", e);
         }
+    }
+
+    private static void scheduleRebroadcast() {
+        Handlers.rekernel.postDelayed(() -> {
+            if (bootCompleted) {
+                publish("boot rebroadcast");
+            }
+        }, 5000L);
     }
 
 }
