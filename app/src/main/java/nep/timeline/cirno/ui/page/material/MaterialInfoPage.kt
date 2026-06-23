@@ -161,7 +161,7 @@ fun MaterialInfoPage(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 MaterialInfoRow(stringResource(R.string.manager_version), "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}-${BuildConfig.BUILD_TIME})")
-                MaterialInfoRow(stringResource(R.string.hook_type), if (working) "Xposed" else stringResource(R.string.unknown))
+                MaterialInfoRow(stringResource(R.string.hook_type), if (working && binderState.hookType != null) binderState.hookType else stringResource(R.string.unknown))
                 MaterialInfoRow(stringResource(R.string.android_version), if (Build.VERSION.PREVIEW_SDK_INT != 0) (Build.VERSION.CODENAME + " Preview (API " + Build.VERSION.PREVIEW_SDK_INT + "/" + Build.VERSION.SDK_INT + ")") else (VersionUtils.getAndroidVersion() + " (API " + Build.VERSION.SDK_INT + ")"))
                 MaterialInfoRow(stringResource(R.string.xposed_version), if (xposedServiceStatus.frameworkVersion.isNotEmpty()) "${xposedServiceStatus.frameworkName} ${xposedServiceStatus.frameworkVersion}, API ${xposedServiceStatus.apiVersion}" else stringResource(R.string.unknown))
                 MaterialInfoRow(stringResource(R.string.system_fingerprint), Build.FINGERPRINT)

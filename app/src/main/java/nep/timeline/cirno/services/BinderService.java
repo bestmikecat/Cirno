@@ -191,6 +191,7 @@ public class BinderService {
                     }
 
                     Log.i("已连接至ReKernel, " + netlinkUnit + "#100");
+                    StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Re-Kernel");
 
                     while (true) {
                         try {

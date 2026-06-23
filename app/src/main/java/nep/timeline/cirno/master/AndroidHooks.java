@@ -42,8 +42,10 @@ import nep.timeline.cirno.hooks.android.signal.SendSignalQuietHook;
 import nep.timeline.cirno.hooks.android.vpn.VpnStateHook;
 import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
 import nep.timeline.cirno.hooks.android.xiaomi.ReportSignalHook;
+import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
+import nep.timeline.cirno.services.StatusBinderHub;
 import nep.timeline.cirno.utils.SystemChecker;
 
 public class AndroidHooks {
@@ -99,8 +101,13 @@ public class AndroidHooks {
         new CacheEnableFreezerHook(classLoader);
         new CacheUseFreezerHook(classLoader);
         // Binder
-        new HansKernelUnfreezeHook(classLoader);
-        new MilletBinderTransHook(classLoader);
+        MethodHook hansHook = new HansKernelUnfreezeHook(classLoader);
+        MethodHook milletHook = new MilletBinderTransHook(classLoader);
+        if (milletHook.isHooked()) {
+            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Millet");
+        } else if (hansHook.isHooked()) {
+            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Hans");
+        }
         // Recorder
         new RecorderEventHook(classLoader);
         new ReleaseRecorderHook(classLoader);

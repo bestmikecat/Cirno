@@ -12,6 +12,7 @@ import nep.timeline.cirno.utils.SystemChecker;
 public final class StatusBinderHub {
     public static final String SIGNAL_DEVICE_TYPE = "device_type";
     public static final String SIGNAL_ADD_ON_REQUIRED = "add_on_required";
+    public static final String SIGNAL_HOOK_TYPE = "hook_type";
     private static final Map<String, String> SIGNALS = new ConcurrentHashMap<>();
 
     private StatusBinderHub() {

@@ -10,6 +10,7 @@ object HookStatusRepository {
         val hookVersion: String? = null,
         val deviceType: String? = null,
         val addOnRequired: Boolean = false,
+        val hookType: String? = null,
     )
 
     fun loadHookStatusSnapshot(): HookStatusSnapshot {
@@ -23,6 +24,7 @@ object HookStatusRepository {
                 hookVersion = if (version.isNullOrBlank()) null else version,
                 deviceType = status.getSignal("device_type").takeIf { !it.isNullOrBlank() },
                 addOnRequired = status.getSignal("add_on_required") == "1",
+                hookType = status.getSignal("hook_type").takeIf { !it.isNullOrBlank() },
             )
         } catch (_: Throwable) {
             HookStatusSnapshot(statusBinderAvailable = false)

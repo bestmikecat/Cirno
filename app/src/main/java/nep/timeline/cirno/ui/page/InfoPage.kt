@@ -247,6 +247,7 @@ private fun InfoContent(
                     )
                     InfoCard(
                         working = active,
+                        hookType = binderState.hookType,
                         xposedServiceStatus = xposedServiceStatus
                     )
                     UpdateCard(
@@ -533,6 +534,7 @@ private fun UpdateCard(
 @Composable
 private fun InfoCard(
     working: Boolean,
+    hookType: String?,
     xposedServiceStatus: nep.timeline.cirno.ui.utils.ModuleStatus,
     modifier: Modifier = Modifier,
     colors: CardColors = CardDefaults.defaultColors(),
@@ -586,7 +588,7 @@ private fun InfoCard(
             )
             InfoText(
                 title = stringResource(R.string.hook_type),
-                content = if (working) "Xposed" else stringResource(R.string.unknown)
+                content = if (working && hookType != null) hookType else stringResource(R.string.unknown)
             )
             InfoText(
                 title = stringResource(R.string.android_version),
