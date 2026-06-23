@@ -27,7 +27,7 @@ fun AppItemCompose(
     app: AppItem,
 ) {
     val configured = app.black || app.white || app.backgroundPlay || app.locationCheck != 0
-        || app.networkCheck || app.networkSpeedEnabled || app.processConfig
+        || app.networkCheck || app.networkSpeedEnabled || app.processConfig || app.blockAutostart
     var subtitle: String? = null
     var subtitleColor = Color(60, 179, 113)
     if (configured) {
@@ -62,11 +62,13 @@ fun AppItemCompose(
                         app.networkCheck -> stringResource(R.string.netreceive_unfreeze)
                         app.networkSpeedEnabled -> stringResource(R.string.network_speed_check)
                         app.processConfig -> stringResource(R.string.process)
+                        app.blockAutostart -> stringResource(R.string.block_autostart)
                         else -> stringResource(R.string.other_config)
                     },
                     backgroundColor = when {
                         app.black -> Color(0xFFD13636)
                         app.white -> if (isInDarkTheme()) Color.White else Color.Black
+                        app.blockAutostart -> Color(0xFFD13636)
                         else -> Color(60, 179, 113)
                     },
                     contentColor = if (app.white && isInDarkTheme()) Color.Black else Color.White

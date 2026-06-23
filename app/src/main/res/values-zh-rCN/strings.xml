@@ -43,6 +43,8 @@
   <string name="netreceive_unfreeze">网络解冻</string>
   <string name="network_speed_check">网速识别</string>
   <string name="network_speed_threshold">网速识别阈值</string>
+  <string name="block_autostart">拦截自启动</string>
+  <string name="block_autostart_summary">阻止广播投递以防止自启动</string>
   <string name="boot_freeze_all">开机冻结</string>
   <string name="battery_opt">电池优化</string>
   <string name="version">版本</string>

@@ -149,6 +149,7 @@ fun ApplicationHome(activity: ApplicationActivity) {
                         val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
                         val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
                         val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
+                        val blockAutostart = remember { mutableStateOf(AppConfigs.isAutostartBlocked(packageName, userId)) }
 
                         if (packetAvailable.value == false && networkMessage.value) {
                             networkMessage.value = false
@@ -285,6 +286,26 @@ fun ApplicationHome(activity: ApplicationActivity) {
                                 }
                             )
                         }
+
+                        SwitchPreference(
+                            title = stringResource(R.string.block_autostart),
+                            checked = blockAutostart.value,
+                            enabled = !userWhitelist.value,
+                            onCheckedChange = {
+                                if (userWhitelist.value && it) {
+                                    WindowUtils.showToast(whitelistExemptionBlocked)
+                                    return@SwitchPreference
+                                }
+                                val previous = blockAutostart.value
+                                blockAutostart.value = it
+                                AppConfigs.setAutostartBlocked(packageName, userId, it)
+                                saveApplicationSettingsAsync("自启动拦截配置更新失败") { error ->
+                                    blockAutostart.value = previous
+                                    AppConfigs.setAutostartBlocked(packageName, userId, previous)
+                                    WindowUtils.showToast(error)
+                                }
+                            }
+                        )
 
                         SwitchPreference(
                             title = stringResource(R.string.black_app),

@@ -32,6 +32,8 @@ public class AppConfigs {
                 return getSafeSettings().networkMessageApps;
             case ALLOW_NETWORK_SPEED:
                 return getSafeSettings().networkSpeedApps;
+            case BLOCK_AUTOSTART:
+                return getSafeSettings().blockAutostartApps;
             default:
                 throw new IllegalArgumentException("Unsupported capability: " + capability);
         }
@@ -175,6 +177,22 @@ public class AppConfigs {
 
     public static void setNetworkSpeedAllowed(String pkg, boolean allowed) {
         setNetworkSpeedAllowed(pkg, 0, allowed);
+    }
+
+    public static boolean isAutostartBlocked(String pkg, int userId) {
+        return hasCapability(pkg, userId, Capability.BLOCK_AUTOSTART);
+    }
+
+    public static boolean isAutostartBlocked(String pkg) {
+        return isAutostartBlocked(pkg, 0);
+    }
+
+    public static void setAutostartBlocked(String pkg, int userId, boolean blocked) {
+        setCapability(pkg, userId, Capability.BLOCK_AUTOSTART, blocked);
+    }
+
+    public static void setAutostartBlocked(String pkg, boolean blocked) {
+        setAutostartBlocked(pkg, 0, blocked);
     }
 
     public static boolean isProcessExcludedFromFreeze(String pkg, int userId, String processName) {

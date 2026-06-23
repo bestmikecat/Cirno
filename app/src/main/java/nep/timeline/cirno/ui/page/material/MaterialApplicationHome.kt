@@ -74,6 +74,7 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
     val locationUse = remember { mutableStateOf(AppConfigs.isLocationUseAllowed(packageName, userId)) }
     val networkMessage = remember { mutableStateOf(AppConfigs.isNetworkMessageAllowed(packageName, userId)) }
     val networkSpeed = remember { mutableStateOf(AppConfigs.isNetworkSpeedAllowed(packageName, userId)) }
+    val blockAutostart = remember { mutableStateOf(AppConfigs.isAutostartBlocked(packageName, userId)) }
     val scope = rememberCoroutineScope()
 
     fun saveApplicationSettingsAsync(defaultError: String = "配置更新失败", onFailed: (String) -> Unit = {}) {
@@ -250,6 +251,21 @@ fun MaterialApplicationHome(activity: ApplicationActivity) {
                             AppConfigs.setNetworkSpeedAllowed(packageName, userId, previous)
                             WindowUtils.showToast(error)
                         }
+                    }
+                }
+
+                MaterialSwitchItem(Icons.Outlined.Block, stringResource(R.string.block_autostart), null, blockAutostart.value, !userWhitelist.value) {
+                    if (userWhitelist.value && it) {
+                        WindowUtils.showToast(whitelistExemptionBlocked)
+                        return@MaterialSwitchItem
+                    }
+                    val previous = blockAutostart.value
+                    blockAutostart.value = it
+                    AppConfigs.setAutostartBlocked(packageName, userId, it)
+                    saveApplicationSettingsAsync("自启动拦截配置更新失败") { error ->
+                        blockAutostart.value = previous
+                        AppConfigs.setAutostartBlocked(packageName, userId, previous)
+                        WindowUtils.showToast(error)
                     }
                 }
 

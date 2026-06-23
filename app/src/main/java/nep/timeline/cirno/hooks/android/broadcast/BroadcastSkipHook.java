@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Build;
 
 import nep.timeline.cirno.GlobalVars;
+import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.framework.MethodHook;
@@ -78,6 +79,13 @@ public class BroadcastSkipHook extends MethodHook {
 
                     ProcessRecord processRecord = ProcessService.getProcessRecord(app);
                     if (processRecord == null) {
+                        return;
+                    }
+
+                    String packageName = processRecord.getPackageName();
+                    int userId = processRecord.getUserId();
+                    if (AppConfigs.isAutostartBlocked(packageName, userId)) {
+                        callback.result = "Skipping deliver [Cirno]: autostart blocked";
                         return;
                     }
 

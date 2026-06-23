@@ -27,6 +27,7 @@ public class AppItem {
     public boolean netReceive;
     public boolean networkCheck;
     public boolean networkSpeedEnabled;
+    public boolean blockAutostart;
     public boolean idle;
     public int killProcCount;
     public int whiteProcCount;

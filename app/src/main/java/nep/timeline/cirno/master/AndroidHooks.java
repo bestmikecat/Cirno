@@ -24,6 +24,7 @@ import nep.timeline.cirno.hooks.android.binder.HansKernelUnfreezeHook;
 import nep.timeline.cirno.hooks.android.binder.MilletBinderTransHook;
 import nep.timeline.cirno.hooks.android.optimizer.CacheEnableFreezerHook;
 import nep.timeline.cirno.hooks.android.optimizer.CacheUseFreezerHook;
+import nep.timeline.cirno.hooks.android.broadcast.AutostartBlockHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastDeliveryHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastIntentHook;
 import nep.timeline.cirno.hooks.android.broadcast.BroadcastSkipHook;
@@ -88,6 +89,7 @@ public class AndroidHooks {
             new BroadcastDeliveryHook(classLoader);
         else
             new BroadcastSkipHook(classLoader);
+        new AutostartBlockHook(classLoader);
         // WakeLock
         new WakeLockHook(classLoader);
         // Activity
