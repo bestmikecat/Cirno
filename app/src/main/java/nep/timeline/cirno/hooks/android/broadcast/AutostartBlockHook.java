@@ -2,6 +2,7 @@ package nep.timeline.cirno.hooks.android.broadcast;
 
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
+import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +31,13 @@ public class AutostartBlockHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            return ReflectUtils.findParameterTypesOrDefault(
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, int.class, boolean.class);
         return ReflectUtils.findParameterTypesOrDefault(
                 CakeReflection.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class);
+                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, boolean.class);
     }
 
     @Override
