@@ -21,7 +21,7 @@ public class GreezeManagerServiceHook extends MethodHook {
 
     @Override
     public String getTargetMethod() {
-        return null;
+        return "init";
     }
 
     @Override
