@@ -2,7 +2,6 @@ package nep.timeline.cirno.hooks.android.broadcast;
 
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
-import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,23 +20,19 @@ public class AutostartBlockHook extends MethodHook {
 
     @Override
     public String getTargetClass() {
-        return "com.android.server.pm.PackageManagerService";
+        return "com.android.server.pm.ResolveIntentHelper";
     }
 
     @Override
     public String getTargetMethod() {
-        return "queryIntentReceivers";
+        return "queryIntentReceiversInternal";
     }
 
     @Override
     public Object[] getTargetParam() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-            return ReflectUtils.findParameterTypesOrDefault(
-                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
-                    getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class);
         return ReflectUtils.findParameterTypesOrDefault(
                 CakeReflection.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), Intent.class, String.class, long.class, int.class);
+                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, boolean.class);
     }
 
     @Override
@@ -48,22 +43,11 @@ public class AutostartBlockHook extends MethodHook {
                 try {
                     if (callback.result == null) return;
 
-                    Log.d("AutostartBlockHook: queryIntentReceivers called");
-
                     Object[] args = callback.getArgs();
-                    int userId = (int) args[args.length - 1];
+                    int userId = (int) args[4];
 
-                    List<?> list;
-                    try {
-                        list = (List<?>) CakeReflection.callMethod(callback.result, "getList");
-                    } catch (Throwable e) {
-                        Log.w("AutostartBlockHook: getList failed", e);
-                        return;
-                    }
-
+                    List<?> list = (List<?>) callback.result;
                     if (list == null || list.isEmpty()) return;
-
-                    Log.d("AutostartBlockHook: getList size=" + list.size());
 
                     List<ResolveInfo> filtered = null;
                     for (int i = 0; i < list.size(); i++) {
@@ -83,13 +67,7 @@ public class AutostartBlockHook extends MethodHook {
                     }
 
                     if (filtered != null) {
-                        Log.d("AutostartBlockHook: filtered list size=" + filtered.size());
-                        Object newList = CakeReflection.newInstance(callback.result.getClass(), new Class<?>[]{List.class}, filtered);
-                        if (newList != null) {
-                            callback.result = newList;
-                        } else {
-                            Log.w("AutostartBlockHook: newInstance failed");
-                        }
+                        callback.result = filtered;
                     }
                 } catch (Throwable e) {
                     Log.e("AutostartBlockHook: error", e);
