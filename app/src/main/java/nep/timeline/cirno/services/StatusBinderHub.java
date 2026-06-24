@@ -29,7 +29,7 @@ public final class StatusBinderHub {
             if (BinderService.received) {
                 return true;
             }
-            return new File("/proc/rekernel").exists() || SystemChecker.isOplus(CakeHooker.getHostClassLoader());
+            return new File("/proc/rekernel").exists() || SystemChecker.isOplus(CakeHooker.getHostClassLoader()) || GreezeManagerServiceWrapper.instance != null;
         }
 
         @Override
