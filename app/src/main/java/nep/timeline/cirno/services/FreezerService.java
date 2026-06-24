@@ -64,6 +64,9 @@ public class FreezerService {
         Handlers.network.post(() -> NetworkManagementService.socketDestroy(appRecord));
 
         appRecord.setFrozen(true);
+
+        if (AppConfigs.isNetworkMessageAllowed(appRecord.getPackageName(), appRecord.getUserId()))
+            GreezeManagerServiceWrapper.monitorNet(appRecord.getUid());
     }
 
     public static synchronized void thaw(AppRecord appRecord) {
@@ -71,6 +74,9 @@ public class FreezerService {
 
         if (!appRecord.isFrozen())
             return;
+
+        if (AppConfigs.isNetworkMessageAllowed(appRecord.getPackageName(), appRecord.getUserId()))
+            GreezeManagerServiceWrapper.clearMonitorNet(appRecord.getUid());
 
         int thawSeq = appRecord.nextThawSeq();
 
