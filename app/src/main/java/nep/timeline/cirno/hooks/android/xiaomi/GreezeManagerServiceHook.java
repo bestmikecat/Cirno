@@ -1,6 +1,7 @@
 package nep.timeline.cirno.hooks.android.xiaomi;
 
 import android.content.Context;
+import android.os.Build;
 
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.log.Log;
