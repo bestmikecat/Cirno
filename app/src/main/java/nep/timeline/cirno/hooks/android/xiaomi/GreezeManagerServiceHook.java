@@ -36,6 +36,17 @@ public class GreezeManagerServiceHook extends MethodHook {
             public void call(CakeHooker.AfterHookCallback callback) {
                 GreezeManagerServiceWrapper.setInstance(callback.getThisObject());
                 Log.i("GreezeManagerService 实例已捕获");
+
+                try {
+                    Class<?> debugConfig = CakeReflection.findClassIfExists(
+                            "com.miui.server.greeze.GreezeManagerDebugConfig", classLoader);
+                    if (debugConfig != null) {
+                        CakeReflection.setStaticBooleanField(debugConfig, "milletEnable", true);
+                        Log.i("milletEnable 已强制启用");
+                    }
+                } catch (Throwable t) {
+                    Log.e("设置 milletEnable 失败", t);
+                }
             }
         };
     }

@@ -43,6 +43,8 @@ import nep.timeline.cirno.hooks.android.signal.SendSignalQuietHook;
 import nep.timeline.cirno.hooks.android.vpn.VpnStateHook;
 import nep.timeline.cirno.hooks.android.wakelock.WakeLockHook;
 import nep.timeline.cirno.hooks.android.xiaomi.GreezeManagerServiceHook;
+import nep.timeline.cirno.hooks.android.xiaomi.MilletBinderTransHook;
+import nep.timeline.cirno.hooks.android.xiaomi.MilletMonitorHook;
 import nep.timeline.cirno.hooks.android.xiaomi.ReportNetHook;
 import nep.timeline.cirno.hooks.android.xiaomi.ReportSignalHook;
 import nep.timeline.cirno.framework.MethodHook;
@@ -108,6 +110,7 @@ public class AndroidHooks {
         MethodHook hansHook = new HansKernelUnfreezeHook(classLoader);
         MethodHook milletHook = new MilletBinderTransHook(classLoader);
         new GreezeManagerServiceHook(classLoader);
+        new MilletMonitorHook(classLoader);
         new ReportNetHook(classLoader);
         if (milletHook.isHooked()) {
             StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Millet");
