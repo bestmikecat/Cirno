@@ -21,7 +21,9 @@ public class GreezeManagerServiceHook extends MethodHook {
 
     @Override
     public String getTargetMethod() {
-        return "init";
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.TIRAMISU) // A13
+            return null;  
+        return "init";    
     }
 
     @Override
