@@ -32,7 +32,7 @@ public class AutostartBlockHook extends MethodHook {
     public Object[] getTargetParam() {
         return ReflectUtils.findParameterTypesOrDefault(
                 CakeReflection.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, boolean.class);
+                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class);
     }
 
     @Override
