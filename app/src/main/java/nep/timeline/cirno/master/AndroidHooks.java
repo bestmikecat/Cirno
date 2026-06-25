@@ -3,7 +3,11 @@ package nep.timeline.cirno.master;
 import android.os.Build;
 import android.os.FileObserver;
 
+import java.io.File;
+
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.ConfigFileObserver;
+import nep.timeline.cirno.configs.settings.GlobalSettings;
 import nep.timeline.cirno.hooks.android.activity.ActivityManagerServiceHook;
 import nep.timeline.cirno.hooks.android.activity.ActivityManagerSystemReadyHook;
 import nep.timeline.cirno.hooks.android.activity.ActivityStatsHook;
@@ -49,6 +53,7 @@ import nep.timeline.cirno.hooks.android.xiaomi.ReportSignalHook;
 import nep.timeline.cirno.framework.MethodHook;
 import nep.timeline.cirno.services.BinderService;
 import nep.timeline.cirno.services.NetworkManagementService;
+import nep.timeline.cirno.services.NkBinderService;
 import nep.timeline.cirno.services.StatusBinderHub;
 import nep.timeline.cirno.utils.SystemChecker;
 
@@ -111,10 +116,53 @@ public class AndroidHooks {
         new GreezeManagerServiceHook(classLoader);
         new MilletMonitorHook(classLoader);
         new ReportNetHook(classLoader);
-        if (milletHook.isHooked()) {
-            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Millet");
-        } else if (hansHook.isHooked()) {
-            StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Hans");
+
+        // Hook type availability
+        StatusBinderHub.setSignal("available_millet", milletHook.isHooked() ? "1" : "0");
+        StatusBinderHub.setSignal("available_hans", hansHook.isHooked() ? "1" : "0");
+        StatusBinderHub.setSignal("available_rekernel", new File("/proc/rekernel").exists() ? "1" : "0");
+        StatusBinderHub.setSignal("available_nkbinder", NkBinderService.isAvailable() ? "1" : "0");
+
+        // Hook type selection
+        String hookType = GlobalVars.globalSettings != null
+                ? GlobalVars.globalSettings.hookType : GlobalSettings.HOOK_TYPE_AUTO;
+
+        switch (hookType) {
+            case GlobalSettings.HOOK_TYPE_MILLET -> {
+                if (milletHook.isHooked()) {
+                    StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Millet");
+                    if (hansHook.isHooked()) hansHook.unhook();
+                }
+            }
+            case GlobalSettings.HOOK_TYPE_HANS -> {
+                if (hansHook.isHooked()) {
+                    StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE, "Hans");
+                    if (milletHook.isHooked()) milletHook.unhook();
+                }
+            }
+            case GlobalSettings.HOOK_TYPE_REKERNEL -> {
+                if (milletHook.isHooked()) milletHook.unhook();
+                if (hansHook.isHooked()) hansHook.unhook();
+                BinderService.start(classLoader);
+            }
+            case GlobalSettings.HOOK_TYPE_NKBINDER -> {
+                if (milletHook.isHooked()) milletHook.unhook();
+                if (hansHook.isHooked()) hansHook.unhook();
+                NkBinderService.start(classLoader);
+            }
+            default -> {
+                // Auto: ReKernel > Millet/Hans > nkBinder
+                boolean rekernelAvailable = new File("/proc/rekernel").exists();
+                if (rekernelAvailable) {
+                    BinderService.start(classLoader);
+                    if (milletHook.isHooked()) milletHook.unhook();
+                    if (hansHook.isHooked()) hansHook.unhook();
+                } else if (milletHook.isHooked() || hansHook.isHooked()) {
+                    // keep registered hooks active
+                } else if (NkBinderService.isAvailable()) {
+                    NkBinderService.start(classLoader);
+                }
+            }
         }
         // Recorder
         new RecorderEventHook(classLoader);
@@ -128,8 +176,6 @@ public class AndroidHooks {
         new PendingIntentHook(classLoader);
         // Notification
         new NotificationHook(classLoader);
-        // ReKernel
-        BinderService.start(classLoader);
     }
 
 }

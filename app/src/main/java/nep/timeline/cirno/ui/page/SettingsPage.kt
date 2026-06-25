@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -36,6 +38,7 @@ import nep.timeline.cirno.ui.utils.BackgroundManager
 import nep.timeline.cirno.ui.utils.BlurredBar
 import nep.timeline.cirno.ui.utils.CirnoCard
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
+import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.RootConfigSaveScope
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
@@ -136,6 +139,12 @@ private fun SettingsContent(
     val backupFileName = remember {
         val time = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(Date())
         "cirno-config-backup-$time.zip"
+    }
+    val hookStatus = remember { mutableStateOf<HookStatusRepository.HookStatusSnapshot?>(null) }
+    LaunchedEffect(Unit) {
+        hookStatus.value = withContext(Dispatchers.IO) {
+            HookStatusRepository.loadHookStatusSnapshot()
+        }
     }
     val freezeDelay = remember { mutableFloatStateOf(globalSettings.freezeDelay.toFloat()) }
     val wakeFreezeDelay = remember { mutableFloatStateOf(globalSettings.wakeFreezeDelay.toFloat()) }
@@ -440,6 +449,38 @@ private fun SettingsContent(
                                     globalSettings.bootFreezeAll = previous
                                     bootFreezeAll.intValue = if (previous) 1 else 0
                                 }
+                            }
+                        )
+                        val snapshot = hookStatus.value
+                        val hookTypeItems = buildList {
+                            add("Auto")
+                            if (snapshot?.availableMillet == true) add("Millet")
+                            if (snapshot?.availableHans == true) add("Hans")
+                            if (snapshot?.availableRekernel == true) add("ReKernel")
+                            if (snapshot?.availableNkbinder == true) add("nkBinder")
+                        }
+                        val hookTypeIndex = remember(snapshot) {
+                            mutableIntStateOf(
+                                hookTypeItems.indexOfFirst {
+                                    it.equals(globalSettings.hookType, ignoreCase = true)
+                                }.coerceAtLeast(0)
+                            )
+                        }
+                        OverlayDropdownPreference(
+                            title = stringResource(R.string.hook_type),
+                            items = hookTypeItems,
+                            selectedIndex = hookTypeIndex.intValue,
+                            onSelectedIndexChange = {
+                                val selected = hookTypeItems[it].lowercase()
+                                val previous = globalSettings.hookType
+                                val previousIndex = hookTypeIndex.intValue
+                                hookTypeIndex.intValue = it
+                                globalSettings.hookType = selected
+                                saveGlobalSettingsAsync(stringResource(R.string.error)) {
+                                    globalSettings.hookType = previous
+                                    hookTypeIndex.intValue = previousIndex
+                                }
+                                WindowUtils.showToast(stringResource(R.string.hook_type_changed_restart))
                             }
                         )
                     }

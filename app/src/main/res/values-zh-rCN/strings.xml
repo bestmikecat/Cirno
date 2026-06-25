@@ -85,6 +85,7 @@
   <string name="home_click_to_learn_freezer">了解如何使用 Cirno 并开发脚本。</string>
   <string name="system_fingerprint">系统指纹</string>
   <string name="hook_type">Hook 类型</string>
+  <string name="hook_type_changed_restart">Hook 类型已变更，请重启生效</string>
   <string name="unknown">未知</string>
   <string name="manager_version">管理器版本</string>
   <string name="error">错误</string>

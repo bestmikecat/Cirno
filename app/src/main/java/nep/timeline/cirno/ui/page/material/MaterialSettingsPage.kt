@@ -18,8 +18,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +42,7 @@ import nep.timeline.cirno.ui.app.themeColorSpecLabel
 import nep.timeline.cirno.ui.app.themePaletteStyleLabel
 import nep.timeline.cirno.ui.utils.AppContext
 import nep.timeline.cirno.ui.utils.ConfigBackupZipUtils
+import nep.timeline.cirno.ui.utils.HookStatusRepository
 import nep.timeline.cirno.ui.utils.RootConfigRepository
 import nep.timeline.cirno.ui.utils.RootConfigSaveScope
 import nep.timeline.cirno.ui.utils.RootFreezerRepository
@@ -57,6 +60,13 @@ fun MaterialSettingsPage(
     val updateAppState = LocalUpdateAppState.current
     val scope = rememberCoroutineScope()
     var globalSettings = GlobalVars.globalSettings ?: GlobalSettings().also { GlobalVars.globalSettings = it }
+
+    val hookStatus = remember { mutableStateOf<HookStatusRepository.HookStatusSnapshot?>(null) }
+    LaunchedEffect(Unit) {
+        hookStatus.value = withContext(Dispatchers.IO) {
+            HookStatusRepository.loadHookStatusSnapshot()
+        }
+    }
 
     val backupFailedText = stringResource(R.string.backup_failed)
     val freezerModeFrozenUnavailableText = stringResource(R.string.freezer_mode_frozen_unavailable)
@@ -302,6 +312,33 @@ fun MaterialSettingsPage(
                             }
                         }
                     )
+                    val snapshot = hookStatus.value
+                    val hookTypeItems = buildList {
+                        add("Auto")
+                        if (snapshot?.availableMillet == true) add("Millet")
+                        if (snapshot?.availableHans == true) add("Hans")
+                        if (snapshot?.availableRekernel == true) add("ReKernel")
+                        if (snapshot?.availableNkbinder == true) add("nkBinder")
+                    }
+                    val hookTypeIndex = remember(snapshot) {
+                        mutableIntStateOf(
+                            hookTypeItems.indexOfFirst {
+                                it.equals(globalSettings.hookType, ignoreCase = true)
+                            }.coerceAtLeast(0)
+                        )
+                    }
+                    MaterialDropdownItem(Icons.Outlined.Update, stringResource(R.string.hook_type), hookTypeItems, hookTypeIndex.intValue) {
+                        val selected = hookTypeItems[it].lowercase()
+                        val previous = globalSettings.hookType
+                        val previousIndex = hookTypeIndex.intValue
+                        hookTypeIndex.intValue = it
+                        globalSettings.hookType = selected
+                        saveGlobalSettingsAsync(stringResource(R.string.error)) {
+                            globalSettings.hookType = previous
+                            hookTypeIndex.intValue = previousIndex
+                        }
+                        WindowUtils.showToast(stringResource(R.string.hook_type_changed_restart))
+                    }
                 }
             }
             item {

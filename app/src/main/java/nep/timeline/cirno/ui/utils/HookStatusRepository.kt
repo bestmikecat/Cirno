@@ -11,6 +11,10 @@ object HookStatusRepository {
         val deviceType: String? = null,
         val addOnRequired: Boolean = false,
         val hookType: String? = null,
+        val availableMillet: Boolean = false,
+        val availableHans: Boolean = false,
+        val availableRekernel: Boolean = false,
+        val availableNkbinder: Boolean = false,
     )
 
     fun loadHookStatusSnapshot(): HookStatusSnapshot {
@@ -25,6 +29,10 @@ object HookStatusRepository {
                 deviceType = status.getSignal("device_type").takeIf { !it.isNullOrBlank() },
                 addOnRequired = status.getSignal("add_on_required") == "1",
                 hookType = status.getSignal("hook_type").takeIf { !it.isNullOrBlank() },
+                availableMillet = status.getSignal("available_millet") == "1",
+                availableHans = status.getSignal("available_hans") == "1",
+                availableRekernel = status.getSignal("available_rekernel") == "1",
+                availableNkbinder = status.getSignal("available_nkbinder") == "1",
             )
         } catch (_: Throwable) {
             HookStatusSnapshot(statusBinderAvailable = false)

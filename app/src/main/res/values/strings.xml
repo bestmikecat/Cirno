@@ -85,6 +85,7 @@
   <string name="home_click_to_learn_freezer">Learn how to use Cirno and develop scripts.</string>
   <string name="system_fingerprint">System Fingerprint</string>
   <string name="hook_type">Hook Type</string>
+  <string name="hook_type_changed_restart">Hook type changed, please restart to apply</string>
   <string name="unknown">Unknown</string>
   <string name="manager_version">Manager Version</string>
   <string name="error">Error</string>
