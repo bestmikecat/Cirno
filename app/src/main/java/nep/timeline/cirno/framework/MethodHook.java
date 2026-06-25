@@ -15,7 +15,7 @@ public abstract class MethodHook {
     public final int ANY_VERSION = -1;
     public final ClassLoader classLoader;
     public io.github.libxposed.api.XposedInterface.HookHandle unhooker;
-    private boolean hooked = false;
+    protected boolean hooked = false;
 
     public MethodHook(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -29,9 +29,13 @@ public abstract class MethodHook {
 
     public abstract String getTargetClass();
 
-    public abstract String getTargetMethod();
+    public String getTargetMethod() {
+        return null;
+    }
 
-    public abstract Object[] getTargetParam();
+    public Object[] getTargetParam() {
+        return null;
+    }
 
     public abstract CakeHooker.Callback getTargetHook();
 
