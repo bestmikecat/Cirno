@@ -327,17 +327,19 @@ fun MaterialSettingsPage(
                             }.coerceAtLeast(0)
                         )
                     }
+                    val hookTypeErrorText = stringResource(R.string.error)
+                    val hookTypeRestartText = stringResource(R.string.hook_type_changed_restart)
                     MaterialDropdownItem(Icons.Outlined.Update, stringResource(R.string.hook_type), hookTypeItems, hookTypeIndex.intValue) {
                         val selected = hookTypeItems[it].lowercase()
                         val previous = globalSettings.hookType
                         val previousIndex = hookTypeIndex.intValue
                         hookTypeIndex.intValue = it
                         globalSettings.hookType = selected
-                        saveGlobalSettingsAsync(stringResource(R.string.error)) {
+                        saveGlobalSettingsAsync(hookTypeErrorText) {
                             globalSettings.hookType = previous
                             hookTypeIndex.intValue = previousIndex
                         }
-                        WindowUtils.showToast(stringResource(R.string.hook_type_changed_restart))
+                        WindowUtils.showToast(hookTypeRestartText)
                     }
                 }
             }

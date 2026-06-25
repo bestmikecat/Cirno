@@ -466,6 +466,8 @@ private fun SettingsContent(
                                 }.coerceAtLeast(0)
                             )
                         }
+                        val hookTypeErrorText = stringResource(R.string.error)
+                        val hookTypeRestartText = stringResource(R.string.hook_type_changed_restart)
                         OverlayDropdownPreference(
                             title = stringResource(R.string.hook_type),
                             items = hookTypeItems,
@@ -476,11 +478,11 @@ private fun SettingsContent(
                                 val previousIndex = hookTypeIndex.intValue
                                 hookTypeIndex.intValue = it
                                 globalSettings.hookType = selected
-                                saveGlobalSettingsAsync(stringResource(R.string.error)) {
+                                saveGlobalSettingsAsync(hookTypeErrorText) {
                                     globalSettings.hookType = previous
                                     hookTypeIndex.intValue = previousIndex
                                 }
-                                WindowUtils.showToast(stringResource(R.string.hook_type_changed_restart))
+                                WindowUtils.showToast(hookTypeRestartText)
                             }
                         )
                     }
