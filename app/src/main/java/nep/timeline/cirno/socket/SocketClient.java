@@ -1,19 +1,21 @@
 package nep.timeline.cirno.socket;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.commons.io.IOUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import com.topjohnwu.superuser.io.SuFile;
+import com.topjohnwu.superuser.io.SuFileInputStream;
 
 import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.log.Log;
@@ -135,15 +137,15 @@ public final class SocketClient {
     }
 
     private static String readToken() {
-        File tokenFile = new File(GlobalVars.CONFIG_DIR, "cirno_hook.token");
-        if (tokenFile.exists()) {
-            try {
-                String token = new String(Files.readAllBytes(tokenFile.toPath()), java.nio.charset.StandardCharsets.UTF_8).trim();
+        try {
+            SuFile tokenFile = new SuFile(GlobalVars.CONFIG_DIR, "cirno_hook.token");
+            if (tokenFile.exists()) {
+                String token = IOUtils.toString(() -> SuFileInputStream.open(tokenFile), StandardCharsets.UTF_8).trim();
                 if (!token.isEmpty()) {
                     return token;
                 }
-            } catch (IOException ignored) {
             }
+        } catch (Exception ignored) {
         }
         return null;
     }
