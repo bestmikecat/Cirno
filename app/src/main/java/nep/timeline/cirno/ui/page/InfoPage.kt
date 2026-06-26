@@ -293,6 +293,8 @@ private fun StatusCard(
     val statusIconSize = if (isWideScreen) 170.dp else 128.dp
     val statusIconOffsetX = if (isWideScreen) 38.dp else 20.dp
     val statusIconOffsetY = if (isWideScreen) 45.dp else 28.dp
+    val boxOffsetX = if (connecting) statusIconOffsetX + 4.dp else statusIconOffsetX
+    val boxOffsetY = if (connecting) statusIconOffsetY - 16.dp else statusIconOffsetY
 
     Column(
         modifier = Modifier
@@ -327,13 +329,13 @@ private fun StatusCard(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .offset(statusIconOffsetX, statusIconOffsetY),
+                            .offset(boxOffsetX, boxOffsetY),
                         contentAlignment = Alignment.BottomEnd
                     ) {
                         if (connecting) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(statusIconSize * 0.375f),
-                                strokeWidth = 4.dp,
+                                modifier = Modifier.size(statusIconSize * 0.5f),
+                                strokeWidth = 6.dp,
                                 color = if (isDynamicColor) colorScheme.primary else Color(0xFF36D167),
                             )
                         } else {
