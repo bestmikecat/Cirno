@@ -158,7 +158,8 @@ public class AndroidHooks {
                     if (milletHook.isHooked()) milletHook.unhook();
                     if (hansHook.isHooked()) hansHook.unhook();
                 } else if (milletHook.isHooked() || hansHook.isHooked()) {
-                    // keep registered hooks active
+                    StatusBinderHub.setSignal(StatusBinderHub.SIGNAL_HOOK_TYPE,
+                            hansHook.isHooked() ? "Hans" : "Millet");
                 } else if (NkBinderService.isAvailable()) {
                     NkBinderService.start(classLoader);
                 }
