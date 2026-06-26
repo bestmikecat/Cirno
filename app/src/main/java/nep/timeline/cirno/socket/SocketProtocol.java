@@ -10,9 +10,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-
-import nep.timeline.cirno.log.Log;
 
 public final class SocketProtocol {
     public static final String SOCKET_NAME = "cirno_hook";

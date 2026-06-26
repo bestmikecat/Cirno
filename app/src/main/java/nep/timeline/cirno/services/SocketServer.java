@@ -20,8 +20,13 @@ import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.socket.SocketProtocol;
 
 public final class SocketServer {
-    private static final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+    private static final ExecutorService serverExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "Cirno-SocketServer");
+        t.setDaemon(true);
+        return t;
+    });
+    private static final ExecutorService clientExecutor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "Cirno-SocketClient");
         t.setDaemon(true);
         return t;
     });
@@ -33,13 +38,15 @@ public final class SocketServer {
 
     public static void start() {
         if (running.compareAndSet(false, true)) {
-            executor.execute(SocketServer::run);
+            serverExecutor.execute(SocketServer::run);
             Log.i("SocketServer: starting");
         }
     }
 
     public static void stop() {
         running.set(false);
+        serverExecutor.shutdownNow();
+        clientExecutor.shutdownNow();
     }
 
     private static void run() {
@@ -52,7 +59,7 @@ public final class SocketServer {
                 try {
                     LocalSocket client = server.accept();
                     if (client != null) {
-                        executor.execute(() -> handleClient(client));
+                        clientExecutor.execute(() -> handleClient(client));
                     }
                 } catch (IOException e) {
                     if (running.get()) {
