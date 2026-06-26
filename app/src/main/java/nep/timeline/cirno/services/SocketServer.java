@@ -1,6 +1,7 @@
 package nep.timeline.cirno.services;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,6 +11,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 
@@ -92,12 +94,13 @@ public final class SocketServer {
         authToken = loadOrCreateToken();
         ServerSocket server = null;
 
-        for (int attempt = 0; attempt < SocketProtocol.MAX_PORT_ATTEMPTS; attempt++) {
+        for (int attempt = 0; attempt < SocketProtocol.MAX_BIND_ATTEMPTS; attempt++) {
             if (!running.get()) break;
-            int port = SocketProtocol.PORT + attempt;
+            int port = ThreadLocalRandom.current().nextInt(SocketProtocol.PORT_MIN, SocketProtocol.PORT_MAX + 1);
             try {
                 server = new ServerSocket(port, 50, InetAddress.getByName(SocketProtocol.HOST));
                 actualPort = port;
+                writePortFile(port);
                 Log.i("SocketServer: listening on " + SocketProtocol.HOST + ":" + port);
                 break;
             } catch (IOException e) {
@@ -132,11 +135,30 @@ public final class SocketServer {
         } finally {
             running.set(false);
             actualPort = 0;
+            deletePortFile();
             try {
                 server.close();
             } catch (IOException ignored) {
             }
             Log.i("SocketServer: stopped");
+        }
+    }
+
+    private static void writePortFile(int port) {
+        File portFile = new File(GlobalVars.CONFIG_DIR, SocketProtocol.PORT_FILE_NAME);
+        try {
+            FileWriter writer = new FileWriter(portFile);
+            writer.write(String.valueOf(port));
+            writer.close();
+        } catch (IOException e) {
+            Log.w("SocketServer: failed to write port file", e);
+        }
+    }
+
+    private static void deletePortFile() {
+        File portFile = new File(GlobalVars.CONFIG_DIR, SocketProtocol.PORT_FILE_NAME);
+        if (portFile.exists()) {
+            portFile.delete();
         }
     }
 

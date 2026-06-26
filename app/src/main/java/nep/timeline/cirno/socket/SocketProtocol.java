@@ -13,11 +13,13 @@ import com.google.gson.JsonParser;
 
 public final class SocketProtocol {
     public static final String HOST = "127.0.0.1";
-    public static final int PORT = 60192;
-    public static final int MAX_PORT_ATTEMPTS = 10;
+    public static final int PORT_MIN = 49152;
+    public static final int PORT_MAX = 65535;
+    public static final int MAX_BIND_ATTEMPTS = 20;
     public static final long BIND_RETRY_DELAY_MS = 2000L;
     public static final int CLIENT_SO_TIMEOUT_MS = 60_000;
     public static final String METHOD_HANDSHAKE = "handshake";
+    public static final String PORT_FILE_NAME = "cirno_hook.port";
     private static final int MAX_MESSAGE_SIZE = 512 * 1024;
     private static final Gson gson = new Gson();
 

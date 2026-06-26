@@ -38,7 +38,6 @@ public final class SocketClient {
     private OutputStream out;
     private volatile boolean connected = false;
     private volatile long lastConnectFailedAtMs = 0;
-    private volatile int cachedServerPort = 0;
 
     private SocketClient() {
     }
@@ -74,25 +73,17 @@ public final class SocketClient {
             throw new IOException("no auth token available");
         }
 
-        int port = tryConnect(token);
+        int port = readPort();
         if (port < 0) {
             lastConnectFailedAtMs = System.currentTimeMillis();
-            throw new IOException("failed to connect to any port");
+            throw new IOException("no port file available");
         }
-        cachedServerPort = port;
-    }
 
-    private int tryConnect(String token) throws IOException {
-        if (cachedServerPort > 0) {
-            int port = trySingleConnect(cachedServerPort, token);
-            if (port > 0) return port;
+        int result = trySingleConnect(port, token);
+        if (result < 0) {
+            lastConnectFailedAtMs = System.currentTimeMillis();
+            throw new IOException("failed to connect to port " + port);
         }
-        for (int i = 0; i < SocketProtocol.MAX_PORT_ATTEMPTS; i++) {
-            int port = SocketProtocol.PORT + i;
-            int result = trySingleConnect(port, token);
-            if (result > 0) return result;
-        }
-        return -1;
     }
 
     private int trySingleConnect(int port, String token) {
@@ -145,9 +136,26 @@ public final class SocketClient {
                     return token;
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.e("SocketClient: failed to read token file", e);
         }
         return null;
+    }
+
+    private static int readPort() {
+        try {
+            SuFile portFile = new SuFile(GlobalVars.CONFIG_DIR, SocketProtocol.PORT_FILE_NAME);
+            if (portFile.exists()) {
+                String content = IOUtils.toString(() -> SuFileInputStream.open(portFile), StandardCharsets.UTF_8).trim();
+                int port = Integer.parseInt(content);
+                if (port >= SocketProtocol.PORT_MIN && port <= SocketProtocol.PORT_MAX) {
+                    return port;
+                }
+            }
+        } catch (Exception e) {
+            Log.e("SocketClient: failed to read port file", e);
+        }
+        return -1;
     }
 
     public synchronized void close() {
