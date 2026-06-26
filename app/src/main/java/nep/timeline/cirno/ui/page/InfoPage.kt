@@ -210,77 +210,56 @@ private fun InfoContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (binderState.connecting) {
-                        CirnoCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.defaultColors(
-                                color = if (isDynamicColor) colorScheme.secondaryContainer else Color(0xFFDFFAE4)
-                            ),
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                Spacer(modifier = Modifier.size(12.dp))
-                                Text(
-                                    text = stringResource(R.string.connecting),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
-                        }
+                    if (versionMismatch) {
+                        WarningCard(stringResource(R.string.module_version_mismatch))
                     } else {
-                        if (versionMismatch) {
-                            WarningCard(stringResource(R.string.module_version_mismatch))
-                        } else {
-                            if (fool)
-                                WarningCard(stringResource(R.string.fools_day))
-                            if (!active)
-                                WarningCard(stringResource(R.string.not_active))
-                            if (active && statusBinderAvailable && missingScopes.isNotEmpty())
-                                WarningCard(
-                                    stringResource(R.string.scope_not_running, missingScopeLabels)
-                                )
-                            if (hasError)
-                                WarningCard(stringResource(R.string.internal_error))
-                            if (active && statusBinderAvailable && addOnMissing)
-                                WarningCard(stringResource(R.string.add_on_required_warning))
-                            if (active && statusBinderAvailable && !binderState.freezerAvailable)
-                                WarningCard(stringResource(R.string.freezer_v2_unavailable))
-                        }
-                        StatusCard(
-                            active = active,
-                            working = active && !hasError && !addOnMissing,
-                            version = hookVersion
-                                ?: stringResource(R.string.not_running),
-                            applicationSettings = applicationSettings,
-                            onClickStatus = {
-
-                            },
-                            onClickWhitelist = {
-                                appListViewModel.updateByQuery(type = 0)
-                                callback(1)
-                            },
-                            onClickBlacklist = {
-                                appListViewModel.updateByQuery(type = 1)
-                                callback(1)
-                            }
-                        )
-                        InfoCard(
-                            working = active,
-                            hookType = binderState.hookType,
-                            xposedServiceStatus = xposedServiceStatus
-                        )
-                        UpdateCard(
-                            isChecking = infoState.isCheckingUpdate,
-                            onClick = {
-                                infoState.startUpdateCheck()
-                            }
-                        )
-                        LearnMoreCard()
-                        LogCard()
+                        if (fool)
+                            WarningCard(stringResource(R.string.fools_day))
+                        if (!active)
+                            WarningCard(stringResource(R.string.not_active))
+                        if (active && statusBinderAvailable && missingScopes.isNotEmpty())
+                            WarningCard(
+                                stringResource(R.string.scope_not_running, missingScopeLabels)
+                            )
+                        if (hasError)
+                            WarningCard(stringResource(R.string.internal_error))
+                        if (active && statusBinderAvailable && addOnMissing)
+                            WarningCard(stringResource(R.string.add_on_required_warning))
+                        if (active && statusBinderAvailable && !binderState.freezerAvailable)
+                            WarningCard(stringResource(R.string.freezer_v2_unavailable))
                     }
+                    StatusCard(
+                        active = active,
+                        working = active && !hasError && !addOnMissing,
+                        connecting = binderState.connecting,
+                        version = hookVersion
+                            ?: stringResource(R.string.not_running),
+                        applicationSettings = applicationSettings,
+                        onClickStatus = {
+
+                        },
+                        onClickWhitelist = {
+                            appListViewModel.updateByQuery(type = 0)
+                            callback(1)
+                        },
+                        onClickBlacklist = {
+                            appListViewModel.updateByQuery(type = 1)
+                            callback(1)
+                        }
+                    )
+                    InfoCard(
+                        working = active,
+                        hookType = binderState.hookType,
+                        xposedServiceStatus = xposedServiceStatus
+                    )
+                    UpdateCard(
+                        isChecking = infoState.isCheckingUpdate,
+                        onClick = {
+                            infoState.startUpdateCheck()
+                        }
+                    )
+                    LearnMoreCard()
+                    LogCard()
                 }
             }
 
@@ -300,6 +279,7 @@ private fun StatusCard(
     modifier: Modifier = Modifier,
     active: Boolean,
     working: Boolean,
+    connecting: Boolean = false,
     version: String,
     applicationSettings: ApplicationSettings?,
     onClickStatus: () -> Unit = {},
@@ -350,16 +330,24 @@ private fun StatusCard(
                             .offset(statusIconOffsetX, statusIconOffsetY),
                         contentAlignment = Alignment.BottomEnd
                     ) {
-                        Icon(
-                            modifier = Modifier.size(statusIconSize),
-                            imageVector = if (working) if (fool) Icons.Rounded.PauseCircleOutline else Icons.Rounded.CheckCircleOutline else Icons.Rounded.ErrorOutline,
-                            tint = if (isDynamicColor) {
-                                colorScheme.primary.copy(0.8f)
-                            } else {
-                                if (working && !fool) Color(0xFF36D167) else Color(0xFFD13636)
-                            },
-                            contentDescription = null
-                        )
+                        if (connecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(statusIconSize * 0.375f),
+                                strokeWidth = 4.dp,
+                                color = if (isDynamicColor) colorScheme.primary else Color(0xFF36D167),
+                            )
+                        } else {
+                            Icon(
+                                modifier = Modifier.size(statusIconSize),
+                                imageVector = if (working) if (fool) Icons.Rounded.PauseCircleOutline else Icons.Rounded.CheckCircleOutline else Icons.Rounded.ErrorOutline,
+                                tint = if (isDynamicColor) {
+                                    colorScheme.primary.copy(0.8f)
+                                } else {
+                                    if (working && !fool) Color(0xFF36D167) else Color(0xFFD13636)
+                                },
+                                contentDescription = null
+                            )
+                        }
                     }
                     Column(
                         modifier = Modifier
@@ -368,7 +356,11 @@ private fun StatusCard(
                     ) {
                         Text(
                             modifier = Modifier.fillMaxWidth(),
-                            text = if (working) if (fool) stringResource(R.string.crying) else stringResource(R.string.working) else stringResource(R.string.error),
+                            text = when {
+                                connecting -> stringResource(R.string.connecting)
+                                working -> if (fool) stringResource(R.string.crying) else stringResource(R.string.working)
+                                else -> stringResource(R.string.error)
+                            },
                             fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold,
                         )
