@@ -1,11 +1,13 @@
 package nep.timeline.cirno.services;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,6 +17,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.socket.SocketProtocol;
 
@@ -31,8 +34,18 @@ public final class SocketServer {
     });
     private static final AtomicBoolean running = new AtomicBoolean(false);
     private static final Gson gson = new Gson();
+    private static volatile int actualPort = 0;
+    private static volatile String authToken = null;
 
     private SocketServer() {
+    }
+
+    public static int getActualPort() {
+        return actualPort;
+    }
+
+    public static String getAuthToken() {
+        return authToken;
     }
 
     public static void start() {
@@ -48,12 +61,62 @@ public final class SocketServer {
         clientExecutor.shutdownNow();
     }
 
-    private static void run() {
-        ServerSocket server = null;
+    private static String loadOrCreateToken() {
+        File tokenFile = new File(GlobalVars.CONFIG_DIR, "cirno_hook.token");
         try {
-            server = new ServerSocket(SocketProtocol.PORT, 50, InetAddress.getByName(SocketProtocol.HOST));
-            Log.i("SocketServer: listening on " + SocketProtocol.HOST + ":" + SocketProtocol.PORT);
+            File parent = tokenFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            if (tokenFile.exists()) {
+                String token = new String(Files.readAllBytes(tokenFile.toPath()), java.nio.charset.StandardCharsets.UTF_8).trim();
+                if (!token.isEmpty()) {
+                    return token;
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        String token = java.util.UUID.randomUUID().toString();
+        try {
+            java.io.FileWriter writer = new java.io.FileWriter(tokenFile);
+            writer.write(token);
+            writer.close();
+            Log.i("SocketServer: generated new auth token");
+        } catch (IOException e) {
+            Log.w("SocketServer: failed to write token file", e);
+        }
+        return token;
+    }
 
+    private static void run() {
+        authToken = loadOrCreateToken();
+        ServerSocket server = null;
+
+        for (int attempt = 0; attempt < SocketProtocol.MAX_PORT_ATTEMPTS; attempt++) {
+            if (!running.get()) break;
+            int port = SocketProtocol.PORT + attempt;
+            try {
+                server = new ServerSocket(port, 50, InetAddress.getByName(SocketProtocol.HOST));
+                actualPort = port;
+                Log.i("SocketServer: listening on " + SocketProtocol.HOST + ":" + port);
+                break;
+            } catch (IOException e) {
+                Log.w("SocketServer: port " + port + " bind failed, retrying in " + SocketProtocol.BIND_RETRY_DELAY_MS + "ms");
+                try {
+                    Thread.sleep(SocketProtocol.BIND_RETRY_DELAY_MS);
+                } catch (InterruptedException ie) {
+                    break;
+                }
+            }
+        }
+
+        if (server == null) {
+            Log.e("SocketServer: all ports failed, giving up");
+            running.set(false);
+            return;
+        }
+
+        try {
             while (running.get()) {
                 try {
                     Socket client = server.accept();
@@ -66,25 +129,52 @@ public final class SocketServer {
                     }
                 }
             }
-        } catch (IOException e) {
-            Log.e("SocketServer: failed to start", e);
         } finally {
             running.set(false);
-            if (server != null) {
-                try {
-                    server.close();
-                } catch (IOException ignored) {
-                }
+            actualPort = 0;
+            try {
+                server.close();
+            } catch (IOException ignored) {
             }
             Log.i("SocketServer: stopped");
         }
     }
 
+    private static boolean authenticate(Socket client, InputStream in, OutputStream out) {
+        try {
+            client.setSoTimeout(5000);
+            String requestJson = SocketProtocol.readMessage(in);
+            if (requestJson == null) {
+                return false;
+            }
+            String method = SocketProtocol.parseMethod(requestJson);
+            if (!SocketProtocol.METHOD_HANDSHAKE.equals(method)) {
+                return false;
+            }
+            long id = SocketProtocol.parseId(requestJson);
+            JsonObject params = SocketProtocol.parseParams(requestJson);
+            String token = SocketProtocol.getStringParam(params, "token", "");
+            if (authToken == null || !authToken.equals(token)) {
+                SocketProtocol.writeMessage(out, SocketProtocol.createErrorResponse(id, "auth failed"));
+                return false;
+            }
+            SocketProtocol.writeMessage(out, SocketProtocol.createResponse(id, gson.toJsonTree("ok")));
+            client.setSoTimeout(SocketProtocol.CLIENT_SO_TIMEOUT_MS);
+            return true;
+        } catch (Exception e) {
+            Log.w("SocketServer: handshake error", e);
+            return false;
+        }
+    }
+
     private static void handleClient(Socket client) {
         try {
-            client.setSoTimeout(0);
             InputStream in = client.getInputStream();
             OutputStream out = client.getOutputStream();
+
+            if (!authenticate(client, in, out)) {
+                return;
+            }
 
             while (running.get() && !client.isClosed()) {
                 String json = SocketProtocol.readMessage(in);

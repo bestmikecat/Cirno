@@ -1,17 +1,21 @@
 package nep.timeline.cirno.socket;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
+import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinderFacade;
 import nep.timeline.cirno.provide.FrozenStateBinderFacade;
@@ -22,6 +26,8 @@ public final class SocketClient {
     private static final Gson gson = new Gson();
     private static final long CONNECT_TIMEOUT_MS = 3000L;
     private static final long REQUEST_TIMEOUT_MS = 5000L;
+    private static final long RECONNECT_BASE_DELAY_MS = 500L;
+    private static final long RECONNECT_MAX_DELAY_MS = 5000L;
 
     private final AtomicLong requestIdGenerator = new AtomicLong(0);
     private final ReentrantLock lock = new ReentrantLock();
@@ -29,6 +35,8 @@ public final class SocketClient {
     private InputStream in;
     private OutputStream out;
     private volatile boolean connected = false;
+    private volatile long lastConnectFailedAtMs = 0;
+    private volatile int cachedServerPort = 0;
 
     private SocketClient() {
     }
@@ -45,18 +53,95 @@ public final class SocketClient {
         if (connected && socket != null && !socket.isClosed()) {
             return;
         }
+        long now = System.currentTimeMillis();
+        long elapsed = now - lastConnectFailedAtMs;
+        if (lastConnectFailedAtMs > 0 && elapsed < RECONNECT_BASE_DELAY_MS) {
+            Thread.sleep(RECONNECT_BASE_DELAY_MS - elapsed);
+        }
         connect();
     }
 
     private void connect() throws IOException {
         close();
-        socket = new Socket();
-        socket.connect(new InetSocketAddress(SocketProtocol.HOST, SocketProtocol.PORT), (int) CONNECT_TIMEOUT_MS);
-        socket.setSoTimeout((int) REQUEST_TIMEOUT_MS);
-        in = socket.getInputStream();
-        out = socket.getOutputStream();
-        connected = true;
-        Log.i("SocketClient: connected");
+        String token = readToken();
+        if (token == null || token.isEmpty()) {
+            throw new IOException("no auth token available");
+        }
+
+        int port = tryConnect(token);
+        if (port < 0) {
+            lastConnectFailedAtMs = System.currentTimeMillis();
+            throw new IOException("failed to connect to any port");
+        }
+        cachedServerPort = port;
+    }
+
+    private int tryConnect(String token) throws IOException {
+        if (cachedServerPort > 0) {
+            int port = trySingleConnect(cachedServerPort, token);
+            if (port > 0) return port;
+        }
+        for (int i = 0; i < SocketProtocol.MAX_PORT_ATTEMPTS; i++) {
+            int port = SocketProtocol.PORT + i;
+            int result = trySingleConnect(port, token);
+            if (result > 0) return result;
+        }
+        return -1;
+    }
+
+    private int trySingleConnect(int port, String token) {
+        Socket s = null;
+        try {
+            s = new Socket();
+            s.connect(new InetSocketAddress(SocketProtocol.HOST, port), (int) CONNECT_TIMEOUT_MS);
+            s.setSoTimeout((int) REQUEST_TIMEOUT_MS);
+            InputStream sockIn = s.getInputStream();
+            OutputStream sockOut = s.getOutputStream();
+
+            long id = requestIdGenerator.incrementAndGet();
+            JsonObject params = new JsonObject();
+            params.addProperty("token", token);
+            String handshake = SocketProtocol.createRequest(id, SocketProtocol.METHOD_HANDSHAKE, gson.toJson(params));
+            SocketProtocol.writeMessage(sockOut, handshake);
+            String response = SocketProtocol.readMessage(sockIn);
+            if (response == null) {
+                return -1;
+            }
+            String error = SocketProtocol.parseError(response);
+            if (error != null) {
+                return -1;
+            }
+            String result = SocketProtocol.parseResult(response);
+            if (result == null || !result.contains("ok")) {
+                return -1;
+            }
+            socket = s;
+            in = sockIn;
+            out = sockOut;
+            connected = true;
+            lastConnectFailedAtMs = 0;
+            Log.i("SocketClient: connected to port " + port);
+            return port;
+        } catch (Exception e) {
+            if (s != null) {
+                try { s.close(); } catch (IOException ignored) {}
+            }
+            return -1;
+        }
+    }
+
+    private static String readToken() {
+        File tokenFile = new File(GlobalVars.CONFIG_DIR, "cirno_hook.token");
+        if (tokenFile.exists()) {
+            try {
+                String token = new String(Files.readAllBytes(tokenFile.toPath()), java.nio.charset.StandardCharsets.UTF_8).trim();
+                if (!token.isEmpty()) {
+                    return token;
+                }
+            } catch (IOException ignored) {
+            }
+        }
+        return null;
     }
 
     public synchronized void close() {
