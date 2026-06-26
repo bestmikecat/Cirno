@@ -21,7 +21,11 @@ public class AutostartBlockHook extends MethodHook {
 
     @Override
     public String getTargetClass() {
-        return "com.android.server.pm.ResolveIntentHelper";
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return "com.android.server.pm.PackageManagerService";
+        } else {
+            return "com.android.server.pm.ResolveIntentHelper";
+        }
     }
 
     @Override
@@ -31,13 +35,22 @@ public class AutostartBlockHook extends MethodHook {
 
     @Override
     public Object[] getTargetParam() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // Android 15+: ResolveIntentHelper with 8 params
             return ReflectUtils.findParameterTypesOrDefault(
                     CakeReflection.findClassIfExists(getTargetClass(), classLoader),
                     getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, int.class, boolean.class);
-        return ReflectUtils.findParameterTypesOrDefault(
-                CakeReflection.findClassIfExists(getTargetClass(), classLoader),
-                getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, boolean.class);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13-14: ResolveIntentHelper with 7 params
+            return ReflectUtils.findParameterTypesOrDefault(
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), "com.android.server.pm.Computer", Intent.class, String.class, long.class, int.class, int.class, boolean.class);
+        } else {
+            // Android 12: PackageManagerService with 5 params
+            return ReflectUtils.findParameterTypesOrDefault(
+                    CakeReflection.findClassIfExists(getTargetClass(), classLoader),
+                    getTargetMethod(), Intent.class, String.class, int.class, int.class, boolean.class);
+        }
     }
 
     @Override
@@ -49,7 +62,8 @@ public class AutostartBlockHook extends MethodHook {
                     if (callback.result == null) return;
 
                     Object[] args = callback.getArgs();
-                    int userId = (int) args[4];
+                    int userIdIndex = getUserIdIndex();
+                    int userId = (int) args[userIdIndex];
 
                     List<?> list = (List<?>) callback.result;
                     if (list == null || list.isEmpty()) return;
@@ -79,5 +93,15 @@ public class AutostartBlockHook extends MethodHook {
                 }
             }
         };
+    }
+
+    private int getUserIdIndex() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+: ResolveIntentHelper has Computer as first param, userId at index 4
+            return 4;
+        } else {
+            // Android 12: PackageManagerService, userId at index 3
+            return 3;
+        }
     }
 }
