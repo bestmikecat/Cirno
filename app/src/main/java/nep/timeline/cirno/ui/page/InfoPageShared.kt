@@ -18,6 +18,7 @@ import nep.timeline.cirno.ui.utils.UpdateResult
 import nep.timeline.cirno.ui.utils.WindowUtils
 
 data class InfoHookStatusState(
+    val connecting: Boolean = true,
     val statusBinderAvailable: Boolean = false,
     val hasError: Boolean = false,
     val freezerAvailable: Boolean = true,
@@ -54,6 +55,7 @@ fun rememberInfoScreenState(context: Context): InfoScreenStateHolder {
                 snapshot = HookStatusRepository.loadHookStatusSnapshot()
             }
             InfoHookStatusState(
+                connecting = false,
                 statusBinderAvailable = snapshot.statusBinderAvailable,
                 hasError = snapshot.hasError,
                 freezerAvailable = !snapshot.statusBinderAvailable || RootFreezerRepository.isAnyFreezerAvailable(),

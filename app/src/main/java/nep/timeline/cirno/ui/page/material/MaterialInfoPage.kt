@@ -81,44 +81,64 @@ fun MaterialInfoPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            val xposedServiceStatus = XposedServiceStatus.state.value
-            val active = xposedServiceStatus.active
             val binderState = infoState.binderState
-            val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
-            val working = active && !binderState.hasError && !addOnMissing
-            val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
-
-            MaterialSurfaceCard(
-                containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
-                contentPadding = PaddingValues(20.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+            if (binderState.connecting) {
+                MaterialSurfaceCard(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentPadding = PaddingValues(20.dp),
                 ) {
-                    Box(
-                        modifier = Modifier.size(40.dp),
-                        contentAlignment = Alignment.Center,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    Spacer(modifier = Modifier.size(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        MaterialLoadingIndicator(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.size(12.dp))
                         Text(
-                            text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
+                            text = stringResource(R.string.connecting),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        Text(
-                            text = hookVersion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    }
+                }
+            } else {
+                val xposedServiceStatus = XposedServiceStatus.state.value
+                val active = xposedServiceStatus.active
+                val addOnMissing = binderState.addOnRequired && !AddOnStatusRepository.isAddOnEnabled()
+                val working = active && !binderState.hasError && !addOnMissing
+                val hookVersion = binderState.hookVersion ?: stringResource(R.string.not_running)
+
+                MaterialSurfaceCard(
+                    containerColor = if (working) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer,
+                    contentPadding = PaddingValues(20.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.size(40.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = if (working) Icons.Outlined.CheckCircleOutline else Icons.Outlined.ErrorOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (working) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        Spacer(modifier = Modifier.size(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = if (working) stringResource(R.string.working) else stringResource(R.string.error),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = hookVersion,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }

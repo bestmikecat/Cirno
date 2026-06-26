@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.PauseCircleOutline
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -209,55 +210,77 @@ private fun InfoContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (versionMismatch) {
-                        WarningCard(stringResource(R.string.module_version_mismatch))
+                    if (binderState.connecting) {
+                        CirnoCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.defaultColors(
+                                color = if (isDynamicColor) colorScheme.secondaryContainer else Color(0xFFDFFAE4)
+                            ),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.size(12.dp))
+                                Text(
+                                    text = stringResource(R.string.connecting),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
                     } else {
-                        if (fool)
-                            WarningCard(stringResource(R.string.fools_day))
-                        if (!active)
-                            WarningCard(stringResource(R.string.not_active))
-                        if (active && statusBinderAvailable && missingScopes.isNotEmpty())
-                            WarningCard(
-                                stringResource(R.string.scope_not_running, missingScopeLabels)
-                            )
-                        if (hasError)
-                            WarningCard(stringResource(R.string.internal_error))
-                        if (active && statusBinderAvailable && addOnMissing)
-                            WarningCard(stringResource(R.string.add_on_required_warning))
-                        if (active && statusBinderAvailable && !binderState.freezerAvailable)
-                            WarningCard(stringResource(R.string.freezer_v2_unavailable))
-                    }
-                    StatusCard(
-                        active = active,
-                        working = active && !hasError && !addOnMissing,
-                        version = hookVersion
-                            ?: stringResource(R.string.not_running),
-                        applicationSettings = applicationSettings,
-                        onClickStatus = {
+                        if (versionMismatch) {
+                            WarningCard(stringResource(R.string.module_version_mismatch))
+                        } else {
+                            if (fool)
+                                WarningCard(stringResource(R.string.fools_day))
+                            if (!active)
+                                WarningCard(stringResource(R.string.not_active))
+                            if (active && statusBinderAvailable && missingScopes.isNotEmpty())
+                                WarningCard(
+                                    stringResource(R.string.scope_not_running, missingScopeLabels)
+                                )
+                            if (hasError)
+                                WarningCard(stringResource(R.string.internal_error))
+                            if (active && statusBinderAvailable && addOnMissing)
+                                WarningCard(stringResource(R.string.add_on_required_warning))
+                            if (active && statusBinderAvailable && !binderState.freezerAvailable)
+                                WarningCard(stringResource(R.string.freezer_v2_unavailable))
+                        }
+                        StatusCard(
+                            active = active,
+                            working = active && !hasError && !addOnMissing,
+                            version = hookVersion
+                                ?: stringResource(R.string.not_running),
+                            applicationSettings = applicationSettings,
+                            onClickStatus = {
 
-                        },
-                        onClickWhitelist = {
-                            appListViewModel.updateByQuery(type = 0)
-                            callback(1)
-                        },
-                        onClickBlacklist = {
-                            appListViewModel.updateByQuery(type = 1)
-                            callback(1)
-                        }
-                    )
-                    InfoCard(
-                        working = active,
-                        hookType = binderState.hookType,
-                        xposedServiceStatus = xposedServiceStatus
-                    )
-                    UpdateCard(
-                        isChecking = infoState.isCheckingUpdate,
-                        onClick = {
-                            infoState.startUpdateCheck()
-                        }
-                    )
-                    LearnMoreCard()
-                    LogCard()
+                            },
+                            onClickWhitelist = {
+                                appListViewModel.updateByQuery(type = 0)
+                                callback(1)
+                            },
+                            onClickBlacklist = {
+                                appListViewModel.updateByQuery(type = 1)
+                                callback(1)
+                            }
+                        )
+                        InfoCard(
+                            working = active,
+                            hookType = binderState.hookType,
+                            xposedServiceStatus = xposedServiceStatus
+                        )
+                        UpdateCard(
+                            isChecking = infoState.isCheckingUpdate,
+                            onClick = {
+                                infoState.startUpdateCheck()
+                            }
+                        )
+                        LearnMoreCard()
+                        LogCard()
+                    }
                 }
             }
 
