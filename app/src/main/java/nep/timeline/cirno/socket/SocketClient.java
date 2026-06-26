@@ -56,7 +56,11 @@ public final class SocketClient {
         long now = System.currentTimeMillis();
         long elapsed = now - lastConnectFailedAtMs;
         if (lastConnectFailedAtMs > 0 && elapsed < RECONNECT_BASE_DELAY_MS) {
-            Thread.sleep(RECONNECT_BASE_DELAY_MS - elapsed);
+            try {
+                Thread.sleep(RECONNECT_BASE_DELAY_MS - elapsed);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
         }
         connect();
     }
