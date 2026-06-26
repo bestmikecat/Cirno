@@ -1,11 +1,11 @@
 package nep.timeline.cirno.services;
 
-import android.net.LocalServerSocket;
-import android.net.LocalSocket;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,7 +14,6 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.socket.SocketProtocol;
@@ -26,7 +25,7 @@ public final class SocketServer {
         return t;
     });
     private static final ExecutorService clientExecutor = Executors.newCachedThreadPool(r -> {
-        Thread t = new Thread(r, "Cirno-SocketClient");
+        Thread t = new Thread(r, "Cirno-SocketHandler");
         t.setDaemon(true);
         return t;
     });
@@ -50,14 +49,14 @@ public final class SocketServer {
     }
 
     private static void run() {
-        LocalServerSocket server = null;
+        ServerSocket server = null;
         try {
-            server = new LocalServerSocket(SocketProtocol.SOCKET_NAME);
-            Log.i("SocketServer: listening on " + SocketProtocol.SOCKET_NAME);
+            server = new ServerSocket(SocketProtocol.PORT, 50, InetAddress.getByName(SocketProtocol.HOST));
+            Log.i("SocketServer: listening on " + SocketProtocol.HOST + ":" + SocketProtocol.PORT);
 
             while (running.get()) {
                 try {
-                    LocalSocket client = server.accept();
+                    Socket client = server.accept();
                     if (client != null) {
                         clientExecutor.execute(() -> handleClient(client));
                     }
@@ -81,7 +80,7 @@ public final class SocketServer {
         }
     }
 
-    private static void handleClient(LocalSocket client) {
+    private static void handleClient(Socket client) {
         try {
             client.setSoTimeout(0);
             InputStream in = client.getInputStream();

@@ -12,7 +12,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public final class SocketProtocol {
-    public static final String SOCKET_NAME = "cirno_hook";
+    public static final String HOST = "127.0.0.1";
+    public static final int PORT = 60192;
     private static final int MAX_MESSAGE_SIZE = 512 * 1024;
     private static final Gson gson = new Gson();
 

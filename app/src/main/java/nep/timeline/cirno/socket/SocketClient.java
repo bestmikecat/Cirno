@@ -1,11 +1,10 @@
 package nep.timeline.cirno.socket;
 
-import android.net.LocalSocket;
-import android.net.LocalSocketAddress;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,7 +25,7 @@ public final class SocketClient {
 
     private final AtomicLong requestIdGenerator = new AtomicLong(0);
     private final ReentrantLock lock = new ReentrantLock();
-    private LocalSocket socket;
+    private Socket socket;
     private InputStream in;
     private OutputStream out;
     private volatile boolean connected = false;
@@ -51,8 +50,8 @@ public final class SocketClient {
 
     private void connect() throws IOException {
         close();
-        socket = new LocalSocket();
-        socket.connect(new LocalSocketAddress(SocketProtocol.SOCKET_NAME, LocalSocketAddress.Namespace.ABSTRACT));
+        socket = new Socket();
+        socket.connect(new InetSocketAddress(SocketProtocol.HOST, SocketProtocol.PORT), (int) CONNECT_TIMEOUT_MS);
         socket.setSoTimeout((int) REQUEST_TIMEOUT_MS);
         in = socket.getInputStream();
         out = socket.getOutputStream();
