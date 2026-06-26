@@ -1,16 +1,12 @@
 package nep.timeline.cirno.services;
 
-import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ServiceInfo;
-import android.os.Bundle;
 import android.os.SystemClock;
-import android.os.UserHandle;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,12 +19,11 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 
-import nep.timeline.cirno.GlobalVars;
-import nep.timeline.cirno.IApplicationInterface;
-import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.configs.policy.FreezeExemption;
 import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
+import nep.timeline.cirno.provide.ApplicationBinderFacade;
+import nep.timeline.cirno.provide.FrozenStateBinderFacade;
 import nep.timeline.cirno.reflect.CakeReflection;
 import nep.timeline.cirno.threads.Handlers;
 import nep.timeline.cirno.utils.FreezeExemptionChecker;
@@ -358,7 +353,7 @@ public final class MonitorBinderHub {
         return 0L;
     }
 
-    private static final IApplicationInterface.Stub applicationBinder = new IApplicationInterface.Stub() {
+    static final ApplicationBinderFacade applicationBinder = new ApplicationBinderFacade() {
         @Override
         public List<String> getRunningApplication() {
             return getOrUpdateSystemSnapshot().runningApps;
@@ -442,7 +437,7 @@ public final class MonitorBinderHub {
         }
     };
 
-    private static final IFrozenStateInterface.Stub frozenStateBinder = new IFrozenStateInterface.Stub() {
+    static final FrozenStateBinderFacade frozenStateBinder = new FrozenStateBinderFacade() {
         @Override
         public String isFrozen(String packageName, int userId) {
             if (packageName == null || packageName.isEmpty()) {
@@ -525,12 +520,10 @@ public final class MonitorBinderHub {
         }
     };
 
-    @SuppressLint("MissingPermission")
     public static void publish() {
         publish("unspecified");
     }
 
-    @SuppressLint("MissingPermission")
     public static void publish(String reason) {
         try {
             if (!bootCompleted) {
@@ -540,27 +533,8 @@ public final class MonitorBinderHub {
                 }
                 return;
             }
-            long now = SystemClock.uptimeMillis();
-            if (ActivityManagerService.instance == null || ActivityManagerService.getContext() == null) {
-                if (!loggedSkippedAms) {
-                    Log.d("MonitorBinderHub: publish skipped - AMS not ready");
-                    loggedSkippedAms = true;
-                }
-                return;
-            }
-            Intent intent = new Intent(GlobalVars.ACTION_BINDER);
-            intent.setPackage(GlobalVars.PACKAGE_NAME);
-            Bundle extras = new Bundle();
-            BinderManager manager = new BinderManager(
-                    StatusBinderHub.statusBinder,
-                    applicationBinder,
-                    frozenStateBinder
-            );
-            extras.putBinder("Manager", manager);
-            intent.putExtras(extras);
-            ActivityManagerService.getContext().sendBroadcastAsUser(intent, UserHandle.getUserHandleForUid(0));
-            lastPublishedAtMs = now;
-            Log.d("MonitorBinderHub: publish sent, reason=" + reason);
+            SocketServer.start();
+            Log.d("MonitorBinderHub: socket server started, reason=" + reason);
         } catch (Throwable e) {
             Log.w("MonitorBinderHub publish failed", e);
         }

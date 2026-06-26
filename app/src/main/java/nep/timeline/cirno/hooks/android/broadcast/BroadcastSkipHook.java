@@ -1,9 +1,7 @@
 package nep.timeline.cirno.hooks.android.broadcast;
 
-import android.content.Intent;
 import android.os.Build;
 
-import nep.timeline.cirno.GlobalVars;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.reflect.CakeReflection;
@@ -55,11 +53,8 @@ public class BroadcastSkipHook extends MethodHook {
                     }
 
                     Object record = callback.getArgs()[0];
-                    if (record != null) {
-                        Intent intent = (Intent) CakeReflection.getObjectField(record, "intent");
-                        if (intent != null && GlobalVars.ACTION_BINDER.equals(intent.getAction())) {
-                            return;
-                        }
+                    if (record == null) {
+                        return;
                     }
 
                     Object filter = callback.getArgs()[1];

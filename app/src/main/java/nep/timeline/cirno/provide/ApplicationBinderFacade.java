@@ -1,6 +1,8 @@
-package nep.timeline.cirno;
+package nep.timeline.cirno.provide;
 
-interface IApplicationInterface {
+import java.util.List;
+
+public interface ApplicationBinderFacade {
     List<String> getRunningApplication();
     String getProcessesForApp(String packageName, int userId);
     String getNetworkSpeed(String packageName, int userId);

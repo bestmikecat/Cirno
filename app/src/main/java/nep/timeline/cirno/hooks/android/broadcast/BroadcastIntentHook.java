@@ -13,7 +13,6 @@ import nep.timeline.cirno.entity.AppRecord;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.services.FreezerService;
-import nep.timeline.cirno.services.MonitorBinderHub;
 
 public class BroadcastIntentHook {
     private static final String ACTION_TILE_CLICK = "nep.timeline.cirno.TILE_CLICK";
@@ -70,12 +69,6 @@ public class BroadcastIntentHook {
                                 if (packageName != null) {
                                     FreezerService.temporaryUnfreezeIfNeed(packageName, userId, "控制中心磁贴", 3000);
                                 }
-                                return;
-                            }
-
-                            if (GlobalVars.ACTION_BINDER_REQUEST.equals(action)) {
-                                Log.d("BroadcastIntentHook: binder request received");
-                                MonitorBinderHub.publish("Binder request broadcast");
                                 return;
                             }
 

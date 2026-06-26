@@ -1,6 +1,6 @@
-package nep.timeline.cirno;
+package nep.timeline.cirno.provide;
 
-interface IStatusInterface {
+public interface StatusBinderFacade {
     String getSignal(String key);
     boolean isPacketAvailable();
     String getHookVersion();

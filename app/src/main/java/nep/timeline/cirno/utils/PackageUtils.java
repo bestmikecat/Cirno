@@ -5,7 +5,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Process;
-import android.os.RemoteException;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 
@@ -29,13 +28,13 @@ import java.util.regex.Pattern;
 
 import nep.timeline.cirno.CommonConstants;
 import nep.timeline.cirno.binder.BinderService;
-import nep.timeline.cirno.IApplicationInterface;
-import nep.timeline.cirno.IFrozenStateInterface;
 import nep.timeline.cirno.configs.checkers.AppConfigs;
 import nep.timeline.cirno.entity.AppItem;
 import nep.timeline.cirno.log.Log;
 import nep.timeline.cirno.provide.ApplicationBinder;
+import nep.timeline.cirno.provide.ApplicationBinderFacade;
 import nep.timeline.cirno.provide.FrozenStateBinder;
+import nep.timeline.cirno.provide.FrozenStateBinderFacade;
 import nep.timeline.cirno.services.AppService;
 import nep.timeline.cirno.ui.utils.RootPackageRepository;
 import nep.timeline.cirno.virtuals.ProcessRecord;
@@ -227,8 +226,8 @@ public class PackageUtils {
         }
 
         PackageManager pm = context.getPackageManager();
-        IApplicationInterface applicationInterface = ApplicationBinder.getInstance();
-        IFrozenStateInterface frozenStateInterface = FrozenStateBinder.getInstance();
+        ApplicationBinderFacade applicationInterface = ApplicationBinder.getInstance();
+        FrozenStateBinderFacade frozenStateInterface = FrozenStateBinder.getInstance();
         if (applicationInterface == null || frozenStateInterface == null) {
             nep.timeline.cirno.binder.BinderService.register(context);
             applicationInterface = ApplicationBinder.getInstance();
@@ -248,7 +247,7 @@ public class PackageUtils {
             }
             runningApps = new LinkedHashSet<>(running);
             Log.i("Monitor data: running app entries=" + runningApps.size());
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             Log.w("Monitor data failed: getRunningApplication", e);
             return result;
         }
@@ -256,7 +255,7 @@ public class PackageUtils {
         List<String> frozenStates;
         try {
             frozenStates = frozenStateInterface.getFrozenStates(new ArrayList<>(runningApps));
-        } catch (RemoteException e) {
+        } catch (Exception e) {
             Log.w("Monitor data failed: getFrozenStates", e);
             frozenStates = null;
         }
@@ -310,7 +309,7 @@ public class PackageUtils {
                 } else {
                     frozenData = frozenStateInterface.isFrozen(runningApp.packageName, runningApp.userId);
                 }
-            } catch (RemoteException e) {
+            } catch (Exception e) {
                 index++;
                 continue;
             }

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import nep.timeline.cirno.BuildConfig;
-import nep.timeline.cirno.IStatusInterface;
+import nep.timeline.cirno.provide.StatusBinderFacade;
 import nep.timeline.cirno.reflect.CakeHooker;
 import nep.timeline.cirno.utils.SystemChecker;
 
@@ -18,7 +18,7 @@ public final class StatusBinderHub {
     private StatusBinderHub() {
     }
 
-    public static final IStatusInterface.Stub statusBinder = new IStatusInterface.Stub() {
+    public static final StatusBinderFacade statusBinder = new StatusBinderFacade() {
         @Override
         public String getSignal(String key) {
             return StatusBinderHub.getSignal(key);
