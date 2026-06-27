@@ -1,6 +1,17 @@
 name: Release
 
 on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "app/**"
+      - ".github/workflows/release.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "app/**"
+      - ".github/workflows/release.yml"
   release:
     types: [published]
 
