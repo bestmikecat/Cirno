@@ -242,10 +242,10 @@ public class PackageUtils {
         LinkedHashSet<String> runningApps;
         List<String> frozenStates;
 
-        SocketClient.MonitorSnapshot snapshot = SocketClient.getInstance().getMonitorSnapshot();
-        if (snapshot != null && snapshot.running != null && !snapshot.running.isEmpty()) {
-            runningApps = new LinkedHashSet<>(snapshot.running);
-            frozenStates = snapshot.frozenStates;
+        SocketClient.MonitorSnapshot monitorSnapshot = SocketClient.getInstance().getMonitorSnapshot();
+        if (monitorSnapshot != null && monitorSnapshot.running != null && !monitorSnapshot.running.isEmpty()) {
+            runningApps = new LinkedHashSet<>(monitorSnapshot.running);
+            frozenStates = monitorSnapshot.frozenStates;
             Log.i("Monitor data: running app entries=" + runningApps.size() + " (batched)");
         } else {
             try {
