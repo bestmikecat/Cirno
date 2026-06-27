@@ -4,6 +4,10 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import nep.timeline.cirno.BuildConfig;
 import nep.timeline.cirno.provide.StatusBinderFacade;
 import nep.timeline.cirno.reflect.CakeHooker;
@@ -14,6 +18,7 @@ public final class StatusBinderHub {
     public static final String SIGNAL_ADD_ON_REQUIRED = "add_on_required";
     public static final String SIGNAL_HOOK_TYPE = "hook_type";
     private static final Map<String, String> SIGNALS = new ConcurrentHashMap<>();
+    private static final Gson gson = new Gson();
 
     private StatusBinderHub() {
     }
@@ -22,6 +27,27 @@ public final class StatusBinderHub {
         @Override
         public String getSignal(String key) {
             return StatusBinderHub.getSignal(key);
+        }
+
+        @Override
+        public String getStatusSnapshot() {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("error", StatusBinderHub.getSignal("error"));
+            obj.addProperty("device_type", StatusBinderHub.getSignal("device_type"));
+            obj.addProperty("add_on_required", StatusBinderHub.getSignal("add_on_required"));
+            obj.addProperty("hook_type", StatusBinderHub.getSignal("hook_type"));
+
+            JsonArray hookTypes = new JsonArray();
+            if ("1".equals(StatusBinderHub.getSignal("available_millet"))) hookTypes.add("Millet");
+            if ("1".equals(StatusBinderHub.getSignal("available_hans"))) hookTypes.add("Hans");
+            if ("1".equals(StatusBinderHub.getSignal("available_rekernel"))) hookTypes.add("ReKernel");
+            if ("1".equals(StatusBinderHub.getSignal("available_nkbinder"))) hookTypes.add("nkBinder");
+            obj.add("available_hook_types", hookTypes);
+
+            obj.addProperty("hook_version", BuildConfig.VERSION_NAME);
+            obj.addProperty("packet_available", isPacketAvailable());
+
+            return gson.toJson(obj);
         }
 
         @Override

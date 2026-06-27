@@ -19,6 +19,8 @@ public final class SocketProtocol {
     public static final long BIND_RETRY_DELAY_MS = 2000L;
     public static final int CLIENT_SO_TIMEOUT_MS = 60_000;
     public static final String METHOD_HANDSHAKE = "handshake";
+    public static final String METHOD_GET_STATUS_SNAPSHOT = "getStatusSnapshot";
+    public static final String METHOD_GET_MONITOR_SNAPSHOT = "getMonitorSnapshot";
     public static final String PORT_FILE_NAME = "cirno_hook.port";
     private static final int MAX_MESSAGE_SIZE = 512 * 1024;
     private static final Gson gson = new Gson();

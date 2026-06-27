@@ -1,5 +1,7 @@
 package nep.timeline.cirno.ui.utils
 
+import com.google.gson.Gson
+import com.google.gson.JsonParser
 import nep.timeline.cirno.binder.BinderService
 import nep.timeline.cirno.provide.StatusBinder
 
@@ -11,28 +13,30 @@ object HookStatusRepository {
         val deviceType: String? = null,
         val addOnRequired: Boolean = false,
         val hookType: String? = null,
-        val availableMillet: Boolean = false,
-        val availableHans: Boolean = false,
-        val availableRekernel: Boolean = false,
-        val availableNkbinder: Boolean = false,
+        val availableHookTypes: List<String> = emptyList(),
+        val packetAvailable: Boolean = false,
     )
+
+    private val gson = Gson()
 
     fun loadHookStatusSnapshot(): HookStatusSnapshot {
         BinderService.register(AppContext.context)
         val status = StatusBinder.getInstance() ?: return HookStatusSnapshot(statusBinderAvailable = false)
         return try {
-            val version = status.hookVersion
+            val snapshotJson = status.getStatusSnapshot()
+            if (snapshotJson.isNullOrBlank()) {
+                return HookStatusSnapshot(statusBinderAvailable = false)
+            }
+            val obj = JsonParser.parseString(snapshotJson).asJsonObject
             HookStatusSnapshot(
                 statusBinderAvailable = true,
-                hasError = status.getSignal("error") == "1",
-                hookVersion = if (version.isNullOrBlank()) null else version,
-                deviceType = status.getSignal("device_type").takeIf { !it.isNullOrBlank() },
-                addOnRequired = status.getSignal("add_on_required") == "1",
-                hookType = status.getSignal("hook_type").takeIf { !it.isNullOrBlank() },
-                availableMillet = status.getSignal("available_millet") == "1",
-                availableHans = status.getSignal("available_hans") == "1",
-                availableRekernel = status.getSignal("available_rekernel") == "1",
-                availableNkbinder = status.getSignal("available_nkbinder") == "1",
+                hasError = obj.get("error")?.asString == "1",
+                hookVersion = obj.get("hook_version")?.asString?.takeIf { it.isNotBlank() },
+                deviceType = obj.get("device_type")?.asString?.takeIf { it.isNotBlank() },
+                addOnRequired = obj.get("add_on_required")?.asString == "1",
+                hookType = obj.get("hook_type")?.asString?.takeIf { it.isNotBlank() },
+                availableHookTypes = obj.get("available_hook_types")?.asJsonArray?.map { it.asString } ?: emptyList(),
+                packetAvailable = obj.get("packet_available")?.asBoolean ?: false,
             )
         } catch (_: Throwable) {
             HookStatusSnapshot(statusBinderAvailable = false)

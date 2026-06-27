@@ -1,5 +1,6 @@
 package nep.timeline.cirno.services;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import nep.timeline.cirno.GlobalVars;
@@ -191,8 +193,9 @@ public final class SocketServer {
 
     private static void handleClient(Socket client) {
         try {
+            client.setTcpNoDelay(true);
             InputStream in = client.getInputStream();
-            OutputStream out = client.getOutputStream();
+            OutputStream out = new BufferedOutputStream(client.getOutputStream());
 
             if (!authenticate(client, in, out)) {
                 return;
@@ -238,6 +241,8 @@ public final class SocketServer {
         try {
             return switch (method) {
                 case "getSignal" -> handleGetSignal(id, params);
+                case "getStatusSnapshot" -> handleGetStatusSnapshot(id);
+                case "getMonitorSnapshot" -> handleGetMonitorSnapshot(id);
                 case "isPacketAvailable" -> handleIsPacketAvailable(id);
                 case "getHookVersion" -> handleGetHookVersion(id);
                 case "getRunningApplication" -> handleGetRunningApplication(id);
@@ -256,6 +261,20 @@ public final class SocketServer {
         String key = SocketProtocol.getStringParam(params, "key", "");
         String result = StatusBinderHub.getSignal(key);
         return SocketProtocol.createResponse(id, gson.toJsonTree(result));
+    }
+
+    private static String handleGetStatusSnapshot(long id) {
+        String result = StatusBinderHub.statusBinder.getStatusSnapshot();
+        return SocketProtocol.createResponse(id, gson.fromJson(result, JsonElement.class));
+    }
+
+    private static String handleGetMonitorSnapshot(long id) {
+        List<String> running = MonitorBinderHub.applicationBinder.getRunningApplication();
+        List<String> frozenStates = MonitorBinderHub.frozenStateBinder.getFrozenStates(new java.util.ArrayList<>(running));
+        JsonObject obj = new JsonObject();
+        obj.add("running", gson.toJsonTree(running));
+        obj.add("frozenStates", gson.toJsonTree(frozenStates));
+        return SocketProtocol.createResponse(id, obj);
     }
 
     private static String handleIsPacketAvailable(long id) {

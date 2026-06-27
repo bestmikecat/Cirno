@@ -315,10 +315,7 @@ fun MaterialSettingsPage(
                     val snapshot = hookStatus.value
                     val hookTypeItems = buildList {
                         add("Auto")
-                        if (snapshot?.availableMillet == true) add("Millet")
-                        if (snapshot?.availableHans == true) add("Hans")
-                        if (snapshot?.availableRekernel == true) add("ReKernel")
-                        if (snapshot?.availableNkbinder == true) add("nkBinder")
+                        snapshot?.availableHookTypes?.let { addAll(it) }
                     }
                     val hookTypeIndex = remember(snapshot) {
                         mutableIntStateOf(

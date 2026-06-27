@@ -1,5 +1,6 @@
 package nep.timeline.cirno.socket;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -91,9 +92,10 @@ public final class SocketClient {
         try {
             s = new Socket();
             s.connect(new InetSocketAddress(SocketProtocol.HOST, port), (int) CONNECT_TIMEOUT_MS);
+            s.setTcpNoDelay(true);
             s.setSoTimeout((int) REQUEST_TIMEOUT_MS);
             InputStream sockIn = s.getInputStream();
-            OutputStream sockOut = s.getOutputStream();
+            OutputStream sockOut = new BufferedOutputStream(s.getOutputStream());
 
             long id = requestIdGenerator.incrementAndGet();
             JsonObject params = new JsonObject();
@@ -208,6 +210,29 @@ public final class SocketClient {
         return frozenStateFacade;
     }
 
+    public static class MonitorSnapshot {
+        public final List<String> running;
+        public final List<String> frozenStates;
+
+        public MonitorSnapshot(List<String> running, List<String> frozenStates) {
+            this.running = running;
+            this.frozenStates = frozenStates;
+        }
+    }
+
+    public MonitorSnapshot getMonitorSnapshot() {
+        try {
+            String result = sendRequest("getMonitorSnapshot", null);
+            JsonObject obj = gson.fromJson(result, JsonObject.class);
+            List<String> running = gson.fromJson(obj.get("running"), new TypeToken<List<String>>() {}.getType());
+            List<String> frozenStates = gson.fromJson(obj.get("frozenStates"), new TypeToken<List<String>>() {}.getType());
+            return new MonitorSnapshot(running, frozenStates);
+        } catch (Exception e) {
+            Log.w("SocketClient: getMonitorSnapshot failed", e);
+            return null;
+        }
+    }
+
     private final StatusBinderFacade statusFacade = new StatusBinderFacade() {
         @Override
         public String getSignal(String key) {
@@ -218,6 +243,16 @@ public final class SocketClient {
             } catch (Exception e) {
                 Log.w("SocketClient: getSignal failed", e);
                 return "";
+            }
+        }
+
+        @Override
+        public String getStatusSnapshot() {
+            try {
+                return sendRequest("getStatusSnapshot", null);
+            } catch (Exception e) {
+                Log.w("SocketClient: getStatusSnapshot failed", e);
+                return null;
             }
         }
 
