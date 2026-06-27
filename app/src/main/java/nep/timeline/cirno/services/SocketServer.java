@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -202,7 +203,12 @@ public final class SocketServer {
             }
 
             while (running.get() && !client.isClosed()) {
-                String json = SocketProtocol.readMessage(in);
+                String json;
+                try {
+                    json = SocketProtocol.readMessage(in);
+                } catch (SocketTimeoutException e) {
+                    continue;
+                }
                 if (json == null) {
                     break;
                 }
@@ -240,6 +246,7 @@ public final class SocketServer {
 
         try {
             return switch (method) {
+                case "ping" -> SocketProtocol.createResponse(id, gson.toJsonTree("pong"));
                 case "getSignal" -> handleGetSignal(id, params);
                 case "getStatusSnapshot" -> handleGetStatusSnapshot(id);
                 case "getMonitorSnapshot" -> handleGetMonitorSnapshot(id);

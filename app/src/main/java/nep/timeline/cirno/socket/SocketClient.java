@@ -8,6 +8,9 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,9 +34,15 @@ public final class SocketClient {
     private static final long REQUEST_TIMEOUT_MS = 5000L;
     private static final long RECONNECT_BASE_DELAY_MS = 500L;
     private static final long RECONNECT_MAX_DELAY_MS = 5000L;
+    private static final long HEARTBEAT_INTERVAL_MS = 30_000L;
 
     private final AtomicLong requestIdGenerator = new AtomicLong(0);
     private final ReentrantLock lock = new ReentrantLock();
+    private final ScheduledExecutorService heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "Cirno-Heartbeat");
+        t.setDaemon(true);
+        return t;
+    });
     private Socket socket;
     private InputStream in;
     private OutputStream out;
@@ -41,6 +50,15 @@ public final class SocketClient {
     private volatile long lastConnectFailedAtMs = 0;
 
     private SocketClient() {
+        heartbeatExecutor.scheduleAtFixedRate(() -> {
+            if (!connected) return;
+            try {
+                sendRequest("ping", null);
+            } catch (IOException e) {
+                Log.w("SocketClient: heartbeat failed, closing connection", e);
+                close();
+            }
+        }, HEARTBEAT_INTERVAL_MS, HEARTBEAT_INTERVAL_MS, TimeUnit.MILLISECONDS);
     }
 
     public static SocketClient getInstance() {
